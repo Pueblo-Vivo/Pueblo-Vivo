@@ -1,0 +1,13 @@
+{
+  "name": "Pueblo Vivo · Lotes Umepay",
+  "short_name": "Pueblo Vivo",
+  "description": "Lotes y alojamientos de la ecoaldea Umepay",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#1f3d2b",
+  "theme_color": "#1f3d2b",
+  "icons": [
+    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231f3d2b'/%3E%3Ctext x='96' y='130' font-family='Georgia,serif' font-size='110' font-weight='bold' fill='%233fa66a' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='106' fill='%231f3d2b'/%3E%3Ctext x='256' y='345' font-family='Georgia,serif' font-size='290' font-weight='bold' fill='%233fa66a' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml" }
+  ]
+}

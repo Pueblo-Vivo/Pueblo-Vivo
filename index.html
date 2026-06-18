@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Pueblo Vivo · Lotes Umepay</title>
+<meta name="theme-color" content="#1f3d2b"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --forest:#1f3d2b; --forest-2:#2d5a3d; --leaf:#3fa66a; --leaf-soft:#dff0e4;
+  --terra:#b5532a; --terra-soft:#f2dccf; --gold:#c98a2b;
+  --sand:#f4efe6; --cream:#fbf8f1; --ink:#1c1a15; --muted:#867d6c; --line:#e6ded0;
+  --libre:#3fa66a; --reservado:#e0a32e; --vendido:#9a9183;
+  --disp:#3fa66a; --ocup:#c94f3d;
+  --shadow:0 8px 30px rgba(31,61,43,.16); --shadow-sm:0 2px 10px rgba(31,61,43,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Spline Sans',system-ui,sans-serif;color:var(--ink);background:var(--sand);overflow:hidden;
+  display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer}
+
+/* ---------- Topbar ---------- */
+.topbar{position:relative;z-index:1200;background:var(--forest);color:#eef5ee;
+  padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:0 2px 14px rgba(0,0,0,.22)}
+.brand{display:flex;flex-direction:column;line-height:1.05;flex:1;min-width:0}
+.brand .b1{font-family:'Fraunces',serif;font-weight:600;font-size:18px;letter-spacing:.3px}
+.brand .b2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9ec9ad;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .logo{width:36px;height:36px;border-radius:11px;background:radial-gradient(circle at 35% 30%, var(--leaf), var(--forest-2));
+  display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:900;color:#eaf6ec;font-size:19px;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18);flex:0 0 auto}
+.topbar .tb-btn{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);
+  color:#cfe6d4;display:grid;place-items:center;flex:0 0 auto}
+.topbar .tb-btn svg{width:19px;height:19px}
+.topbar .tb-btn.on{background:var(--gold);color:#2a1c06;border-color:var(--gold)}
+.fav-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.16);color:#ffd9c9;padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
+.fav-pill svg{width:15px;height:15px}
+
+/* ---------- Mode toggle ---------- */
+.modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
+.seg{display:flex;background:#ece5d8;border-radius:999px;padding:4px;gap:3px;width:100%;max-width:420px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.06)}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:14px;
+  padding:9px 6px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:7px;transition:.18s}
+.seg button svg{width:17px;height:17px}
+.seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
+.seg button.active.alq{color:var(--terra)}
+
+/* ---------- Filtros ---------- */
+.filters{position:relative;z-index:1100;background:var(--cream);border-bottom:1px solid var(--line);
+  display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;align-items:center}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1.4px solid var(--line);background:#fff;color:var(--ink);
+  padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;transition:.16s;white-space:nowrap}
+.chip .cnt{font-size:11px;color:var(--muted);font-weight:600}
+.chip .sw{width:11px;height:11px;border-radius:50%;display:inline-block}
+.chip.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+.chip.active .cnt{color:#bfe0c8}
+.chip svg{width:14px;height:14px}
+.chip.fbtn{border-color:var(--terra);color:var(--terra)}
+.chip.fbtn.dirty{background:var(--terra);color:#fff}
+
+/* ---------- Map ---------- */
+#map{flex:1;background:#aeb9a8;z-index:1}
+.leaflet-container{background:#9fb29c;font-family:inherit}
+.parc-label{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:700;font-size:12px;
+  text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 4px rgba(0,0,0,.6);padding:0;white-space:nowrap}
+.parc-label::before{display:none}
+.parc-label.lib{color:#d6ffe5}
+.lbl-barrio{display:flex;justify-content:center;align-items:center;background:transparent;border:0;box-shadow:none}
+.lbl-barrio span{background:rgba(122,67,38,.92);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.45);white-space:nowrap}
+.poi-icon{background:transparent;border:0}
+.poi-pin{display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.poi-pin .b{width:26px;height:26px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);display:grid;place-items:center;
+  background:#fff;border:2px solid var(--forest)}
+.poi-pin .b svg{transform:rotate(-45deg);width:15px;height:15px;color:var(--forest)}
+.poi-pin .t{margin-top:3px;background:rgba(31,61,43,.92);color:#fff;font-size:10.5px;font-weight:700;
+  padding:2px 6px;border-radius:5px;white-space:nowrap}
+.poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
+.poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
+
+/* map floating controls */
+.fab-col{position:absolute;right:14px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+.fab{width:46px;height:46px;border-radius:14px;background:#fff;border:0;box-shadow:var(--shadow);
+  display:grid;place-items:center;color:var(--forest)}
+.fab svg{width:23px;height:23px}
+.fab.on{background:var(--leaf);color:#fff}
+.fab.loc.tracking{background:var(--leaf);color:#fff}
+.fab .badge{position:absolute;top:-5px;right:-5px;background:var(--terra);color:#fff;font-size:10px;font-weight:800;
+  min-width:17px;height:17px;border-radius:99px;display:grid;place-items:center;padding:0 3px}
+.legend{position:absolute;left:14px;bottom:16px;z-index:900;background:rgba(251,248,241,.95);
+  backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;padding:9px 11px;box-shadow:var(--shadow-sm);font-size:12px;max-width:165px}
+.legend h4{font-family:'Fraunces',serif;font-size:12px;font-weight:600;color:var(--forest);margin-bottom:5px}
+.legend .row{display:flex;align-items:center;gap:7px;margin:4px 0;color:#4a4639;font-weight:500}
+.legend .sw{width:13px;height:13px;border-radius:4px;border:1.5px solid rgba(0,0,0,.18)}
+.me-dot{width:16px;height:16px;border-radius:50%;background:#2f7be6;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,230,.4),0 1px 4px rgba(0,0,0,.4)}
+
+/* compare tray */
+.tray{position:absolute;left:50%;transform:translateX(-50%) translateY(120%);bottom:16px;z-index:950;
+  background:var(--forest);color:#fff;border-radius:16px;box-shadow:var(--shadow);display:flex;align-items:center;
+  gap:12px;padding:10px 12px 10px 16px;transition:transform .28s;max-width:92vw}
+.tray.show{transform:translateX(-50%) translateY(0)}
+.tray .info{font-size:13px;font-weight:600;line-height:1.2}
+.tray .info small{display:block;color:#bfe0c8;font-weight:500;font-size:11px}
+.tray button{background:#fff;color:var(--forest);border:0;border-radius:11px;padding:9px 14px;font-weight:700;font-size:13px}
+.tray .x{background:transparent;color:#bfe0c8;padding:6px}
+
+/* admin banner */
+.adminbar{display:none;background:var(--gold);color:#2a1c06;font-size:12.5px;font-weight:700;
+  padding:7px 14px;align-items:center;gap:8px;z-index:1140;position:relative}
+.adminbar.show{display:flex}
+.adminbar svg{width:15px;height:15px}
+
+/* ---------- Sheets ---------- */
+.scrim{position:fixed;inset:0;background:rgba(28,26,21,.42);z-index:1400;opacity:0;pointer-events:none;transition:opacity .28s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:1500;background:var(--cream);
+  border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.30);
+  transform:translateY(105%);transition:transform .34s cubic-bezier(.22,1,.36,1);max-height:92vh;display:flex;flex-direction:column}
+.sheet.open{transform:translateY(0)}
+.grip{width:42px;height:5px;border-radius:99px;background:#d9cfbd;margin:10px auto 4px;flex:0 0 auto}
+.sheet-scroll{overflow-y:auto;padding:4px 18px 30px;overscroll-behavior:contain}
+
+.sh-head{display:flex;align-items:flex-start;gap:12px;padding-top:6px}
+.sh-title{flex:1}
+.sh-title .barrio{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--terra);font-weight:700}
+.sh-title h2{font-family:'Fraunces',serif;font-weight:600;font-size:25px;line-height:1.08;margin-top:2px}
+.statusbadge{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:999px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.statusbadge .sw{width:8px;height:8px;border-radius:50%;background:currentColor}
+.st-libre,.st-disp{background:var(--leaf-soft);color:#1d7a45}
+.st-reservado{background:#fbeecb;color:#9a6a0e}
+.st-vendido{background:#ece8e0;color:#6f685b}
+.st-ocup{background:#f6dcd6;color:#a23a2a}
+
+.priceblock{display:flex;align-items:baseline;gap:10px;margin:16px 0 4px;flex-wrap:wrap}
+.price{font-family:'Fraunces',serif;font-weight:700;font-size:31px;color:var(--forest);letter-spacing:.5px}
+.price .cur{font-size:15px;color:var(--muted);font-weight:600;margin-right:2px}
+.price .per{font-size:15px;color:var(--muted);font-weight:600}
+.permeter{font-size:12.5px;color:var(--muted);font-weight:500}
+.sold .price{color:var(--muted);text-decoration:line-through;text-decoration-thickness:2px}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 4px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px}
+.stat .lab{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stat .val{font-family:'Fraunces',serif;font-weight:600;font-size:16px;margin-top:3px;color:var(--ink)}
+.stat .val small{font-size:11px;color:var(--muted);font-weight:600}
+
+.sec-t{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:var(--forest);margin:20px 0 9px;display:flex;align-items:center;gap:7px}
+.sec-t svg{width:16px;height:16px;color:var(--terra)}
+
+/* nearby */
+.nearby{display:flex;flex-direction:column;gap:7px}
+.nb{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.nb .ico{width:30px;height:30px;border-radius:9px;background:var(--leaf-soft);display:grid;place-items:center;color:var(--forest);flex:0 0 auto}
+.nb .ico svg{width:17px;height:17px}
+.nb .nm{flex:1;font-weight:600;font-size:13.5px}.nb .nm small{display:block;color:var(--muted);font-weight:500;font-size:11.5px}
+.nb .d{font-family:'Fraunces',serif;font-weight:600;color:var(--terra);font-size:14px}
+
+/* sun */
+.sun{display:flex;align-items:center;gap:12px;background:linear-gradient(100deg,#fff6e6,#fff);border:1px solid #f0e2c2;border-radius:14px;padding:12px 14px}
+.sun .orb{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#ffd564,#f0a92b);flex:0 0 auto;box-shadow:0 0 0 6px #ffe9b733}
+.sun .txt b{font-family:'Fraunces',serif;font-size:15px;color:#9a6a0e}
+.sun .txt p{font-size:12.5px;color:#7a6a45;margin-top:1px}
+.stars{color:#e0a32e;font-size:13px;letter-spacing:1px;margin-top:3px}
+
+/* gallery */
+.gallery{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin:0 -18px;padding-left:18px;padding-right:18px}
+.gallery::-webkit-scrollbar{display:none}
+.gphoto{flex:0 0 auto;width:150px;height:108px;border-radius:14px;object-fit:cover;background:#e5ddcd;box-shadow:var(--shadow-sm)}
+.gphoto.user{box-shadow:0 0 0 2.5px var(--leaf), var(--shadow-sm)}
+.addphoto{flex:0 0 auto;width:104px;height:108px;border-radius:14px;border:2px dashed #cdbfa6;background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--terra);font-size:11.5px;font-weight:600}
+.addphoto svg{width:24px;height:24px}
+.usertag{font-size:10px;color:var(--leaf);font-weight:700;margin-top:-2px}
+
+/* features / amenities */
+.feats{display:flex;flex-wrap:wrap;gap:7px}
+.feat{background:var(--leaf-soft);color:#1d6e40;border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:5px}
+.feat svg{width:13px;height:13px}
+.feat.amen{background:#eef3ff;color:#2d5198}
+
+/* calendar */
+.cal-wrap{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.cal{flex:0 0 auto;width:220px}
+.cal h5{font-family:'Fraunces',serif;font-size:13.5px;color:var(--forest);text-transform:capitalize;margin-bottom:6px;text-align:center}
+.cal .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal .dow{font-size:9.5px;color:var(--muted);text-align:center;font-weight:700}
+.cal .day{aspect-ratio:1;display:grid;place-items:center;font-size:11.5px;border-radius:7px;color:#5a5346;font-weight:600}
+.cal .day.out{color:transparent}
+.cal .day.free{background:var(--leaf-soft);color:#1d7a45}
+.cal .day.busy{background:#f1ddd7;color:#b65b48;text-decoration:line-through}
+.cal .day.today{outline:2px solid var(--terra);outline-offset:-2px}
+.calleg{display:flex;gap:14px;font-size:11.5px;color:var(--muted);margin:8px 0 2px}
+.calleg span{display:flex;align-items:center;gap:5px}
+.calleg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* actions */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 4px}
+.act{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px;font-weight:600;font-size:14px;
+  display:flex;align-items:center;justify-content:center;gap:8px;color:var(--ink);transition:.16s}
+.act svg{width:19px;height:19px}
+.act.on.like{background:#fff0eb;border-color:var(--terra);color:var(--terra)}
+.act.on.seen{background:var(--leaf-soft);border-color:var(--leaf);color:#1d7a45}
+.act.full{grid-column:1/-1}
+.btn-primary{grid-column:1/-1;background:var(--forest);color:#fff;border:0;border-radius:14px;padding:14px;font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;gap:9px}
+.btn-primary.wa{background:#1ea861}
+.btn-primary svg{width:20px;height:20px}
+.share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.share-row .act{font-size:13px}
+
+/* admin edit box */
+.adminbox{background:#fff7e6;border:1.5px solid #f0d695;border-radius:14px;padding:13px;margin-top:18px}
+.adminbox h4{font-family:'Fraunces',serif;color:#9a6a0e;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.adminbox h4 svg{width:15px;height:15px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:11px;font-weight:700;color:#7a6a45;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.field select,.field input{width:100%;border:1.5px solid #e6d6ac;border-radius:10px;padding:9px 11px;font-size:14px;font-family:inherit;background:#fff}
+.field.inline{display:flex;align-items:center;justify-content:space-between}
+.switch{width:46px;height:26px;border-radius:99px;background:#d9cdb0;position:relative;transition:.18s;border:0;flex:0 0 auto}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.18s}
+.switch.on{background:var(--leaf)}.switch.on::after{left:23px}
+.adminbox .save{width:100%;background:var(--gold);color:#2a1c06;border:0;border-radius:11px;padding:11px;font-weight:700;margin-top:4px}
+
+/* comments */
+.comments{display:flex;flex-direction:column;gap:9px}
+.comment{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.comment .meta{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px;display:flex;justify-content:space-between}
+.comment p{font-size:13.5px;line-height:1.4}
+.cbox{display:flex;gap:8px;margin-top:11px}
+.cbox input{flex:1;border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;font-size:14px;font-family:inherit;background:#fff;outline:none}
+.cbox input:focus{border-color:var(--leaf)}
+.cbox button{background:var(--forest);color:#fff;border:0;border-radius:13px;padding:0 16px;font-weight:600}
+.empty-c{font-size:13px;color:var(--muted);font-style:italic;padding:4px 0}
+.disclaimer{font-size:11px;color:var(--muted);text-align:center;margin-top:22px;line-height:1.5}
+
+/* filter sheet */
+.fsheet-scroll{padding:6px 18px 26px;overflow-y:auto}
+.frow{margin-bottom:20px}
+.frow h4{font-family:'Fraunces',serif;font-size:15px;color:var(--forest);margin-bottom:10px}
+.frange{display:flex;align-items:center;gap:10px}
+.frange input[type=range]{flex:1;accent-color:var(--forest)}
+.fval{font-family:'Fraunces',serif;font-weight:600;color:var(--terra);font-size:15px;min-width:96px;text-align:right}
+.fchips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--ink)}
+.fchip.on{background:var(--forest);color:#fff;border-color:var(--forest)}
+.fbtns{display:flex;gap:10px;margin-top:6px}
+.fbtns button{flex:1;border-radius:13px;padding:13px;font-weight:700;font-size:14px;border:1.5px solid var(--line);background:#fff;color:var(--ink)}
+.fbtns button.apply{background:var(--forest);color:#fff;border-color:var(--forest)}
+
+/* compare modal */
+.cmp-scroll{padding:6px 14px 26px;overflow:auto}
+.cmp-table{width:100%;border-collapse:separate;border-spacing:0}
+.cmp-table th,.cmp-table td{padding:11px 9px;text-align:left;font-size:13px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp-table th{background:var(--leaf-soft);font-family:'Fraunces',serif;color:var(--forest);font-weight:600;position:sticky;top:0}
+.cmp-table .rl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.cmp-table tr:first-child td{font-weight:700}
+
+/* inventario real */
+.inv-h{display:flex;align-items:center;gap:10px;margin:4px 2px 6px}
+.inv-h h2{font-family:'Fraunces',serif;color:var(--forest);font-size:21px;flex:1}
+.inv-sync{background:#1ea861;color:#fff;border:0;border-radius:11px;padding:9px 12px;font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:6px}
+.inv-sync svg{width:15px;height:15px}
+.inv-sub{font-size:12.5px;color:var(--muted);margin:0 2px 12px;line-height:1.45}
+.inv-grp{font-family:'Fraunces',serif;font-size:12px;font-weight:700;color:var(--terra);text-transform:uppercase;letter-spacing:1px;margin:16px 4px 7px}
+.inv-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:9px;display:flex;gap:11px;align-items:center}
+.inv-card .ic{flex:1;min-width:0}
+.inv-card .nm{font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:7px}
+.inv-card .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.inv-card .pr{font-family:'Fraunces',serif;font-weight:600;color:var(--forest);font-size:15px;white-space:nowrap}
+.nota-badge{font-size:9.5px;font-weight:800;letter-spacing:.4px;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+.nb-OPORTUNIDAD,.nb-UNICA{background:#fdebd0;color:#b5532a}
+.nb-PAUSADA,.nb-PAUSADO{background:#ece8e0;color:#6f685b}
+.nb-COMERCIAL{background:#e7eefb;color:#2d5198}
+.inv-link{border:1.5px solid var(--forest);background:#fff;color:var(--forest);border-radius:10px;padding:8px 11px;font-weight:700;font-size:12px;white-space:nowrap;flex:0 0 auto}
+.inv-link.placed{background:var(--leaf-soft);border-color:var(--leaf);color:#1d7a45}
+.linkbar{position:fixed;left:50%;transform:translateX(-50%) translateY(140%);bottom:18px;z-index:1650;background:var(--terra);color:#fff;
+  border-radius:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:11px 13px 11px 16px;transition:transform .28s;max-width:92vw;font-size:13.5px;font-weight:600}
+.linkbar.show{transform:translateX(-50%) translateY(0)}
+.linkbar button{background:rgba(255,255,255,.2);color:#fff;border:0;border-radius:9px;padding:7px 11px;font-weight:700;font-size:12.5px}
+.sheet-fields{background:#eef5ef;border:1px solid #cfe6d4;border-radius:14px;padding:12px;margin-top:18px}
+.sheet-fields h4{font-family:'Fraunces',serif;color:var(--forest);font-size:14px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.sheet-fields h4 svg{width:16px;height:16px;flex:0 0 auto;color:var(--terra)}
+.sheet-fields .kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0;border-bottom:1px dashed #d3e4d6}
+.sheet-fields .kv:last-child{border:0}.sheet-fields .kv .k{color:var(--muted);font-weight:600}.sheet-fields .kv .v{font-weight:600;text-align:right}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:1700;
+  background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:500;
+  opacity:0;pointer-events:none;transition:.25s;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(min-width:820px){
+  .sheet{left:auto;right:18px;bottom:18px;top:120px;width:430px;border-radius:24px;transform:translateX(135%)}
+  .sheet.open{transform:translateX(0)}
+  .sheet .grip{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">P</div>
+  <div class="brand">
+    <span class="b1">Pueblo Vivo</span>
+    <span class="b2">Ecoaldea Umepay</span>
+  </div>
+  <button class="tb-btn" id="btnPoi" title="Puntos de interés">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+  </button>
+  <button class="tb-btn" id="btnInv" title="Inventario real (planilla)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1z"/><path d="M9 5h6"/><path d="M8 11h8M8 15h5"/></svg>
+  </button>
+  <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
+  </button>
+  <button class="fav-pill" id="favPill">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg>
+    <span id="favCount">0</span>
+  </button>
+</div>
+
+<div class="adminbar" id="adminbar">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+  Modo inmobiliaria activo — tocá un lote para editar precio y estado
+</div>
+
+<div class="modebar">
+  <div class="seg">
+    <button id="mComprar" class="active" data-mode="comprar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-6h6v6"/></svg>
+      Comprar lote</button>
+    <button id="mAlojar" class="alq" data-mode="alojar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+      Alojarte</button>
+  </div>
+</div>
+
+<div class="filters" id="filters"></div>
+
+<div id="map">
+  <div class="fab-col" style="top:14px">
+    <button class="fab loc" id="btnLoc" title="Mi ubicación">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <button class="fab" id="btnRoute" title="Recorrido de favoritos" style="position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8 18c7-1 3-11 9-12"/></svg>
+      <span class="badge" id="routeBadge" style="display:none">0</span></button>
+    <button class="fab" id="btnFit" title="Ver todo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
+    <button class="fab" id="btnSat" title="Satélite / mapa">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></button>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="tray" id="tray">
+    <div class="info"><span id="trayN">0</span> seleccionados<small>para comparar (máx 3)</small></div>
+    <button id="trayCmp">Comparar</button>
+    <button class="x" id="trayX">✕</button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="sheet" id="sheet"><div class="grip"></div><div class="sheet-scroll" id="sheetScroll"></div></div>
+<div class="sheet" id="fsheet"><div class="grip"></div><div class="fsheet-scroll" id="fsheetScroll"></div></div>
+<div class="sheet" id="cmpsheet"><div class="grip"></div><div class="cmp-scroll" id="cmpScroll"></div></div>
+<div class="sheet" id="invsheet"><div class="grip"></div><div class="cmp-scroll" id="invScroll"></div></div>
+<div class="linkbar" id="linkbar"><span id="linkTxt"></span><button id="linkCancel">Cancelar</button></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="parcelas-data.js"></script>
+<script src="poi-data.js"></script>
+<script src="lotes-reales.js"></script>
+<script>
+/* ============ Datos sintéticos (prototipo) ============ */
+const CENTRO=[-32.199,-64.743];
+function rng(seed){let t=seed+0x6D2B79F5;return function(){t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+const FEATS=[["Vista a las sierras","mountain"],["Arbolado nativo","tree"],["Acceso a agua","drop"],["Pendiente suave","slope"],["Orientación norte","sun"],["Apto huerta","leaf"],["Sombra de algarrobos","tree"],["Esquina","corner"],["Frente amplio","ruler"],["Zona alta","peak"],["Privacidad","shield"]];
+const AMEN=[["Energía solar","sun"],["Agua de vertiente","drop"],["Estufa a leña","fire"],["Huerta","leaf"],["Wifi","wifi"],["Cocina equipada","pot"],["Vista a las sierras","mountain"],["Baño compost","leaf"],["Pet friendly","paw"],["Galería techada","home"]];
+const ORIENT=["Norte","Noreste","Este","Noroeste","Sureste"];
+const SOL={Norte:["Sol todo el día","Cálido en invierno — ideal en la sierra",5],Noreste:["Sol de mañana y mediodía","Muy luminoso, fresco a la tarde",4],Noroeste:["Sol de mediodía y tarde","Atardeceres largos",4],Este:["Sol de mañana","Mañanas luminosas, sombra a la tarde",3],Sureste:["Sol parcial de mañana","Más fresco y sombreado",2]};
+function precioBase(b){const t={"Aldea":22,"Nogales Alto":19,"Nogales Bajo":15,"3 Rios":17,"7 Lomas":14,"9 Lomas":13,"Espinillos":12,"Acacias":16,"Castaños":18,"Castanos":18,"CampoNina":11};return t[b]||13;}
+
+function buildInfo(p){
+  const r=rng(p.id*97+13), roll=r();
+  let estado= roll<0.55?"libre": roll<0.80?"reservado":"vendido";
+  const usd=Math.round(precioBase(p.barrio)*(0.85+r()*0.45));
+  const total=Math.round(p.sup*usd/500)*500;
+  const pool=[...FEATS],feats=[],nf=2+Math.floor(r()*3);
+  for(let i=0;i<nf;i++)feats.push(pool.splice(Math.floor(r()*pool.length),1)[0]);
+  const orient=ORIENT[Math.floor(r()*ORIENT.length)];
+  const fotos=[],nfo=2+Math.floor(r()*2);
+  for(let i=0;i<nfo;i++)fotos.push(`https://picsum.photos/seed/ume${p.id}x${i}/640/420`);
+  // ¿es casa en alquiler?
+  const isCasa = r()<0.16;
+  let rental=null;
+  if(isCasa){
+    const nightly=20+Math.floor(r()*70);
+    const cap=2+Math.floor(r()*7);
+    const ap=[...AMEN],am=[],na=3+Math.floor(r()*4);
+    for(let i=0;i<na;i++)am.push(ap.splice(Math.floor(r()*ap.length),1)[0]);
+    // rangos ocupados en los próximos 75 días
+    const busy=new Set();let d=2+Math.floor(r()*10);
+    while(d<70){const len=1+Math.floor(r()*5);for(let k=0;k<len;k++)busy.add(d+k);d+=len+3+Math.floor(r()*12);}
+    rental={nightly,cap,am,busy:[...busy]};
+  }
+  return {estado,usd,total,feats,orient,fotos,isCasa,rental};
+}
+
+/* ============ Estado de usuario / admin (localStorage) ============ */
+const SKEY="pv_lotes_v1", AKEY="pv_admin_v1";
+let STATE=JSON.parse(localStorage.getItem(SKEY)||"{}");
+let ADMIN=JSON.parse(localStorage.getItem(AKEY)||"{}");
+function uget(id){if(!STATE[id])STATE[id]={fav:false,seen:false,photos:[],comments:[]};return STATE[id];}
+function save(){try{localStorage.setItem(SKEY,JSON.stringify(STATE));}catch(e){toast("Almacenamiento lleno");}}
+function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch(e){}}
+// info efectiva = sintética + override admin
+function info(id){return Object.assign({},DATA[id],ADMIN[id]||{});}
+
+/* ============ Mapa ============ */
+const map=L.map('map',{zoomControl:false}).setView(CENTRO,15);
+L.control.zoom({position:'bottomright'}).addTo(map);
+const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri'});
+const calle=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+sat.addTo(map);let satOn=true;
+document.getElementById('btnSat').onclick=()=>{satOn=!satOn;if(satOn){map.removeLayer(calle);sat.addTo(map);}else{map.removeLayer(sat);calle.addTo(map);}refreshLabels();};
+
+const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
+let DATA={},layers={},labels={},centers={};
+let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true;
+let REALES=(window.LOTES_REALES||[]).slice(), linkMode=null;
+const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258';
+try{const cache=JSON.parse(localStorage.getItem('pv_reales_v1')||'null');if(cache&&cache.length)REALES=cache;}catch(e){}
+let compare=[]; // ids
+let FILT={maxPrice:null,minSize:0,orient:[]};
+
+const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d2r,dLng=(b[1]-a[1])*d2r;
+  const s=Math.sin(dLat/2)**2+Math.cos(a[0]*d2r)*Math.cos(b[0]*d2r)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s));};
+const fmtDist=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1)+' km';
+
+function estilo(id){
+  const inf=info(id),u=uget(id);
+  if(MODE==='alojar'){
+    if(!inf.isCasa) return {opacity:0,fillOpacity:0};
+    const avail=isAvailableNow(inf);
+    const c=avail?'#3fa66a':'#c94f3d';
+    return {color:c,weight:u.fav?3.4:2.2,fillColor:c,fillOpacity:.42,opacity:1};
+  }
+  const c=C_SALE[inf.estado];
+  const sel=compare.includes(id);
+  return {color:sel?'#b5532a':c,weight:(u.fav||sel)?3.4:1.8,fillColor:c,
+    fillOpacity:inf.estado==='vendido'?0.18:0.40,dashArray:inf.estado==='reservado'?'5,4':null,opacity:1};
+}
+function isAvailableNow(inf){ if(!inf.rental)return false; return !inf.rental.busy.includes(0); }
+
+PARCELAS.features.forEach(f=>{
+  const id=f.properties.id;
+  DATA[id]=buildInfo(f.properties);
+  const layer=L.geoJSON(f,{style:()=>estilo(id)});
+  if(!layer.getBounds().isValid()){delete DATA[id];return;}
+  layer.addTo(map);
+  layer.on('click',()=>onLoteClick(id));
+  layers[id]=layer;
+  const c=layer.getBounds().getCenter();centers[id]=[c.lat,c.lng];
+  const m=L.marker(c,{icon:L.divIcon({className:'parc-label',html:'',iconSize:[40,18]})});
+  m.on('click',()=>onLoteClick(id));m.addTo(map);labels[id]=m;
+});
+// distancias a POIs de referencia
+const REF_POIS=(window.POIS||[]).filter(p=>p.ref);
+for(const id in centers){DATA[id].dist=REF_POIS.map(p=>({name:p.name,desc:p.desc,icon:p.icon,m:haversine(centers[id],[p.lat,p.lng])}));}
+
+/* etiquetas de barrio (como en umeapp) */
+const barrioLayer=L.layerGroup().addTo(map);
+(function(){const norm=s=>(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const g={};
+  PARCELAS.features.forEach(f=>{const id=f.properties.id;if(!centers[id])return;const b=f.properties.barrio;if(!b||norm(b)==='sin barrio')return;
+    const k=norm(b);if(!g[k])g[k]={name:b,pts:[]};g[k].pts.push(centers[id]);});
+  for(const k in g){const pts=g[k].pts;const lat=pts.reduce((s,p)=>s+p[0],0)/pts.length,lng=pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    L.marker([lat,lng],{icon:L.divIcon({className:'lbl-barrio',html:'<span>'+g[k].name+'</span>',iconSize:[140,22],iconAnchor:[70,11]}),interactive:false,zIndexOffset:-200}).addTo(barrioLayer);}
+})();
+
+function onLoteClick(id){ if(linkMode!=null){linkListing(linkMode,id);return;} if(MODE==='comprar'&&compareMode){toggleCompare(id);return;} openSheet(id); }
+
+/* ---- POI markers ---- */
+const poiLayer=L.layerGroup().addTo(map);
+function poiIconSvg(k){const I={cart:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6 5 3H2"/>',tea:'<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h2a2 2 0 0 1 0 5h-2"/><path d="M7 4c0 1-1 1-1 2M11 4c0 1-1 1-1 2"/>',school:'<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11v5c0 1 5 3 5 3s5-2 5-3v-5"/>',water:'<path d="M12 3c4 5 6 8 6 11a6 6 0 1 1-12 0c0-3 2-6 6-11z"/>',tree:'<path d="M12 2l5 7h-3l4 6h-4v5h-4v-5H6l4-6H7z"/>',sport:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>',star:'<path d="M12 3l2.6 5.6 6 .8-4.4 4.1 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.4l6-.8z"/>',pin:'<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/>'};return I[k]||I.pin;}
+(window.POIS||[]).forEach(p=>{
+  const html=`<div class="poi-pin ${p.cat}"><div class="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${poiIconSvg(p.icon)}</svg></div><div class="t">${p.name}</div></div>`;
+  L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[60,46],iconAnchor:[30,40]})}).addTo(poiLayer);
+});
+document.getElementById('btnPoi').classList.add('on');
+document.getElementById('btnPoi').onclick=function(){poiVisible=!poiVisible;this.classList.toggle('on',poiVisible);
+  if(poiVisible)poiLayer.addTo(map);else map.removeLayer(poiLayer);};
+
+/* ============ Labels ============ */
+function labelHtml(id){
+  const f=PARCELAS.features.find(x=>x.properties.id==id);if(!f)return'';
+  const u=uget(id),inf=info(id);
+  const heart=u.fav?'❤ ':'';const eye=(MODE==='comprar'&&u.seen)?'✓ ':'';
+  if(MODE==='alojar') return heart+'$'+inf.rental.nightly;
+  return heart+eye+(f.properties.num!=null?f.properties.num:'');
+}
+function refreshLabels(){
+  const z=map.getZoom();
+  for(const id in labels){
+    const inf=info(id),u=uget(id),m=labels[id],el=m.getElement();
+    if(!passesFilter(id)){if(el)el.style.display='none';continue;}
+    if(el)el.style.display='';
+    const html=labelHtml(id);
+    m.setIcon(L.divIcon({className:'parc-label '+(inf.estado==='libre'?'lib':''),html,iconSize:[44,18]}));
+  }
+}
+map.on('zoomend',refreshLabels);
+
+/* ============ Filtros ============ */
+function passesFilter(id){
+  const inf=info(id),u=uget(id);
+  if(MODE==='alojar'){ if(!inf.isCasa)return false;
+    if(currentFilter==='disp')return isAvailableNow(inf);
+    if(currentFilter==='ocup')return !isAvailableNow(inf);
+    if(currentFilter==='fav')return u.fav;
+    return true; }
+  // comprar
+  if(currentFilter==='libre'&&inf.estado!=='libre')return false;
+  if(currentFilter==='reservado'&&inf.estado!=='reservado')return false;
+  if(currentFilter==='vendido'&&inf.estado!=='vendido')return false;
+  if(currentFilter==='fav'&&!u.fav)return false;
+  if(currentFilter==='seen'&&!u.seen)return false;
+  // filtros avanzados
+  const f=PARCELAS.features.find(x=>x.properties.id==id);
+  if(FILT.maxPrice&&inf.total>FILT.maxPrice)return false;
+  if(FILT.minSize&&f.properties.sup<FILT.minSize)return false;
+  if(FILT.orient.length&&!FILT.orient.includes(inf.orient))return false;
+  return true;
+}
+function applyFilter(){
+  for(const id in layers){
+    const show=passesFilter(id),lyr=layers[id];
+    if(show){if(!map.hasLayer(lyr))lyr.addTo(map);lyr.setStyle&&lyr.setStyle(estilo(id));}
+    else if(map.hasLayer(lyr))map.removeLayer(lyr);
+  }
+  refreshLabels();
+}
+function counts(){
+  let c={todos:0,libre:0,reservado:0,vendido:0,fav:0,seen:0,casas:0,disp:0,ocup:0,favA:0};
+  for(const id in DATA){const inf=info(id),u=uget(id);
+    if(inf.isCasa){c.casas++;if(isAvailableNow(inf))c.disp++;else c.ocup++;if(u.fav)c.favA++;}
+    else{c.todos++;c[inf.estado]++;if(u.fav)c.fav++;if(u.seen)c.seen++;}
+  }
+  // en compra "todos" cuenta lotes no-casa
+  c.todos=0;for(const id in DATA){if(!info(id).isCasa)c.todos++;}
+  for(const id in DATA){const u=uget(id);if(!info(id).isCasa&&u.fav)c.fav++;}
+  return c;
+}
+const ICON={heart:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg>',
+ eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ funnel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg>'};
+function renderFilters(){
+  const c=counts(),el=document.getElementById('filters');el.innerHTML='';
+  let list;
+  if(MODE==='alojar'){
+    list=[{k:'todos',label:'Todas',n:c.casas},{k:'disp',label:'Disponibles',n:c.disp,sw:'#3fa66a'},
+      {k:'ocup',label:'Ocupadas',n:c.ocup,sw:'#c94f3d'},{k:'fav',label:'Favoritas',n:c.favA,heart:true}];
+  }else{
+    list=[{k:'todos',label:'Todos',n:c.todos},{k:'libre',label:'Libres',n:c.libre,sw:C_SALE.libre},
+      {k:'reservado',label:'En pausa',n:c.reservado,sw:C_SALE.reservado},
+      {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
+  }
+  list.forEach(ft=>{const b=document.createElement('button');b.className='chip'+(currentFilter===ft.k?' active':'');
+    let ic=ft.sw?`<span class="sw" style="background:${ft.sw}"></span>`:ft.heart?ICON.heart:ft.eye?ICON.eye:'';
+    b.innerHTML=`${ic}${ft.label} <span class="cnt">${ft.n}</span>`;
+    b.onclick=()=>{currentFilter=ft.k;renderFilters();applyFilter();};el.appendChild(b);});
+  if(MODE==='comprar'){
+    const fb=document.createElement('button');const dirty=FILT.maxPrice||FILT.minSize||FILT.orient.length;
+    fb.className='chip fbtn'+(dirty?' dirty':'');fb.innerHTML=`${ICON.funnel} Filtros`;
+    fb.onclick=openFilterSheet;el.appendChild(fb);
+  }
+  document.getElementById('favCount').textContent=c.fav+c.favA;
+}
+function renderLegend(){
+  const el=document.getElementById('legend');
+  if(MODE==='alojar'){el.innerHTML=`<h4>Alojamientos</h4>
+    <div class="row"><span class="sw" style="background:#3fa66a55;border-color:#2c7d4e"></span> Disponible</div>
+    <div class="row"><span class="sw" style="background:#c94f3d55;border-color:#a23a2a"></span> Ocupada</div>
+    <div class="row"><span class="me-dot" style="width:13px;height:13px"></span> Estás acá</div>`;
+  }else{el.innerHTML=`<h4>Lotes</h4>
+    <div class="row"><span class="sw" style="background:#3fa66a55;border-color:#2c7d4e"></span> Libre</div>
+    <div class="row"><span class="sw" style="background:#e0a32e55;border-color:#b07d12"></span> Reservado</div>
+    <div class="row"><span class="sw" style="background:#9a918355;border-color:#6f685b"></span> Vendido</div>
+    <div class="row"><span class="me-dot" style="width:13px;height:13px"></span> Estás acá</div>`;}
+}
+
+/* ============ Cambio de modo ============ */
+function setMode(m){
+  MODE=m;currentFilter='todos';clearCompare();
+  document.getElementById('mComprar').classList.toggle('active',m==='comprar');
+  document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
+  document.getElementById('btnRoute').style.display=m==='comprar'?'':'none';
+  renderFilters();renderLegend();applyFilter();
+}
+document.getElementById('mComprar').onclick=()=>setMode('comprar');
+document.getElementById('mAlojar').onclick=()=>setMode('alojar');
+
+/* ============ Bottom sheet detalle ============ */
+const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),scroll=document.getElementById('sheetScroll');
+let openId=null;
+const money=n=>n.toLocaleString('es-AR');
+function openSheet(id){openId=id;if(MODE==='comprar'){const u=uget(id);u.seen=true;}render();
+  scrim.classList.add('show');sheet.classList.add('open');highlight(id);}
+function closeSheet(){sheet.classList.remove('open');document.getElementById('fsheet').classList.remove('open');
+  document.getElementById('cmpsheet').classList.remove('open');document.getElementById('invsheet').classList.remove('open');
+  scrim.classList.remove('show');openId=null;renderFilters();applyFilter();}
+scrim.onclick=closeSheet;
+function highlight(id){const lyr=layers[id];if(!lyr)return;try{map.fitBounds(lyr.getBounds(),{maxZoom:18,paddingTopLeft:[40,40],paddingBottomRight:[40,window.innerHeight*0.55]});}catch(e){}}
+
+function render(){
+  const id=openId;if(id==null)return;
+  if(MODE==='alojar'&&info(id).isCasa)return renderCasa(id);
+  return renderLote(id);
+}
+function renderLote(id){
+  const f=PARCELAS.features.find(x=>x.properties.id==id),p=f.properties,inf=info(id),u=uget(id);
+  const ha=p.sup/10000,stL={libre:'Libre',reservado:'Reservado',vendido:'Vendido'}[inf.estado];
+  const featChips=inf.feats.map(ft=>`<span class="feat">${featIcon(ft[1])}${ft[0]}</span>`).join('');
+  const offF=inf.fotos.map(s=>`<img class="gphoto" src="${s}" loading="lazy" alt="">`).join('');
+  const userF=u.photos.map((s,i)=>`<img class="gphoto user" src="${s}" data-up="${i}" alt="">`).join('');
+  const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
+  const comments=u.comments.length?u.comments.map(c=>`<div class="comment"><div class="meta"><span>Vos</span><span>${c.when}</span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
+  const title=inf.inmueble||('Parcela '+(p.num!=null?p.num:('#'+id)));
+  const sub=inf.inmueble?`${p.barrio} · Parcela ${p.num!=null?p.num:id}`:p.barrio;
+  const ppm=inf.total&&p.sup?Math.round(inf.total/p.sup):inf.usd;
+  scroll.innerHTML=`
+  <div class="sh-head"><div class="sh-title"><span class="barrio">${sub}</span><h2>${esc(title)}</h2></div>
+    <span class="statusbadge st-${inf.estado}"><span class="sw"></span>${stL}</span></div>
+  <div class="priceblock ${inf.estado==='vendido'?'sold':''}"><span class="price"><span class="cur">USD</span>${inf.total?money(inf.total):'—'}</span><span class="permeter">≈ USD ${ppm}/m²</span></div>
+  ${inf.fromSheet?planillaBox(inf):''}
+  <div class="stats">
+    <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
+    <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
+    <div class="stat"><div class="lab">Orientación</div><div class="val" style="font-size:14px">${inf.orient}</div></div></div>
+  <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias cargadas.</p>'}</div>
+  <div class="sec-t">${ic('camera')} Fotos del terreno</div>
+  <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
+  ${u.photos.length?'<div class="usertag">Las fotos con borde verde las subiste vos</div>':''}
+  <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
+  <div class="sec-t">${ic('star')} Características</div><div class="feats">${featChips}</div>
+  <div class="actions">
+    <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
+    <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
+    <button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>
+  </div>
+  <div class="share-row">
+    <button class="act" id="btnWA">${ic('wa')}WhatsApp</button>
+    <button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>
+  ${adminMode?adminBox(id,inf,p):''}
+  <div class="sec-t">${ic('chat')} Mis notas y comentarios</div>
+  <div class="comments">${comments}</div>
+  <div class="cbox"><input id="cIn" placeholder="Escribí una nota…" maxlength="280"><button id="cSend">Enviar</button></div>
+  <p class="disclaimer">Prototipo · precios, estados y fotos de muestra (no reales).<br>Lotes y puntos de interés: cartografía Umepay.</p>`;
+  wireCommon(id);wireLote(id);
+}
+function renderCasa(id){
+  const f=PARCELAS.features.find(x=>x.properties.id==id),p=f.properties,inf=info(id),u=uget(id),rt=inf.rental;
+  const avail=isAvailableNow(inf);
+  const amen=rt.am.map(a=>`<span class="feat amen">${featIcon(a[1])}${a[0]}</span>`).join('');
+  const offF=inf.fotos.map(s=>`<img class="gphoto" src="${s}" loading="lazy" alt="">`).join('');
+  const userF=u.photos.map((s,i)=>`<img class="gphoto user" src="${s}" data-up="${i}" alt="">`).join('');
+  const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon('leaf')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
+  scroll.innerHTML=`
+  <div class="sh-head"><div class="sh-title"><span class="barrio">${p.barrio} · Alojamiento</span><h2>Casa ${p.num!=null?p.num:('#'+id)}</h2></div>
+    <span class="statusbadge st-${avail?'disp':'ocup'}"><span class="sw"></span>${avail?'Disponible':'Ocupada hoy'}</span></div>
+  <div class="priceblock"><span class="price"><span class="cur">USD</span>${rt.nightly}<span class="per"> /noche</span></span><span class="permeter">hasta ${rt.cap} personas</span></div>
+  <div class="sec-t">${ic('camera')} Fotos</div>
+  <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
+  <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
+  <div class="sec-t">${ic('star')} Comodidades</div><div class="feats">${amen}</div>
+  <div class="sec-t">${ic('cal')} Disponibilidad</div>
+  <div class="cal-wrap">${calMonths(rt.busy,2)}</div>
+  <div class="calleg"><span><i style="background:var(--leaf-soft)"></i> Libre</span><span><i style="background:#f1ddd7"></i> Ocupado</span></div>
+  <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby}</div>
+  <div class="actions"><button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
+    <button class="act" id="btnWA2">${ic('wa')}Consultar</button></div>
+  <button class="btn-primary wa" id="btnReserve" style="margin-top:10px">${ic('wa')}Reservar por WhatsApp</button>
+  ${adminMode?adminBox(id,inf,p):''}
+  <p class="disclaimer">Prototipo · disponibilidad y precios de muestra.</p>`;
+  wireCommon(id);
+  document.getElementById('btnReserve').onclick=()=>reservaWA(id);
+  document.getElementById('btnWA2').onclick=()=>reservaWA(id);
+}
+
+/* mini calendarios */
+function calMonths(busyArr,n){
+  const busy=new Set(busyArr);const today=new Date();today.setHours(0,0,0,0);
+  const dow=['L','M','M','J','V','S','D'];let out='';
+  for(let mo=0;mo<n;mo++){
+    const d=new Date(today.getFullYear(),today.getMonth()+mo,1);
+    const name=d.toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+    const first=(d.getDay()+6)%7;const days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+    let cells=dow.map(x=>`<div class="dow">${x}</div>`).join('');
+    for(let i=0;i<first;i++)cells+=`<div class="day out">.</div>`;
+    for(let day=1;day<=days;day++){
+      const cur=new Date(d.getFullYear(),d.getMonth(),day);
+      const diff=Math.round((cur-today)/86400000);
+      const isBusy=busy.has(diff);const isToday=diff===0;const past=diff<0;
+      let cls='day '+(past?'out':isBusy?'busy':'free')+(isToday?' today':'');
+      cells+=`<div class="${cls}">${day}</div>`;
+    }
+    out+=`<div class="cal"><h5>${name}</h5><div class="grid">${cells}</div></div>`;
+  }
+  return out;
+}
+
+/* admin box */
+function adminBox(id,inf,p){
+  const feats=(inf.feats||[]).map(f=>f[0]).join(', ');
+  const amen=(inf.rental?inf.rental.am:[]).map(a=>a[0]).join(', ');
+  const opt=(arr,val)=>arr.map(s=>`<option value="${s}" ${val===s?'selected':''}>${s}</option>`).join('');
+  return `<div class="adminbox"><h4>${ic('gear')} Editar lote (inmobiliaria)</h4>
+    <div class="field"><label>Nombre / inmueble</label><input id="adNombre" value="${esc(inf.inmueble||('Parcela '+(p.num!=null?p.num:id)))}"></div>
+    <div class="field"><label>Estado</label><select id="adEstado">${opt(['libre','reservado','vendido'],inf.estado)}</select></div>
+    <div class="field"><label>Precio total (USD)</label><input id="adPrecio" type="number" value="${inf.total||''}"></div>
+    <div class="field"><label>Orientación</label><select id="adOrient">${opt(ORIENT,inf.orient)}</select></div>
+    <div class="field"><label>Legalidad</label><input id="adLegal" value="${esc(inf.legalidad||'')}" placeholder="escritura directa, condominio…"></div>
+    <div class="field"><label>Tipo</label><input id="adTipo" value="${esc(inf.tipo||'terreno')}"></div>
+    <div class="field"><label>m² cubiertos (si hay construcción)</label><input id="adCub" value="${esc(inf.mtCub||'')}"></div>
+    <div class="field"><label>Características (separadas por coma)</label><input id="adFeats" value="${esc(feats)}"></div>
+    <div class="field inline"><label style="margin:0">¿Casa en alquiler?</label><button class="switch ${inf.isCasa?'on':''}" id="adCasa"></button></div>
+    <div id="adCasaWrap" style="${inf.isCasa?'':'display:none'}">
+      <div class="field"><label>Precio por noche (USD)</label><input id="adNight" type="number" value="${inf.rental?inf.rental.nightly:40}"></div>
+      <div class="field"><label>Capacidad (personas)</label><input id="adCap" type="number" value="${inf.rental?inf.rental.cap:4}"></div>
+      <div class="field"><label>Comodidades (separadas por coma)</label><input id="adAmen" value="${esc(amen)}"></div>
+    </div>
+    <button class="save" id="adSave">Guardar cambios</button>
+    ${inf.fromSheet?`<button class="save" id="adUnlink" style="background:#fff;border:1.5px solid var(--terra);color:var(--terra);margin-top:8px">Desvincular de la planilla</button>`:''}
+  </div>`;
+}
+
+function wireCommon(id){
+  const u=uget(id);
+  document.getElementById('btnLike').onclick=()=>{u.fav=!u.fav;save();render();renderFilters();estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');};
+  const add=document.getElementById('addPhoto');if(add)add.onclick=()=>document.getElementById('fileIn').click();
+  const fi=document.getElementById('fileIn');if(fi)fi.onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,900,img=>{u.photos.push(img);save();render();toast('Foto agregada 📷');});rd.readAsDataURL(file);};
+  scroll.querySelectorAll('.gphoto.user').forEach(img=>img.onclick=()=>{if(confirm('¿Eliminar esta foto?')){u.photos.splice(+img.dataset.up,1);save();render();}});
+  if(adminMode)wireAdmin(id);
+}
+function wireLote(id){
+  const u=uget(id);
+  document.getElementById('btnSeen').onclick=()=>{u.seen=!u.seen;save();render();renderFilters();estiloRefresh(id);};
+  document.getElementById('btnCmp').onclick=()=>{toggleCompare(id);render();};
+  document.getElementById('btnWA').onclick=()=>shareWA(id);
+  document.getElementById('btnPdf').onclick=()=>sharePDF(id);
+  document.getElementById('cSend').onclick=sendComment;
+  document.getElementById('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendComment();});
+}
+function wireAdmin(id){
+  const casaBtn=document.getElementById('adCasa');
+  casaBtn.onclick=()=>{casaBtn.classList.toggle('on');document.getElementById('adCasaWrap').style.display=casaBtn.classList.contains('on')?'':'none';};
+  const txt2feats=(s,ic)=>s.split(',').map(x=>x.trim()).filter(Boolean).map(t=>{const m=AMEN.find(a=>a[0].toLowerCase()===t.toLowerCase())||FEATS.find(a=>a[0].toLowerCase()===t.toLowerCase());return [t,m?m[1]:ic];});
+  document.getElementById('adSave').onclick=()=>{
+    const g=i=>document.getElementById(i), ov=Object.assign({},ADMIN[id]);
+    ov.inmueble=g('adNombre').value.trim()||null;
+    ov.estado=g('adEstado').value;
+    ov.total=+g('adPrecio').value||0;
+    ov.orient=g('adOrient').value;
+    ov.legalidad=g('adLegal').value.trim()||null;
+    ov.tipo=g('adTipo').value.trim()||null;
+    ov.mtCub=g('adCub').value.trim()||null;
+    ov.feats=txt2feats(g('adFeats').value,'star');
+    const isCasa=casaBtn.classList.contains('on');ov.isCasa=isCasa;
+    if(isCasa){const base=DATA[id].rental||{busy:[]};ov.rental=Object.assign({},base,{nightly:+g('adNight').value||40,cap:+g('adCap').value||4,am:txt2feats(g('adAmen').value,'home')});}
+    else ov.rental=null;
+    ADMIN[id]=ov;saveAdmin();estiloRefresh(id);renderFilters();render();toast('Cambios guardados ✓');
+  };
+  const un=document.getElementById('adUnlink');
+  if(un)un.onclick=()=>{ delete ADMIN[id]; saveAdmin(); estiloRefresh(id); renderFilters(); render(); toast('Lote desvinculado'); };
+}
+function sendComment(){const inp=document.getElementById('cIn'),v=inp.value.trim();if(!v)return;const u=uget(openId);const d=new Date();
+  u.comments.unshift({txt:v,when:d.getDate()+'/'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')});save();render();}
+function estiloRefresh(id){const lyr=layers[id];if(lyr&&lyr.setStyle)lyr.setStyle(estilo(id));refreshLabels();}
+function resizeImg(dataUrl,max,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=w*s|0;h=h*s|0;}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);cb(cv.toDataURL('image/jpeg',0.72));};img.src=dataUrl;}
+
+/* ============ Comparar ============ */
+let compareMode=false;
+function toggleCompare(id){const i=compare.indexOf(id);if(i>=0)compare.splice(i,1);else{if(compare.length>=3){toast('Máximo 3 lotes');return;}compare.push(id);}
+  updateTray();estiloRefresh(id);}
+function clearCompare(){compare.forEach(id=>{const l=layers[id];if(l)l.setStyle&&l.setStyle(estilo(id));});compare=[];updateTray();}
+function updateTray(){const t=document.getElementById('tray');document.getElementById('trayN').textContent=compare.length;t.classList.toggle('show',compare.length>0&&MODE==='comprar');refreshLabels();}
+document.getElementById('trayX').onclick=clearCompare;
+document.getElementById('trayCmp').onclick=openCompare;
+function openCompare(){
+  if(compare.length<2){toast('Elegí al menos 2 lotes');return;}
+  const rows=[['Precio',id=>'USD '+money(info(id).total)],['USD/m²',id=>'USD '+info(id).usd],
+    ['Superficie',id=>money(PARCELAS.features.find(x=>x.properties.id==id).properties.sup)+' m²'],
+    ['Barrio',id=>PARCELAS.features.find(x=>x.properties.id==id).properties.barrio],
+    ['Estado',id=>({libre:'Libre',reservado:'Reservado',vendido:'Vendido'})[info(id).estado]],
+    ['Orientación',id=>info(id).orient],
+    ['Siembra Dicha',id=>{const d=(info(id).dist||[]).find(x=>x.name==='Siembra Dicha');return d?fmtDist(d.m):'-';}],
+    ['Despensa',id=>{const d=(info(id).dist||[]).find(x=>x.name==='Despensa');return d?fmtDist(d.m):'-';}]];
+  const head='<th class="rl"></th>'+compare.map(id=>`<th>Parc. ${PARCELAS.features.find(x=>x.properties.id==id).properties.num}</th>`).join('');
+  const body=rows.map(r=>`<tr><td class="rl">${r[0]}</td>${compare.map(id=>`<td>${r[1](id)}</td>`).join('')}</tr>`).join('');
+  document.getElementById('cmpScroll').innerHTML=`<h2 style="font-family:Fraunces,serif;color:var(--forest);font-size:21px;margin:4px 4px 12px">Comparar lotes</h2>
+    <table class="cmp-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
+    <p class="disclaimer">Tocá fuera para cerrar.</p>`;
+  scrim.classList.add('show');document.getElementById('cmpsheet').classList.add('open');
+}
+
+/* ============ Inventario real (Google Sheet) ============ */
+function notaBadge(n){const k=(n||'').toUpperCase().replace(/[^A-Z]/g,'');return `<span class="nota-badge nb-${k}">${esc(n)}</span>`;}
+function placedMap(){const m={};for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)m[ADMIN[k].sheetRef]=k;}return m;}
+function planillaBox(inf){
+  const rows=[['Dueño / inmueble',inf.inmueble],['Legalidad',inf.legalidad],['Tipo',inf.tipo],['m² cubiertos',inf.mtCub],['Otros',inf.otros],['N° en planilla',inf.sheetMapaN!=null?('#'+inf.sheetMapaN):null],['Valor planilla',inf.valorRaw?('USD '+inf.valorRaw):null]].filter(r=>r[1]);
+  return `<div class="sheet-fields"><h4>${ic('clip')} Datos de la planilla${inf.nota?' '+notaBadge(inf.nota):''}</h4>${rows.map(r=>`<div class="kv"><span class="k">${r[0]}</span><span class="v">${esc(String(r[1]))}</span></div>`).join('')}</div>`;
+}
+const invsheet=document.getElementById('invsheet'),invScroll=document.getElementById('invScroll');
+function openInventory(){
+  const placed=placedMap();const tot=REALES.length,plc=Object.keys(placed).length;
+  let html=`<div class="inv-h"><h2>Inventario real</h2><button class="inv-sync" id="invSync">${ic('sync')} Actualizar</button></div>
+   <p class="inv-sub">${tot} inmuebles de la planilla de Google Sheets · <b>${plc} ubicados</b> en el mapa, ${tot-plc} por ubicar.<br>Tocá <b>Vincular</b> y después el lote en el mapa para colocarlo.</p>`;
+  let lastB=null;
+  REALES.forEach((r,i)=>{
+    if(r.barrio!==lastB){lastB=r.barrio;html+=`<div class="inv-grp">${esc(r.barrio)}</div>`;}
+    const pr=r.valor!=null?('USD '+money(r.valor)):(r.valorRaw?('USD '+esc(r.valorRaw)):'s/precio');
+    const meta=[r.tipo,r.legalidad].filter(Boolean).map(esc).join(' · ');
+    const linkedId=placed[i];
+    const btn=linkedId!=null?`<button class="inv-link placed" data-go="${linkedId}">📍 Parcela ${PARCELAS.features.find(x=>x.properties.id==linkedId).properties.num}</button>`
+      :`<button class="inv-link" data-link="${i}">Vincular</button>`;
+    html+=`<div class="inv-card"><div class="ic"><div class="nm">${esc(r.inmueble||'(sin nombre)')} ${r.nota?notaBadge(r.nota):''}</div><div class="meta">${meta||'—'}</div></div><div class="pr">${pr}</div>${btn}</div>`;
+  });
+  invScroll.innerHTML=html;
+  invScroll.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>linkStart(+b.dataset.link));
+  invScroll.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{closeSheet();openSheet(+b.dataset.go);});
+  document.getElementById('invSync').onclick=syncSheets;
+  scrim.classList.add('show');invsheet.classList.add('open');
+}
+function linkStart(idx){
+  linkMode=idx;const r=REALES[idx];
+  closeSheet();
+  document.getElementById('linkTxt').textContent='Tocá el lote para «'+(r.inmueble||'inmueble')+'»';
+  document.getElementById('linkbar').classList.add('show');
+}
+function linkListing(idx,id){
+  const r=REALES[idx];
+  ADMIN[id]=Object.assign({},ADMIN[id],{fromSheet:true,sheetRef:idx,inmueble:r.inmueble,legalidad:r.legalidad,tipo:r.tipo,
+    mtCub:r.mtCub,otros:r.otros,nota:r.nota,sheetMapaN:r.mapaN,valorRaw:r.valorRaw,
+    total:r.valor!=null?r.valor:(ADMIN[id]?ADMIN[id].total:DATA[id].total),
+    estado:(r.nota&&/PAUSAD/i.test(r.nota))?'reservado':'libre'});
+  saveAdmin();linkMode=null;document.getElementById('linkbar').classList.remove('show');
+  estiloRefresh(id);renderFilters();openSheet(id);toast('Vinculado a Parcela '+(PARCELAS.features.find(x=>x.properties.id==id).properties.num||id)+' ✓');
+}
+document.getElementById('linkCancel').onclick=()=>{linkMode=null;document.getElementById('linkbar').classList.remove('show');};
+
+function parseCSV(t){const rows=[];let cell='',row=[],q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}
+  else{if(c==='"')q=true;else if(c===',') {row.push(cell);cell='';} else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell='';} else if(c!=='\r')cell+=c;}}
+  if(cell.length||row.length){row.push(cell);rows.push(row);}return rows;}
+function vnum(x){if(x==null)return null;const s=String(x).replace(/\s/g,'');return /^\d+$/.test(s)?+s:null;}
+function parseSheet(text){
+  const rows=parseCSV(text);let h=-1,cm=-1;
+  for(let i=0;i<rows.length;i++){const j=rows[i].findIndex(c=>/mapa/i.test(c||''));if(j>=0){h=i;cm=j;break;}}
+  if(h<0)throw new Error('no header');
+  const ci=cm-2,ct=cm-1,cl=cm+1,cmt=cm+2,ccub=cm+3,csemi=cm+4,cotr=cm+5,cv=cm+6,cn=cm+7;
+  let barrio=(rows[h][ci]||'').trim()||'—';
+  const out=[];
+  for(let i=h+1;i<rows.length;i++){const r=rows[i];const g=k=>(r[k]||'').trim();
+    const inmueble=g(ci),tipo=g(ct),mapaN=g(cm),legal=g(cl),mtT=g(cmt),mtC=g(ccub),semi=g(csemi),otros=g(cotr),valor=g(cv),nota=g(cn);
+    if(inmueble.toLowerCase()==='inmueble')continue;          // fila de encabezado repetida
+    const rest=[tipo,mapaN,legal,mtT,valor].some(Boolean);
+    if(inmueble&&!rest){barrio=inmueble;continue;}            // fila de barrio
+    if(!inmueble&&!valor&&!tipo)continue;                     // vacía
+    out.push({barrio,inmueble,tipo:tipo||null,mapaN:vnum(mapaN),legalidad:legal||null,mtTerreno:mtT||null,mtCub:mtC||null,semicub:semi||null,otros:otros||null,valor:vnum(valor),valorRaw:valor||null,nota:nota||null,id:null});}
+  return out;
+}
+function syncSheets(){
+  const btn=document.getElementById('invSync');if(btn)btn.textContent='Conectando…';
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+  fetch(url).then(r=>r.text()).then(txt=>{
+    const list=parseSheet(txt);
+    if(!list.length)throw new Error('vacío');
+    REALES=list;try{localStorage.setItem('pv_reales_v1',JSON.stringify(list));}catch(e){}
+    openInventory();toast('Planilla actualizada: '+list.length+' inmuebles ✓');
+  }).catch(()=>{ if(btn){btn.innerHTML=ic('sync')+' Actualizar';} toast('No se pudo conectar a Sheets (permisos/CORS). Uso la copia cargada.'); });
+}
+document.getElementById('btnInv').onclick=openInventory;
+
+/* ============ Recorrido favoritos ============ */
+let routeLine=null;
+function favIds(){return Object.keys(centers).filter(id=>uget(id).fav&&!info(id).isCasa);}
+function updateRouteBadge(){const n=favIds().length,b=document.getElementById('routeBadge');b.style.display=n?'':'none';b.textContent=n;}
+document.getElementById('btnRoute').onclick=()=>{
+  if(routeLine){map.removeLayer(routeLine);routeLine=null;document.getElementById('btnRoute').classList.remove('on');return;}
+  const ids=favIds();if(ids.length<2){toast('Marcá al menos 2 lotes como favoritos ❤');return;}
+  // nearest-neighbor desde el primero
+  let pts=ids.map(id=>({id,c:centers[id]}));const order=[pts.shift()];
+  while(pts.length){let last=order[order.length-1].c,bi=0,bd=1e12;pts.forEach((p,i)=>{const d=haversine(last,p.c);if(d<bd){bd=d;bi=i;}});order.push(pts.splice(bi,1)[0]);}
+  routeLine=L.polyline(order.map(o=>o.c),{color:'#b5532a',weight:4,dashArray:'2,9',lineCap:'round'}).addTo(map);
+  let tot=0;for(let i=1;i<order.length;i++)tot+=haversine(order[i-1].c,order[i].c);
+  document.getElementById('btnRoute').classList.add('on');map.fitBounds(routeLine.getBounds(),{padding:[60,60]});
+  toast('Recorrido: '+order.length+' lotes · '+fmtDist(tot));
+};
+
+/* ============ Compartir ============ */
+function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
+  const txt=`*Pueblo Vivo · Parcela ${p.num}* (${p.barrio})\n${money(p.sup)} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
+function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
+  const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
+function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
+  const feats=inf.feats.map(f=>f[0]).join(' · ');
+  const w=window.open('','_blank');if(!w){toast('Permití las ventanas emergentes');return;}
+  w.document.write(`<html><head><title>Parcela ${p.num} · Pueblo Vivo</title><style>
+    body{font-family:Georgia,serif;color:#1c1a15;max-width:600px;margin:40px auto;padding:0 24px}
+    h1{color:#1f3d2b;border-bottom:3px solid #b5532a;padding-bottom:8px}
+    .p{font-size:34px;color:#1f3d2b;font-weight:bold} table{width:100%;border-collapse:collapse;margin:18px 0}
+    td{padding:9px 0;border-bottom:1px solid #e6ded0}td:first-child{color:#867d6c;width:45%}
+    .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs img{width:48%;border-radius:8px}
+    .badge{display:inline-block;background:#dff0e4;color:#1d7a45;padding:4px 12px;border-radius:99px;font-size:14px}</style></head>
+    <body><h1>Pueblo Vivo · Parcela ${p.num}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
+    <p class="p">USD ${money(inf.total)}</p><span class="badge">${inf.estado}</span>
+    <table><tr><td>Superficie</td><td>${money(p.sup)} m² (${(p.sup/10000).toFixed(2)} ha)</td></tr>
+    <tr><td>Precio por m²</td><td>USD ${inf.usd}</td></tr><tr><td>Orientación</td><td>${inf.orient}</td></tr>
+    <tr><td>Características</td><td>${feats}</td></tr></table>
+    <div class="imgs">${inf.fotos.map(s=>`<img src="${s}">`).join('')}</div>
+    <p style="color:#867d6c;font-size:12px;margin-top:30px">Prototipo · datos de muestra · cartografía Umepay</p>
+    <script>setTimeout(()=>window.print(),600)<\/script></body></html>`);w.document.close();}
+
+/* ============ Filtros avanzados ============ */
+const fsheet=document.getElementById('fsheet'),fscroll=document.getElementById('fsheetScroll');
+function openFilterSheet(){
+  const maxP=FILT.maxPrice||500000;
+  fscroll.innerHTML=`<h2 style="font-family:Fraunces,serif;color:var(--forest);font-size:21px;margin:4px 0 16px">Filtros</h2>
+   <div class="frow"><h4>Presupuesto máximo</h4><div class="frange"><input type="range" id="fPrice" min="20000" max="800000" step="10000" value="${maxP}"><span class="fval" id="fPriceV"></span></div></div>
+   <div class="frow"><h4>Tamaño mínimo</h4><div class="frange"><input type="range" id="fSize" min="0" max="20000" step="500" value="${FILT.minSize}"><span class="fval" id="fSizeV"></span></div></div>
+   <div class="frow"><h4>Orientación</h4><div class="fchips" id="fOrient">${ORIENT.map(o=>`<button class="fchip ${FILT.orient.includes(o)?'on':''}" data-o="${o}">${o}</button>`).join('')}</div></div>
+   <div class="fbtns"><button id="fClear">Limpiar</button><button class="apply" id="fApply">Ver resultados</button></div>`;
+  const pv=()=>document.getElementById('fPriceV').textContent='USD '+money(+document.getElementById('fPrice').value);
+  const sv=()=>{const v=+document.getElementById('fSize').value;document.getElementById('fSizeV').textContent=v?money(v)+' m²':'Cualquiera';};
+  document.getElementById('fPrice').oninput=pv;document.getElementById('fSize').oninput=sv;pv();sv();
+  fscroll.querySelectorAll('#fOrient .fchip').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
+  document.getElementById('fClear').onclick=()=>{FILT={maxPrice:null,minSize:0,orient:[]};closeSheet();renderFilters();applyFilter();toast('Filtros limpiados');};
+  document.getElementById('fApply').onclick=()=>{
+    FILT.maxPrice=+document.getElementById('fPrice').value;FILT.minSize=+document.getElementById('fSize').value;
+    FILT.orient=[...fscroll.querySelectorAll('#fOrient .fchip.on')].map(b=>b.dataset.o);
+    closeSheet();renderFilters();applyFilter();
+    let n=0;for(const id in DATA)if(passesFilter(id))n++;toast(n+' lotes coinciden');
+  };
+  scrim.classList.add('show');fsheet.classList.add('open');
+}
+
+/* ============ Admin / POI / geo ============ */
+document.getElementById('btnAdmin').onclick=function(){adminMode=!adminMode;this.classList.toggle('on',adminMode);
+  document.getElementById('adminbar').classList.toggle('show',adminMode);if(openId!=null)render();
+  toast(adminMode?'Modo inmobiliaria activado':'Modo inmobiliaria desactivado');};
+
+let meMarker=null,meCircle=null,watchId=null;const btnLoc=document.getElementById('btnLoc');
+btnLoc.onclick=()=>{
+  if(!navigator.geolocation){toast('Tu dispositivo no comparte ubicación');return;}
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;btnLoc.classList.remove('tracking');if(meMarker)map.removeLayer(meMarker);if(meCircle)map.removeLayer(meCircle);return;}
+  btnLoc.classList.add('tracking');toast('Buscando tu ubicación…');
+  watchId=navigator.geolocation.watchPosition(pos=>{const yo=[pos.coords.latitude,pos.coords.longitude],acc=pos.coords.accuracy;
+    if(!meMarker){meMarker=L.marker(yo,{icon:L.divIcon({className:'',html:'<div class="me-dot"></div>',iconSize:[16,16]})}).addTo(map);
+      meCircle=L.circle(yo,{radius:acc,color:'#2f7be6',weight:1,fillColor:'#2f7be6',fillOpacity:.12}).addTo(map);map.setView(yo,Math.max(map.getZoom(),17));}
+    else{meMarker.setLatLng(yo);meCircle.setLatLng(yo).setRadius(acc);}},
+    ()=>{btnLoc.classList.remove('tracking');toast('No se pudo obtener ubicación');},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});};
+document.getElementById('btnFit').onclick=()=>{const all=L.featureGroup(Object.values(layers).filter(l=>map.hasLayer(l)));try{map.fitBounds(all.getBounds(),{padding:[40,40]});}catch(e){}};
+
+/* ============ helpers iconos ============ */
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+function ic(n){const I={
+ camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.2"/></svg>',
+ star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.6 5.6 6 .8-4.4 4.1 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.4l6-.8z"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg>',
+ eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.5 7.2L3 21l1.8-6.5A8 8 0 1 1 21 12z"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+ sun:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/><g stroke="currentColor" stroke-width="2"><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4 4l2 2M18 18l2 2M20 4l-2 2M6 18l-2 2"/></g></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+ cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>',
+ cmp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v18M15 3v18M3 7h6M15 7h6M3 13h6M15 17h6"/></svg>',
+ wa:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.4 5 5.1-1.3A10 10 0 1 0 12 2zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.3 0 .5l-.4.5c-.2.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.2.1.4.1.6-.1l.7-.8c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.8-.1 1.4z"/></svg>',
+ pdf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7 7 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg>',
+ clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h4"/></svg>',
+ sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7-3.3M3 12a9 9 0 0 1 16-5.7"/><path d="M21 3v4h-4M3 21v-4h4"/></svg>'};
+ return I[n]||'';}
+function featIcon(k){const m={
+ mountain:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l6-11 4 6 2-3 6 8z"/></svg>',
+ tree:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l5 7h-3l4 6h-4v5h-4v-5H6l4-6H7z"/></svg>',
+ drop:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c4 5 6 8 6 11a6 6 0 1 1-12 0c0-3 2-6 6-11z"/></svg>',
+ sun:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="4"/><g stroke="currentColor" stroke-width="2"><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4 4l2 2M18 18l2 2M20 4l-2 2M6 18l-2 2"/></g></svg>',
+ leaf:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 19C5 9 12 4 20 4c0 9-6 15-15 15z"/></svg>',
+ corner:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5v14h14"/></svg>',
+ ruler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h18v8H3z"/><path d="M7 8v3M11 8v4M15 8v3"/></svg>',
+ peak:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 16H3z"/></svg>',
+ slope:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 20L21 5M3 20h18"/></svg>',
+ shield:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3v6c0 5-3.5 8.5-8 11-4.5-2.5-8-6-8-11V5z"/></svg>',
+ fire:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.5-2-1-2.5C15 11 16 13 16 15a4 4 0 0 1-8 0c0-5 4-7 4-13z"/></svg>',
+ wifi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8.5a16 16 0 0 1 20 0M5 12a11 11 0 0 1 14 0M8.5 15.5a6 6 0 0 1 7 0"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>',
+ pot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M2 10h20M9 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/></svg>',
+ paw:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="10" r="2"/><circle cx="10" cy="6" r="2"/><circle cx="14" cy="6" r="2"/><circle cx="18" cy="10" r="2"/><path d="M8 16c0-2 2-3 4-3s4 1 4 3-2 4-4 4-4-2-4-4z"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>'};
+ return m[k]||m.leaf;}
+
+/* ============ init ============ */
+renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
+try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
+
+/* PWA */
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
