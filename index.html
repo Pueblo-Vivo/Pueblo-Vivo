@@ -447,7 +447,7 @@ let DATA={},layers={},labels={},centers={};
 let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true;
 const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258', INVKEY='pv_inv_v1';
 let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
-const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.num);
+const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.mapNum); // mapNum = clave interna de enlace (no el num original)
 for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)delete ADMIN[k];} saveAdmin(); // limpia enlaces viejos
 let compare=[]; // ids
 let FILT={maxPrice:null,minSize:0,orient:[]};
@@ -539,9 +539,8 @@ function passesFilter(id){
     if(currentFilter==='fav')return u.fav;
     return true; }
   // comprar
-  if(currentFilter==='libre'&&inf.estado!=='libre')return false;
-  if(currentFilter==='reservado'&&inf.estado!=='reservado')return false;
-  if(currentFilter==='vendido'&&inf.estado!=='vendido')return false;
+  if(currentFilter==='venta_lote'&&!(inf.fromSheet&&!conCasa(inf)))return false;
+  if(currentFilter==='venta_casa'&&!(inf.fromSheet&&conCasa(inf)))return false;
   if(currentFilter==='fav'&&!u.fav)return false;
   if(currentFilter==='seen'&&!u.seen)return false;
   // filtros avanzados
@@ -559,15 +558,14 @@ function applyFilter(){
   }
   refreshLabels();
 }
+function conCasa(inf){return /casa|mono|local|casita|d[uú]plex/i.test(inf.tipo||'')||!!inf.mtCub;}
 function counts(){
-  let c={todos:0,libre:0,reservado:0,vendido:0,fav:0,seen:0,casas:0,disp:0,ocup:0,favA:0};
+  let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,casas:0,disp:0,ocup:0,favA:0};
   for(const id in DATA){const inf=info(id),u=uget(id);
     if(inf.isCasa){c.casas++;if(isAvailableNow(inf))c.disp++;else c.ocup++;if(u.fav)c.favA++;}
-    else{c.todos++;c[inf.estado]++;if(u.fav)c.fav++;if(u.seen)c.seen++;}
+    else{c.todos++;if(u.fav)c.fav++;if(u.seen)c.seen++;}
+    if(inf.fromSheet){if(conCasa(inf))c.ventaCasa++;else c.ventaLote++;}
   }
-  // en compra "todos" cuenta lotes no-casa
-  c.todos=0;for(const id in DATA){if(!info(id).isCasa)c.todos++;}
-  for(const id in DATA){const u=uget(id);if(!info(id).isCasa&&u.fav)c.fav++;}
   return c;
 }
 const ICON={heart:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg>',
@@ -580,8 +578,9 @@ function renderFilters(){
     list=[{k:'todos',label:'Todas',n:c.casas},{k:'disp',label:'Disponibles',n:c.disp,sw:'#3fa66a'},
       {k:'ocup',label:'Ocupadas',n:c.ocup,sw:'#c94f3d'},{k:'fav',label:'Favoritas',n:c.favA,heart:true}];
   }else{
-    list=[{k:'todos',label:'Todos',n:c.todos},{k:'libre',label:'Libres',n:c.libre,sw:C_SALE.libre},
-      {k:'reservado',label:'En pausa',n:c.reservado,sw:C_SALE.reservado},
+    list=[{k:'todos',label:'Todos',n:c.todos},
+      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:C_SALE.libre},
+      {k:'venta_casa',label:'Lote y casa en venta',n:c.ventaCasa,sw:'#2d5198'},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
   list.forEach(ft=>{const b=document.createElement('button');b.className='chip'+(currentFilter===ft.k?' active':'');
@@ -835,7 +834,7 @@ function loadInv(){
 function saveInv(){try{localStorage.setItem(INVKEY,JSON.stringify({v:(window.LOTES_REALES_V||1),items:REALES}));}catch(e){toast('Almacenamiento lleno');}buildLinks();}
 function buildLinks(){linkByNum={};REALES.forEach(r=>{if(r.loteNum!=null)linkByNum[r.loteNum]=r;});}
 function refreshAllStyles(){for(const id in layers){if(layers[id].setStyle)layers[id].setStyle(estilo(id));}refreshLabels();}
-function loteIdByNum(n){const f=PARCELAS.features.find(x=>x.properties.num==n);return f?f.properties.id:null;}
+function loteIdByNum(n){const f=PARCELAS.features.find(x=>x.properties.mapNum==n);return f?f.properties.id:null;}
 function placedCount(){return REALES.filter(r=>r.loteNum!=null).length;}
 function notaBadge(n){const k=(n||'').toUpperCase().replace(/[^A-Z]/g,'');return `<span class="nota-badge nb-${k}">${esc(n)}</span>`;}
 function planillaBox(inf){
