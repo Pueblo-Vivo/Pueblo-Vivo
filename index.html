@@ -445,7 +445,7 @@ document.getElementById('btnSat').onclick=()=>{satOn=!satOn;if(satOn){map.remove
 const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
 let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true;
-const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258';
+const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258', INVKEY='pv_inv_v1';
 let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
 const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.num);
 for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)delete ADMIN[k];} saveAdmin(); // limpia enlaces viejos
@@ -823,7 +823,6 @@ function openCompare(){
 }
 
 /* ============ Inventario real (editable) ============ */
-const INVKEY='pv_inv_v1';
 function newKey(){return 'l'+(++invSeq);}
 function loadInv(){
   let arr=null;
