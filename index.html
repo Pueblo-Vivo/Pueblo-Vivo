@@ -280,6 +280,13 @@ button{font-family:inherit;cursor:pointer}
 .nb-COMERCIAL{background:#e7eefb;color:#2d5198}
 .inv-link{border:1.5px solid var(--forest);background:#fff;color:var(--forest);border-radius:10px;padding:8px 11px;font-weight:700;font-size:12px;white-space:nowrap;flex:0 0 auto}
 .inv-link.placed{background:var(--leaf-soft);border-color:var(--leaf);color:#1d7a45}
+.inv-actions{display:flex;gap:6px;flex:0 0 auto}
+.inv-mini{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--forest)}
+.inv-mini svg{width:16px;height:16px}
+.inv-mini.del{color:var(--ocup);border-color:#eccfc8}
+.inv-lote{font-size:10.5px;font-weight:700;color:#1d7a45;background:var(--leaf-soft);padding:2px 7px;border-radius:6px;margin-left:4px;white-space:nowrap}
+.inv-add{width:100%;border:1.5px dashed var(--terra);background:#fff;color:var(--terra);border-radius:13px;padding:12px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
+.inv-add svg{width:18px;height:18px}
 .linkbar{position:fixed;left:50%;transform:translateX(-50%) translateY(140%);bottom:18px;z-index:1650;background:var(--terra);color:#fff;
   border-radius:14px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;padding:11px 13px 11px 16px;transition:transform .28s;max-width:92vw;font-size:13.5px;font-weight:600}
 .linkbar.show{transform:translateX(-50%) translateY(0)}
@@ -420,7 +427,12 @@ function uget(id){if(!STATE[id])STATE[id]={fav:false,seen:false,photos:[],commen
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(STATE));}catch(e){toast("Almacenamiento lleno");}}
 function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch(e){}}
 // info efectiva = sintética + override admin
-function info(id){return Object.assign({},DATA[id],ADMIN[id]||{});}
+function info(id){
+  let o=Object.assign({},DATA[id]);
+  const L=linkByNum[numById[id]];
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  return Object.assign(o,ADMIN[id]||{});
+}
 
 /* ============ Mapa ============ */
 const map=L.map('map',{zoomControl:false}).setView(CENTRO,15);
@@ -433,9 +445,10 @@ document.getElementById('btnSat').onclick=()=>{satOn=!satOn;if(satOn){map.remove
 const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
 let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true;
-let REALES=(window.LOTES_REALES||[]).slice(), linkMode=null;
 const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258';
-try{const cache=JSON.parse(localStorage.getItem('pv_reales_v1')||'null');if(cache&&cache.length)REALES=cache;}catch(e){}
+let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
+const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.num);
+for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)delete ADMIN[k];} saveAdmin(); // limpia enlaces viejos
 let compare=[]; // ids
 let FILT={maxPrice:null,minSize:0,orient:[]};
 
@@ -777,7 +790,7 @@ function wireAdmin(id){
     ADMIN[id]=ov;saveAdmin();estiloRefresh(id);renderFilters();render();toast('Cambios guardados ✓');
   };
   const un=document.getElementById('adUnlink');
-  if(un)un.onclick=()=>{ delete ADMIN[id]; saveAdmin(); estiloRefresh(id); renderFilters(); render(); toast('Lote desvinculado'); };
+  if(un)un.onclick=()=>{ const L=linkByNum[numById[id]]; if(L){L.loteNum=null;saveInv();} delete ADMIN[id]; saveAdmin(); estiloRefresh(id); renderFilters(); render(); toast('Lote desvinculado'); };
 }
 function sendComment(){const inp=document.getElementById('cIn'),v=inp.value.trim();if(!v)return;const u=uget(openId);const d=new Date();
   u.comments.unshift({txt:v,when:d.getDate()+'/'+(d.getMonth()+1)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')});save();render();}
@@ -809,49 +822,85 @@ function openCompare(){
   scrim.classList.add('show');document.getElementById('cmpsheet').classList.add('open');
 }
 
-/* ============ Inventario real (Google Sheet) ============ */
+/* ============ Inventario real (editable) ============ */
+const INVKEY='pv_inv_v1';
+function newKey(){return 'l'+(++invSeq);}
+function loadInv(){
+  let arr=null;
+  try{const c=JSON.parse(localStorage.getItem(INVKEY)||'null');if(c&&c.length)arr=c;}catch(e){}
+  if(!arr)arr=(window.LOTES_REALES||[]).map(r=>Object.assign({},r,{loteNum:null}));
+  arr.forEach(r=>{if(!r.key)r.key='l'+(++invSeq);else{const n=+String(r.key).replace(/\D/g,'');if(n>invSeq)invSeq=n;}if(r.loteNum===undefined)r.loteNum=null;});
+  return arr;
+}
+function saveInv(){try{localStorage.setItem(INVKEY,JSON.stringify(REALES));}catch(e){toast('Almacenamiento lleno');}buildLinks();}
+function buildLinks(){linkByNum={};REALES.forEach(r=>{if(r.loteNum!=null)linkByNum[r.loteNum]=r;});}
+function refreshAllStyles(){for(const id in layers){if(layers[id].setStyle)layers[id].setStyle(estilo(id));}refreshLabels();}
+function loteIdByNum(n){const f=PARCELAS.features.find(x=>x.properties.num==n);return f?f.properties.id:null;}
+function placedCount(){return REALES.filter(r=>r.loteNum!=null).length;}
 function notaBadge(n){const k=(n||'').toUpperCase().replace(/[^A-Z]/g,'');return `<span class="nota-badge nb-${k}">${esc(n)}</span>`;}
-function placedMap(){const m={};for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)m[ADMIN[k].sheetRef]=k;}return m;}
 function planillaBox(inf){
   const rows=[['Dueño / inmueble',inf.inmueble],['Legalidad',inf.legalidad],['Tipo',inf.tipo],['m² cubiertos',inf.mtCub],['Otros',inf.otros],['N° en planilla',inf.sheetMapaN!=null?('#'+inf.sheetMapaN):null],['Valor planilla',inf.valorRaw?('USD '+inf.valorRaw):null]].filter(r=>r[1]);
   return `<div class="sheet-fields"><h4>${ic('clip')} Datos de la planilla${inf.nota?' '+notaBadge(inf.nota):''}</h4>${rows.map(r=>`<div class="kv"><span class="k">${r[0]}</span><span class="v">${esc(String(r[1]))}</span></div>`).join('')}</div>`;
 }
 const invsheet=document.getElementById('invsheet'),invScroll=document.getElementById('invScroll');
 function openInventory(){
-  const placed=placedMap();const tot=REALES.length,plc=Object.keys(placed).length;
-  let html=`<div class="inv-h"><h2>Inventario real</h2><button class="inv-sync" id="invSync">${ic('sync')} Actualizar</button></div>
-   <p class="inv-sub">${tot} inmuebles de la planilla de Google Sheets · <b>${plc} ubicados</b> en el mapa, ${tot-plc} por ubicar.<br>Tocá <b>Vincular</b> y después el lote en el mapa para colocarlo.</p>`;
+  const tot=REALES.length,plc=placedCount();
+  let html=`<div class="inv-h"><h2>Inventario real</h2><button class="inv-sync" id="invSync">${ic('sync')} Sheets</button></div>
+   <p class="inv-sub">${tot} inmuebles · <b>${plc} con lote asignado</b>, ${tot-plc} sin asignar.<br>Editá cada uno y poné su <b>N° de lote</b> (1–186), o tocá <b>Ubicar</b> y elegí el lote en el mapa.</p>
+   <button class="inv-add" id="invAdd">${ic('plus')} Agregar inmueble</button>`;
   let lastB=null;
-  REALES.forEach((r,i)=>{
-    if(r.barrio!==lastB){lastB=r.barrio;html+=`<div class="inv-grp">${esc(r.barrio)}</div>`;}
+  REALES.forEach(r=>{
+    if(r.barrio!==lastB){lastB=r.barrio;html+=`<div class="inv-grp">${esc(r.barrio||'—')}</div>`;}
     const pr=r.valor!=null?('USD '+money(r.valor)):(r.valorRaw?('USD '+esc(r.valorRaw)):'s/precio');
     const meta=[r.tipo,r.legalidad].filter(Boolean).map(esc).join(' · ');
-    const linkedId=placed[i];
-    const btn=linkedId!=null?`<button class="inv-link placed" data-go="${linkedId}">📍 Parcela ${PARCELAS.features.find(x=>x.properties.id==linkedId).properties.num}</button>`
-      :`<button class="inv-link" data-link="${i}">Vincular</button>`;
-    html+=`<div class="inv-card"><div class="ic"><div class="nm">${esc(r.inmueble||'(sin nombre)')} ${r.nota?notaBadge(r.nota):''}</div><div class="meta">${meta||'—'}</div></div><div class="pr">${pr}</div>${btn}</div>`;
+    const lote=r.loteNum!=null?`<span class="inv-lote">📍 Lote ${r.loteNum}</span>`:'';
+    html+=`<div class="inv-card"><div class="ic"><div class="nm">${esc(r.inmueble||'(sin nombre)')} ${r.nota?notaBadge(r.nota):''}${lote}</div><div class="meta">${(meta||'—')+' · '+pr}</div></div>
+      <div class="inv-actions">
+        <button class="inv-mini" data-edit="${r.key}" title="Editar">${ic('pencil')}</button>
+        <button class="inv-mini" data-loc="${r.key}" title="Ubicar en el mapa">${ic('pin')}</button>
+        <button class="inv-mini del" data-del="${r.key}" title="Eliminar">${ic('trash')}</button>
+      </div></div>`;
   });
   invScroll.innerHTML=html;
-  invScroll.querySelectorAll('[data-link]').forEach(b=>b.onclick=()=>linkStart(+b.dataset.link));
-  invScroll.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{closeSheet();openSheet(+b.dataset.go);});
   document.getElementById('invSync').onclick=syncSheets;
+  document.getElementById('invAdd').onclick=()=>editListing(null);
+  invScroll.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editListing(b.dataset.edit));
+  invScroll.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>linkStart(b.dataset.loc));
+  invScroll.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>delListing(b.dataset.del));
   scrim.classList.add('show');invsheet.classList.add('open');
 }
-function linkStart(idx){
-  linkMode=idx;const r=REALES[idx];
-  closeSheet();
-  document.getElementById('linkTxt').textContent='Tocá el lote para «'+(r.inmueble||'inmueble')+'»';
-  document.getElementById('linkbar').classList.add('show');
+function editListing(key){
+  const r=key?REALES.find(x=>x.key==key):{key:null,barrio:'',inmueble:'',tipo:'',legalidad:'',valorRaw:'',nota:'',loteNum:null,mapaN:null};
+  const barrios=[...new Set(PARCELAS.features.map(f=>f.properties.barrio))];
+  invScroll.innerHTML=`<div class="inv-h"><h2>${key?'Editar inmueble':'Nuevo inmueble'}</h2></div>
+   <div class="field"><label>Nombre / inmueble</label><input id="eNom" value="${esc(r.inmueble||'')}"></div>
+   <div class="field"><label>Barrio</label><input id="eBarrio" value="${esc(r.barrio||'')}" list="barrioDL"></div>
+   <div class="field"><label>Tipo</label><input id="eTipo" value="${esc(r.tipo||'')}" placeholder="terreno, casa…"></div>
+   <div class="field"><label>Legalidad</label><input id="eLegal" value="${esc(r.legalidad||'')}"></div>
+   <div class="field"><label>Valor (USD)</label><input id="eValor" value="${esc(r.valorRaw||'')}"></div>
+   <div class="field"><label>Nota</label><input id="eNota" value="${esc(r.nota||'')}" placeholder="OPORTUNIDAD, PAUSADA…"></div>
+   <div class="field"><label>N° de lote en el mapa (1–186) — lo enlaza al lote</label><input id="eLote" type="number" min="1" max="186" value="${r.loteNum!=null?r.loteNum:''}" placeholder="ej: 4"></div>
+   <div class="fbtns"><button id="eCancel">Cancelar</button><button class="apply" id="eSave">Guardar</button></div>
+   <datalist id="barrioDL">${barrios.map(b=>`<option value="${esc(b)}">`).join('')}</datalist>`;
+  const g=i=>document.getElementById(i);
+  g('eCancel').onclick=openInventory;
+  g('eSave').onclick=()=>{
+    let loteNum=g('eLote').value.trim()===''?null:parseInt(g('eLote').value,10);
+    if(loteNum!=null){ if(!loteIdByNum(loteNum)){toast('No existe el lote N° '+loteNum);return;}
+      const other=REALES.find(x=>x.loteNum===loteNum&&x.key!==r.key);
+      if(other&&!confirm('El lote '+loteNum+' ya está en «'+(other.inmueble||'?')+'». ¿Pasarlo a este?'))return;
+      if(other)other.loteNum=null; }
+    const data={inmueble:g('eNom').value.trim()||null,barrio:g('eBarrio').value.trim()||'—',tipo:g('eTipo').value.trim()||null,legalidad:g('eLegal').value.trim()||null,valorRaw:g('eValor').value.trim()||null,valor:vnum(g('eValor').value),nota:g('eNota').value.trim()||null,loteNum};
+    if(r.key){const it=REALES.find(x=>x.key==r.key);Object.assign(it,data);}
+    else REALES.push(Object.assign({key:newKey(),mapaN:null},data));
+    saveInv();refreshAllStyles();renderFilters();openInventory();toast('Guardado ✓');
+  };
 }
-function linkListing(idx,id){
-  const r=REALES[idx];
-  ADMIN[id]=Object.assign({},ADMIN[id],{fromSheet:true,sheetRef:idx,inmueble:r.inmueble,legalidad:r.legalidad,tipo:r.tipo,
-    mtCub:r.mtCub,otros:r.otros,nota:r.nota,sheetMapaN:r.mapaN,valorRaw:r.valorRaw,
-    total:r.valor!=null?r.valor:(ADMIN[id]?ADMIN[id].total:DATA[id].total),
-    estado:(r.nota&&/PAUSAD/i.test(r.nota))?'reservado':'libre'});
-  saveAdmin();linkMode=null;document.getElementById('linkbar').classList.remove('show');
-  estiloRefresh(id);renderFilters();openSheet(id);toast('Vinculado a Parcela '+(PARCELAS.features.find(x=>x.properties.id==id).properties.num||id)+' ✓');
-}
+function delListing(key){const r=REALES.find(x=>x.key==key);if(!r)return;if(!confirm('¿Eliminar «'+(r.inmueble||'inmueble')+'» del inventario?'))return;REALES=REALES.filter(x=>x.key!=key);saveInv();refreshAllStyles();renderFilters();openInventory();toast('Eliminado');}
+function linkStart(key){linkMode=key;const r=REALES.find(x=>x.key==key);closeSheet();document.getElementById('linkTxt').textContent='Tocá el lote para «'+((r&&r.inmueble)||'inmueble')+'»';document.getElementById('linkbar').classList.add('show');}
+function linkListing(key,id){const r=REALES.find(x=>x.key==key);linkMode=null;document.getElementById('linkbar').classList.remove('show');if(!r)return;
+  const num=numById[id];const other=REALES.find(x=>x.loteNum===num&&x.key!==key);if(other)other.loteNum=null;
+  r.loteNum=num;saveInv();refreshAllStyles();renderFilters();openSheet(id);toast('«'+(r.inmueble||'inmueble')+'» → lote '+num+' ✓');}
 document.getElementById('linkCancel').onclick=()=>{linkMode=null;document.getElementById('linkbar').classList.remove('show');};
 
 function parseCSV(t){const rows=[];let cell='',row=[],q=false;for(let i=0;i<t.length;i++){const c=t[i];
@@ -868,11 +917,11 @@ function parseSheet(text){
   const out=[];
   for(let i=h+1;i<rows.length;i++){const r=rows[i];const g=k=>(r[k]||'').trim();
     const inmueble=g(ci),tipo=g(ct),mapaN=g(cm),legal=g(cl),mtT=g(cmt),mtC=g(ccub),semi=g(csemi),otros=g(cotr),valor=g(cv),nota=g(cn);
-    if(inmueble.toLowerCase()==='inmueble')continue;          // fila de encabezado repetida
+    if(inmueble.toLowerCase()==='inmueble')continue;
     const rest=[tipo,mapaN,legal,mtT,valor].some(Boolean);
-    if(inmueble&&!rest){barrio=inmueble;continue;}            // fila de barrio
-    if(!inmueble&&!valor&&!tipo)continue;                     // vacía
-    out.push({barrio,inmueble,tipo:tipo||null,mapaN:vnum(mapaN),legalidad:legal||null,mtTerreno:mtT||null,mtCub:mtC||null,semicub:semi||null,otros:otros||null,valor:vnum(valor),valorRaw:valor||null,nota:nota||null,id:null});}
+    if(inmueble&&!rest){barrio=inmueble;continue;}
+    if(!inmueble&&!valor&&!tipo)continue;
+    out.push({barrio,inmueble,tipo:tipo||null,mapaN:vnum(mapaN),legalidad:legal||null,mtTerreno:mtT||null,mtCub:mtC||null,semicub:semi||null,otros:otros||null,valor:vnum(valor),valorRaw:valor||null,nota:nota||null});}
   return out;
 }
 function syncSheets(){
@@ -881,9 +930,10 @@ function syncSheets(){
   fetch(url).then(r=>r.text()).then(txt=>{
     const list=parseSheet(txt);
     if(!list.length)throw new Error('vacío');
-    REALES=list;try{localStorage.setItem('pv_reales_v1',JSON.stringify(list));}catch(e){}
-    openInventory();toast('Planilla actualizada: '+list.length+' inmuebles ✓');
-  }).catch(()=>{ if(btn){btn.innerHTML=ic('sync')+' Actualizar';} toast('No se pudo conectar a Sheets (permisos/CORS). Uso la copia cargada.'); });
+    const prev=REALES;
+    REALES=list.map(r=>{const m=prev.find(p=>p.inmueble===r.inmueble&&p.barrio===r.barrio&&p.mapaN===r.mapaN&&p.loteNum!=null);return Object.assign(r,{key:newKey(),loteNum:m?m.loteNum:null});});
+    saveInv();refreshAllStyles();renderFilters();openInventory();toast('Planilla actualizada: '+list.length+' inmuebles ✓');
+  }).catch(()=>{ if(btn){btn.innerHTML=ic('sync')+' Sheets';} toast('No se pudo conectar a Sheets (CORS). Lo editado local quedó guardado.'); });
 }
 document.getElementById('btnInv').onclick=openInventory;
 
@@ -987,7 +1037,9 @@ function ic(n){const I={
  pdf:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>',
  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.3 1a7 7 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5a7 7 0 0 0-1.7 1l-2.3-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.3-1a7 7 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7 7 0 0 0 1.7-1l2.3 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg>',
  clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h4"/></svg>',
- sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7-3.3M3 12a9 9 0 0 1 16-5.7"/><path d="M21 3v4h-4M3 21v-4h4"/></svg>'};
+ sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7-3.3M3 12a9 9 0 0 1 16-5.7"/><path d="M21 3v4h-4M3 21v-4h4"/></svg>',
+ pencil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+ trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>'};
  return I[n]||'';}
 function featIcon(k){const m={
  mountain:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l6-11 4 6 2-3 6 8z"/></svg>',
@@ -1008,7 +1060,7 @@ function featIcon(k){const m={
  return m[k]||m.leaf;}
 
 /* ============ init ============ */
-renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
+buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
 /* PWA */
