@@ -4,10 +4,10 @@
   "description": "Lotes y alojamientos de la ecoaldea Umepay",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#1f3d2b",
-  "theme_color": "#1f3d2b",
+  "background_color": "#f4efe6",
+  "theme_color": "#f1ede3",
   "icons": [
-    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%231f3d2b'/%3E%3Ctext x='96' y='130' font-family='Georgia,serif' font-size='110' font-weight='bold' fill='%233fa66a' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='106' fill='%231f3d2b'/%3E%3Ctext x='256' y='345' font-family='Georgia,serif' font-size='290' font-weight='bold' fill='%233fa66a' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml" }
+    { "src": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20192%20192'%3E%3Crect%20width='192'%20height='192'%20rx='40'%20fill='%23f4efe6'/%3E%3Cpath%20d='M96,150%20C44,112%2028,88%2028,62%20C28,40%2044,28%2062,28%20C76,28%2089,38%2096,54%20C103,38%20116,28%20130,28%20C148,28%20164,40%20164,62%20C164,88%20148,112%2096,150%20Z'%20fill='%23cf9a3f'/%3E%3Ccircle%20cx='96'%20cy='167'%20r='6'%20fill='%23cf9a3f'/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" },
+    { "src": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20192%20192'%3E%3Crect%20width='192'%20height='192'%20rx='40'%20fill='%23f4efe6'/%3E%3Cpath%20d='M96,150%20C44,112%2028,88%2028,62%20C28,40%2044,28%2062,28%20C76,28%2089,38%2096,54%20C103,38%20116,28%20130,28%20C148,28%20164,40%20164,62%20C164,88%20148,112%2096,150%20Z'%20fill='%23cf9a3f'/%3E%3Ccircle%20cx='96'%20cy='167'%20r='6'%20fill='%23cf9a3f'/%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml" }
   ]
 }

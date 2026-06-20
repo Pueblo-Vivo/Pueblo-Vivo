@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>Pueblo Vivo · Lotes Umepay</title>
-<meta name="theme-color" content="#1f3d2b"/>
+<meta name="theme-color" content="#f1ede3"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,8 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --forest:#1f3d2b; --forest-2:#2d5a3d; --leaf:#3fa66a; --leaf-soft:#dff0e4;
-  --terra:#b5532a; --terra-soft:#f2dccf; --gold:#c98a2b;
+  --forest:#5f6e37; --forest-2:#76884a; --olive:#8a9a5a; --leaf:#4ca36a; --leaf-soft:#e7eed8;
+  --terra:#b5532a; --terra-soft:#f2dccf; --gold:#cf9a3f;
   --sand:#f4efe6; --cream:#fbf8f1; --ink:#1c1a15; --muted:#867d6c; --line:#e6ded0;
   --libre:#3fa66a; --reservado:#e0a32e; --vendido:#9a9183;
   --disp:#3fa66a; --ocup:#c94f3d;
@@ -26,20 +26,17 @@ body{font-family:'Spline Sans',system-ui,sans-serif;color:var(--ink);background:
 button{font-family:inherit;cursor:pointer}
 
 /* ---------- Topbar ---------- */
-.topbar{position:relative;z-index:1200;background:var(--forest);color:#eef5ee;
-  padding:11px 14px;display:flex;align-items:center;gap:11px;box-shadow:0 2px 14px rgba(0,0,0,.22)}
-.brand{display:flex;flex-direction:column;line-height:1.05;flex:1;min-width:0}
-.brand .b1{font-family:'Fraunces',serif;font-weight:600;font-size:18px;letter-spacing:.3px}
-.brand .b2{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9ec9ad;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar .logo{width:36px;height:36px;border-radius:11px;background:radial-gradient(circle at 35% 30%, var(--leaf), var(--forest-2));
-  display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:900;color:#eaf6ec;font-size:19px;
-  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18);flex:0 0 auto}
-.topbar .tb-btn{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);
-  color:#cfe6d4;display:grid;place-items:center;flex:0 0 auto}
+.topbar{position:relative;z-index:1200;background:var(--cream);color:var(--ink);
+  padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);box-shadow:0 1px 10px rgba(95,110,55,.07)}
+.brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.brand .logo-svg{width:36px;height:38px;flex:0 0 auto}
+.brand .wm{font-family:'Fraunces',serif;font-weight:600;font-size:23px;color:var(--olive);letter-spacing:.2px;line-height:1;white-space:nowrap}
+.topbar .tb-btn{width:38px;height:38px;border-radius:11px;background:#fff;border:1px solid var(--line);
+  color:var(--forest);display:grid;place-items:center;flex:0 0 auto}
 .topbar .tb-btn svg{width:19px;height:19px}
-.topbar .tb-btn.on{background:var(--gold);color:#2a1c06;border-color:var(--gold)}
-.fav-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.16);color:#ffd9c9;padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
+.topbar .tb-btn.on{background:var(--gold);color:#3a2806;border-color:var(--gold)}
+.fav-pill{display:flex;align-items:center;gap:5px;background:#fff;
+  border:1px solid var(--line);color:var(--terra);padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
 .fav-pill svg{width:15px;height:15px}
 
 /* ---------- Mode toggle ---------- */
@@ -316,10 +313,17 @@ body.lightbase .parc-label.lib{color:#1d7a45}
 <body>
 
 <div class="topbar">
-  <div class="logo">P</div>
   <div class="brand">
-    <span class="b1">Pueblo Vivo</span>
-    <span class="b2">Ecoaldea Umepay</span>
+    <svg class="logo-svg" viewBox="0 0 100 108" aria-label="Pueblo Vivo">
+      <defs><linearGradient id="pvg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs>
+      <g fill="none" stroke="url(#pvg)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M50,84 C22,61 10,45 10,30 C10,17 19,9 30,9 C39,9 46,15 50,23 C54,15 61,9 70,9 C81,9 90,17 90,30 C90,45 78,61 50,84 Z"/>
+        <path d="M31,15 C33,40 40,60 50,82"/>
+        <path d="M69,15 C67,40 60,60 50,82"/>
+      </g>
+      <circle cx="50" cy="99" r="4" fill="url(#pvg)"/>
+    </svg>
+    <span class="wm">pueblo vivo</span>
   </div>
   <button class="tb-btn" id="btnPoi" title="Puntos de interés">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
