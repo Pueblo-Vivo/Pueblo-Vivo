@@ -137,6 +137,9 @@ button{font-family:inherit;cursor:pointer}
 .st-reservado{background:#fbeecb;color:#9a6a0e}
 .st-vendido{background:#ece8e0;color:#6f685b}
 .st-ocup{background:#f6dcd6;color:#a23a2a}
+.st-novender{background:#ece8e0;color:#6f685b}
+.notlisted{display:flex;gap:9px;align-items:flex-start;background:#f1ede4;border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:13.5px;color:#5a5346;line-height:1.5;margin:16px 0 6px}
+.notlisted svg{width:18px;height:18px;color:var(--muted);flex:0 0 auto;margin-top:1px}
 
 .priceblock{display:flex;align-items:baseline;gap:10px;margin:16px 0 4px;flex-wrap:wrap}
 .price{font-family:'Fraunces',serif;font-weight:700;font-size:31px;color:var(--forest);letter-spacing:.5px}
@@ -430,7 +433,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   return Object.assign(o,ADMIN[id]||{});
 }
 
@@ -456,18 +459,18 @@ const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d
   const s=Math.sin(dLat/2)**2+Math.cos(a[0]*d2r)*Math.cos(b[0]*d2r)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s));};
 const fmtDist=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1)+' km';
 
+function opOf(inf){return inf.op||'venta';}
+function isVenta(inf){return !!inf.fromSheet&&opOf(inf)==='venta';}
+function isAlq(inf){return !!inf.fromSheet&&opOf(inf)==='alquiler';}
 function estilo(id){
-  const inf=info(id),u=uget(id);
-  if(MODE==='alojar'){
-    if(!inf.isCasa) return {opacity:0,fillOpacity:0};
-    const avail=isAvailableNow(inf);
-    const c=avail?'#3fa66a':'#c94f3d';
-    return {color:c,weight:u.fav?3.4:2.2,fillColor:c,fillOpacity:.42,opacity:1};
+  const inf=info(id),u=uget(id),sel=compare.includes(id);
+  const active = MODE==='comprar'? isVenta(inf) : isAlq(inf);
+  if(!active){ // gris transparente (contexto)
+    return {color:sel?'#b5532a':'#7d766a',weight:sel?3:1,fillColor:'#8c857a',fillOpacity:0.07,opacity:u.fav?0.85:0.45,dashArray:null};
   }
-  const c=C_SALE[inf.estado];
-  const sel=compare.includes(id);
-  return {color:sel?'#b5532a':c,weight:(u.fav||sel)?3.4:1.8,fillColor:c,
-    fillOpacity:inf.estado==='vendido'?0.18:0.40,dashArray:inf.estado==='reservado'?'5,4':null,opacity:1};
+  const pausada=inf.nota&&/PAUSAD/i.test(inf.nota);
+  const c=MODE==='comprar'?(pausada?'#e0a32e':'#3fa66a'):'#2b9aa0';
+  return {color:sel?'#b5532a':c,weight:(u.fav||sel)?3.4:2,fillColor:c,fillOpacity:0.42,dashArray:pausada?'5,4':null,opacity:1};
 }
 function isAvailableNow(inf){ if(!inf.rental)return false; return !inf.rental.busy.includes(0); }
 
@@ -515,7 +518,7 @@ function labelHtml(id){
   const f=PARCELAS.features.find(x=>x.properties.id==id);if(!f)return'';
   const u=uget(id),inf=info(id);
   const heart=u.fav?'❤ ':'';const eye=(MODE==='comprar'&&u.seen)?'✓ ':'';
-  if(MODE==='alojar') return heart+'$'+inf.rental.nightly;
+  if(MODE==='alojar') return heart+(isAlq(inf)?('$'+(inf.total||'')):(f.properties.num!=null?f.properties.num:''));
   return heart+eye+(f.properties.num!=null?f.properties.num:'');
 }
 function refreshLabels(){
@@ -533,21 +536,24 @@ map.on('zoomend',refreshLabels);
 /* ============ Filtros ============ */
 function passesFilter(id){
   const inf=info(id),u=uget(id);
-  if(MODE==='alojar'){ if(!inf.isCasa)return false;
-    if(currentFilter==='disp')return isAvailableNow(inf);
-    if(currentFilter==='ocup')return !isAvailableNow(inf);
+  if(MODE==='alojar'){
+    if(currentFilter==='alquiler')return isAlq(inf);
     if(currentFilter==='fav')return u.fav;
-    return true; }
+    return true; // todos: muestra todo (lo no-alquiler sale gris)
+  }
   // comprar
-  if(currentFilter==='venta_lote'&&!(inf.fromSheet&&!conCasa(inf)))return false;
-  if(currentFilter==='venta_casa'&&!(inf.fromSheet&&conCasa(inf)))return false;
+  if(currentFilter==='venta_lote'&&!(isVenta(inf)&&!conCasa(inf)))return false;
+  if(currentFilter==='venta_casa'&&!(isVenta(inf)&&conCasa(inf)))return false;
   if(currentFilter==='fav'&&!u.fav)return false;
   if(currentFilter==='seen'&&!u.seen)return false;
-  // filtros avanzados
-  const f=PARCELAS.features.find(x=>x.properties.id==id);
-  if(FILT.maxPrice&&inf.total>FILT.maxPrice)return false;
-  if(FILT.minSize&&f.properties.sup<FILT.minSize)return false;
-  if(FILT.orient.length&&!FILT.orient.includes(inf.orient))return false;
+  // filtros avanzados (solo lotes en venta)
+  if(FILT.maxPrice||FILT.minSize||FILT.orient.length){
+    if(!isVenta(inf))return false;
+    const f=PARCELAS.features.find(x=>x.properties.id==id);
+    if(FILT.maxPrice&&inf.total>FILT.maxPrice)return false;
+    if(FILT.minSize&&f.properties.sup<FILT.minSize)return false;
+    if(FILT.orient.length&&!FILT.orient.includes(inf.orient))return false;
+  }
   return true;
 }
 function applyFilter(){
@@ -560,11 +566,11 @@ function applyFilter(){
 }
 function conCasa(inf){return /casa|mono|local|casita|d[uú]plex/i.test(inf.tipo||'')||!!inf.mtCub;}
 function counts(){
-  let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,casas:0,disp:0,ocup:0,favA:0};
+  let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,alquiler:0};
   for(const id in DATA){const inf=info(id),u=uget(id);
-    if(inf.isCasa){c.casas++;if(isAvailableNow(inf))c.disp++;else c.ocup++;if(u.fav)c.favA++;}
-    else{c.todos++;if(u.fav)c.fav++;if(u.seen)c.seen++;}
-    if(inf.fromSheet){if(conCasa(inf))c.ventaCasa++;else c.ventaLote++;}
+    c.todos++; if(u.fav)c.fav++; if(u.seen)c.seen++;
+    if(isVenta(inf)){if(conCasa(inf))c.ventaCasa++;else c.ventaLote++;}
+    if(isAlq(inf))c.alquiler++;
   }
   return c;
 }
@@ -575,11 +581,12 @@ function renderFilters(){
   const c=counts(),el=document.getElementById('filters');el.innerHTML='';
   let list;
   if(MODE==='alojar'){
-    list=[{k:'todos',label:'Todas',n:c.casas},{k:'disp',label:'Disponibles',n:c.disp,sw:'#3fa66a'},
-      {k:'ocup',label:'Ocupadas',n:c.ocup,sw:'#c94f3d'},{k:'fav',label:'Favoritas',n:c.favA,heart:true}];
+    list=[{k:'todos',label:'Todos',n:c.todos},
+      {k:'alquiler',label:'En alquiler',n:c.alquiler,sw:'#2b9aa0'},
+      {k:'fav',label:'Favoritos',n:c.fav,heart:true}];
   }else{
     list=[{k:'todos',label:'Todos',n:c.todos},
-      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:C_SALE.libre},
+      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:'#3fa66a'},
       {k:'venta_casa',label:'Lote y casa en venta',n:c.ventaCasa,sw:'#2d5198'},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
@@ -592,18 +599,18 @@ function renderFilters(){
     fb.className='chip fbtn'+(dirty?' dirty':'');fb.innerHTML=`${ICON.funnel} Filtros`;
     fb.onclick=openFilterSheet;el.appendChild(fb);
   }
-  document.getElementById('favCount').textContent=c.fav+c.favA;
+  document.getElementById('favCount').textContent=c.fav;
 }
 function renderLegend(){
   const el=document.getElementById('legend');
-  if(MODE==='alojar'){el.innerHTML=`<h4>Alojamientos</h4>
-    <div class="row"><span class="sw" style="background:#3fa66a55;border-color:#2c7d4e"></span> Disponible</div>
-    <div class="row"><span class="sw" style="background:#c94f3d55;border-color:#a23a2a"></span> Ocupada</div>
+  if(MODE==='alojar'){el.innerHTML=`<h4>Alojamiento</h4>
+    <div class="row"><span class="sw" style="background:#2b9aa055;border-color:#1f7a80"></span> En alquiler</div>
+    <div class="row"><span class="sw" style="background:#8c857a26;border-color:#9a9183"></span> No listado</div>
     <div class="row"><span class="me-dot" style="width:13px;height:13px"></span> Estás acá</div>`;
   }else{el.innerHTML=`<h4>Lotes</h4>
-    <div class="row"><span class="sw" style="background:#3fa66a55;border-color:#2c7d4e"></span> Libre</div>
-    <div class="row"><span class="sw" style="background:#e0a32e55;border-color:#b07d12"></span> Reservado</div>
-    <div class="row"><span class="sw" style="background:#9a918355;border-color:#6f685b"></span> Vendido</div>
+    <div class="row"><span class="sw" style="background:#3fa66a55;border-color:#2c7d4e"></span> En venta</div>
+    <div class="row"><span class="sw" style="background:#e0a32e55;border-color:#b07d12"></span> En pausa</div>
+    <div class="row"><span class="sw" style="background:#8c857a26;border-color:#9a9183"></span> No listado</div>
     <div class="row"><span class="me-dot" style="width:13px;height:13px"></span> Estás acá</div>`;}
 }
 
@@ -632,49 +639,76 @@ function highlight(id){const lyr=layers[id];if(!lyr)return;try{map.fitBounds(lyr
 
 function render(){
   const id=openId;if(id==null)return;
-  if(MODE==='alojar'&&info(id).isCasa)return renderCasa(id);
   return renderLote(id);
 }
 function renderLote(id){
   const f=PARCELAS.features.find(x=>x.properties.id==id),p=f.properties,inf=info(id),u=uget(id);
-  const ha=p.sup/10000,stL={libre:'Libre',reservado:'Reservado',vendido:'Vendido'}[inf.estado];
-  const featChips=inf.feats.map(ft=>`<span class="feat">${featIcon(ft[1])}${ft[0]}</span>`).join('');
-  const offF=inf.fotos.map(s=>`<img class="gphoto" src="${s}" loading="lazy" alt="">`).join('');
+  const ha=p.sup/10000;
+  const linked=!!inf.fromSheet, alq=opOf(inf)==='alquiler', pausada=inf.nota&&/PAUSAD/i.test(inf.nota);
+  const stKey=!linked?'novender':(pausada?'reservado':(alq?'disp':'libre'));
+  const stL=!linked?'No listado':(pausada?'En pausa':(alq?'En alquiler':'En venta'));
+  const offF=linked?inf.fotos.map(s=>`<img class="gphoto" src="${s}" loading="lazy" alt="">`).join(''):'';
   const userF=u.photos.map((s,i)=>`<img class="gphoto user" src="${s}" data-up="${i}" alt="">`).join('');
   const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map(c=>`<div class="comment"><div class="meta"><span>Vos</span><span>${c.when}</span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
   const title=inf.inmueble||('Parcela '+(p.num!=null?p.num:('#'+id)));
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.num!=null?p.num:id}`:p.barrio;
-  const ppm=inf.total&&p.sup?Math.round(inf.total/p.sup):inf.usd;
+  let body='';
+  if(linked){
+    const ppm=inf.total&&p.sup?Math.round(inf.total/p.sup):'';
+    body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${inf.total?money(inf.total):'—'}${alq?'<span class="per"> /mes</span>':''}</span>${(!alq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
+    ${planillaBox(inf)}
+    <div class="stats">
+      <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
+      <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
+      <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${alq?'Alquiler':'Venta'}</div></div></div>`;
+  }else{
+    body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
+    <div class="actions">
+      <button class="btn-primary" id="btnPonerVenta" style="grid-column:1/-1">${ic('plus')} Poner en venta</button>
+      <button class="btn-primary" id="btnPonerAlq" style="grid-column:1/-1;background:#2b9aa0">${ic('plus')} Poner en alquiler</button></div>`;
+  }
+  const acciones=`<div class="actions">
+      <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
+      <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
+      ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
+    </div>
+    ${linked?`<div class="share-row"><button class="act" id="btnWA">${ic('wa')}WhatsApp</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
   scroll.innerHTML=`
-  <div class="sh-head"><div class="sh-title"><span class="barrio">${sub}</span><h2>${esc(title)}</h2></div>
-    <span class="statusbadge st-${inf.estado}"><span class="sw"></span>${stL}</span></div>
-  <div class="priceblock ${inf.estado==='vendido'?'sold':''}"><span class="price"><span class="cur">USD</span>${inf.total?money(inf.total):'—'}</span><span class="permeter">≈ USD ${ppm}/m²</span></div>
-  ${inf.fromSheet?planillaBox(inf):''}
-  <div class="stats">
-    <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
-    <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
-    <div class="stat"><div class="lab">Orientación</div><div class="val" style="font-size:14px">${inf.orient}</div></div></div>
-  <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias cargadas.</p>'}</div>
-  <div class="sec-t">${ic('camera')} Fotos del terreno</div>
+  <div class="sh-head"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
+    <span class="statusbadge st-${stKey}"><span class="sw"></span>${stL}</span></div>`+body+`
+  <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
+  <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
   ${u.photos.length?'<div class="usertag">Las fotos con borde verde las subiste vos</div>':''}
-  <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
-  <div class="sec-t">${ic('star')} Características</div><div class="feats">${featChips}</div>
-  <div class="actions">
-    <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
-    <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
-    <button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>
-  </div>
-  <div class="share-row">
-    <button class="act" id="btnWA">${ic('wa')}WhatsApp</button>
-    <button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>
-  ${adminMode?adminBox(id,inf,p):''}
+  <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">`+
+  acciones+
+  (adminMode&&linked?adminBox(id,inf,p):'')+`
   <div class="sec-t">${ic('chat')} Mis notas y comentarios</div>
   <div class="comments">${comments}</div>
   <div class="cbox"><input id="cIn" placeholder="Escribí una nota…" maxlength="280"><button id="cSend">Enviar</button></div>
-  <p class="disclaimer">Prototipo · precios, estados y fotos de muestra (no reales).<br>Lotes y puntos de interés: cartografía Umepay.</p>`;
-  wireCommon(id);wireLote(id);
+  <p class="disclaimer">Prototipo · cartografía y puntos de interés: Umepay.</p>`;
+  wireCommon(id);
+  document.getElementById('btnSeen').onclick=()=>{u.seen=!u.seen;save();render();renderFilters();estiloRefresh(id);};
+  document.getElementById('cSend').onclick=sendComment;
+  document.getElementById('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendComment();});
+  if(linked){
+    document.getElementById('btnCmp').onclick=()=>{toggleCompare(id);render();};
+    document.getElementById('btnWA').onclick=()=>shareWA(id);
+    document.getElementById('btnPdf').onclick=()=>sharePDF(id);
+  }else{
+    document.getElementById('btnPonerVenta').onclick=()=>setOp(id,'venta');
+    document.getElementById('btnPonerAlq').onclick=()=>setOp(id,'alquiler');
+  }
+}
+function setOp(id,op){
+  const num=numById[id];
+  let r=REALES.find(x=>x.loteNum===num);
+  if(!r){const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    r={key:newKey(),barrio:p.barrio,inmueble:'',tipo:(op==='alquiler'?'casa':'terreno'),mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:num,op};
+    REALES.push(r);}
+  else r.op=op;
+  saveInv();editListing(r.key);
 }
 function renderCasa(id){
   const f=PARCELAS.features.find(x=>x.properties.id==id),p=f.properties,inf=info(id),u=uget(id),rt=inf.rental;
@@ -869,9 +903,10 @@ function openInventory(){
   scrim.classList.add('show');invsheet.classList.add('open');
 }
 function editListing(key){
-  const r=key?REALES.find(x=>x.key==key):{key:null,barrio:'',inmueble:'',tipo:'',legalidad:'',valorRaw:'',nota:'',loteNum:null,mapaN:null};
+  const r=key?REALES.find(x=>x.key==key):{key:null,barrio:'',inmueble:'',tipo:'',legalidad:'',valorRaw:'',nota:'',loteNum:null,mapaN:null,op:'venta'};
   const barrios=[...new Set(PARCELAS.features.map(f=>f.properties.barrio))];
   invScroll.innerHTML=`<div class="inv-h"><h2>${key?'Editar inmueble':'Nuevo inmueble'}</h2></div>
+   <div class="field"><label>Operación</label><select id="eOp"><option value="venta" ${(r.op||'venta')==='venta'?'selected':''}>En venta</option><option value="alquiler" ${r.op==='alquiler'?'selected':''}>En alquiler</option></select></div>
    <div class="field"><label>Nombre / inmueble</label><input id="eNom" value="${esc(r.inmueble||'')}"></div>
    <div class="field"><label>Barrio</label><input id="eBarrio" value="${esc(r.barrio||'')}" list="barrioDL"></div>
    <div class="field"><label>Tipo</label><input id="eTipo" value="${esc(r.tipo||'')}" placeholder="terreno, casa…"></div>
@@ -889,7 +924,7 @@ function editListing(key){
       const other=REALES.find(x=>x.loteNum===loteNum&&x.key!==r.key);
       if(other&&!confirm('El lote '+loteNum+' ya está en «'+(other.inmueble||'?')+'». ¿Pasarlo a este?'))return;
       if(other)other.loteNum=null; }
-    const data={inmueble:g('eNom').value.trim()||null,barrio:g('eBarrio').value.trim()||'—',tipo:g('eTipo').value.trim()||null,legalidad:g('eLegal').value.trim()||null,valorRaw:g('eValor').value.trim()||null,valor:vnum(g('eValor').value),nota:g('eNota').value.trim()||null,loteNum};
+    const data={op:g('eOp').value,inmueble:g('eNom').value.trim()||null,barrio:g('eBarrio').value.trim()||'—',tipo:g('eTipo').value.trim()||null,legalidad:g('eLegal').value.trim()||null,valorRaw:g('eValor').value.trim()||null,valor:vnum(g('eValor').value),nota:g('eNota').value.trim()||null,loteNum};
     if(r.key){const it=REALES.find(x=>x.key==r.key);Object.assign(it,data);}
     else REALES.push(Object.assign({key:newKey(),mapaN:null},data));
     saveInv();refreshAllStyles();renderFilters();openInventory();toast('Guardado ✓');
