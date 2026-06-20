@@ -69,9 +69,9 @@ button{font-family:inherit;cursor:pointer}
 .parc-label{background:transparent;border:0;box-shadow:none;color:#fff;font-weight:700;font-size:12px;
   text-shadow:0 1px 3px rgba(0,0,0,.9),0 0 4px rgba(0,0,0,.6);padding:0;white-space:nowrap}
 .parc-label::before{display:none}
-.parc-label.lib{color:#d6ffe5}
+.parc-label.lib{color:#ffd2a6}
 body.lightbase .parc-label{color:#26241d;text-shadow:0 0 2px #fff,0 0 4px #fff,0 1px 2px #fff}
-body.lightbase .parc-label.lib{color:#1d7a45}
+body.lightbase .parc-label.lib{color:#b5611a}
 .lbl-barrio{display:flex;justify-content:center;align-items:center;background:transparent;border:0;box-shadow:none}
 .lbl-barrio span{background:rgba(122,67,38,.92);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.45);white-space:nowrap}
 .poi-icon{background:transparent;border:0}
@@ -133,7 +133,8 @@ body.poinames .poi-pin .t{display:block}
 .sh-title h2{font-family:'Fraunces',serif;font-weight:600;font-size:25px;line-height:1.08;margin-top:2px}
 .statusbadge{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:999px;white-space:nowrap;display:flex;align-items:center;gap:6px}
 .statusbadge .sw{width:8px;height:8px;border-radius:50%;background:currentColor}
-.st-libre,.st-disp{background:var(--leaf-soft);color:#1d7a45}
+.st-libre{background:#fbe6d4;color:#b5611a}
+.st-disp{background:var(--leaf-soft);color:#1d7a45}
 .st-reservado{background:#fbeecb;color:#9a6a0e}
 .st-vendido{background:#ece8e0;color:#6f685b}
 .st-ocup{background:#f6dcd6;color:#a23a2a}
@@ -474,7 +475,7 @@ function estilo(id){
   if(!active){ // gris transparente (contexto)
     return {color:sel?'#b5532a':'#7d766a',weight:sel?3:1,fillColor:'#8c857a',fillOpacity:0.07,opacity:u.fav?0.85:0.45,dashArray:null};
   }
-  const c=MODE==='comprar'?'#3fa66a':'#2b9aa0';
+  const c=MODE==='comprar'?'#e07d2b':'#2b9aa0';
   return {color:sel?'#b5532a':c,weight:(u.fav||sel)?3.4:2,fillColor:c,fillOpacity:0.42,dashArray:null,opacity:1};
 }
 function isAvailableNow(inf){ if(!inf.rental)return false; return !inf.rental.busy.includes(0); }
@@ -593,7 +594,7 @@ function renderFilters(){
       {k:'fav',label:'Favoritos',n:c.fav,heart:true}];
   }else{
     list=[{k:'todos',label:'Todos',n:c.todos},
-      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:'#3fa66a'},
+      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:'#e07d2b'},
       {k:'venta_casa',label:'Lote y casa en venta',n:c.ventaCasa,sw:'#2d5198'},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
