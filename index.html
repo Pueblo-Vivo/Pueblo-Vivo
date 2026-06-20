@@ -616,7 +616,7 @@ document.getElementById('mAlojar').onclick=()=>setMode('alojar');
 const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),scroll=document.getElementById('sheetScroll');
 let openId=null;
 const money=n=>n.toLocaleString('es-AR');
-function openSheet(id){openId=id;if(MODE==='comprar'){const u=uget(id);u.seen=true;}render();
+function openSheet(id){openId=id;render();
   scrim.classList.add('show');sheet.classList.add('open');highlight(id);}
 function closeSheet(){sheet.classList.remove('open');document.getElementById('fsheet').classList.remove('open');
   document.getElementById('cmpsheet').classList.remove('open');document.getElementById('invsheet').classList.remove('open');
