@@ -79,8 +79,9 @@ body.lightbase .parc-label.lib{color:#1d7a45}
 .poi-pin .b{width:26px;height:26px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);display:grid;place-items:center;
   background:#fff;border:2px solid var(--forest)}
 .poi-pin .b svg{transform:rotate(-45deg);width:15px;height:15px;color:var(--forest)}
-.poi-pin .t{margin-top:3px;background:rgba(31,61,43,.92);color:#fff;font-size:10.5px;font-weight:700;
+.poi-pin .t{display:none;margin-top:3px;background:rgba(95,110,55,.94);color:#fff;font-size:10.5px;font-weight:700;
   padding:2px 6px;border-radius:5px;white-space:nowrap}
+body.poinames .poi-pin .t{display:block}
 .poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
 
@@ -528,6 +529,7 @@ function labelHtml(id){
 const ZNUM=16; // a partir de este zoom se ven los números de parcela
 function refreshLabels(){
   const showNums=map.getZoom()>=ZNUM;
+  document.body.classList.toggle('poinames',showNums); // nombres de POI al acercar
   for(const id in labels){
     const m=labels[id],el=m.getElement();
     if(!showNums||!passesFilter(id)){if(el)el.style.display='none';continue;}
