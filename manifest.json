@@ -7,7 +7,7 @@
   "background_color": "#f4efe6",
   "theme_color": "#f1ede3",
   "icons": [
-    { "src": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20192%20192'%3E%3Crect%20width='192'%20height='192'%20rx='40'%20fill='%23f4efe6'/%3E%3Cpath%20d='M96,150%20C44,112%2028,88%2028,62%20C28,40%2044,28%2062,28%20C76,28%2089,38%2096,54%20C103,38%20116,28%20130,28%20C148,28%20164,40%20164,62%20C164,88%20148,112%2096,150%20Z'%20fill='%23cf9a3f'/%3E%3Ccircle%20cx='96'%20cy='167'%20r='6'%20fill='%23cf9a3f'/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20192%20192'%3E%3Crect%20width='192'%20height='192'%20rx='40'%20fill='%23f4efe6'/%3E%3Cpath%20d='M96,150%20C44,112%2028,88%2028,62%20C28,40%2044,28%2062,28%20C76,28%2089,38%2096,54%20C103,38%20116,28%20130,28%20C148,28%20164,40%20164,62%20C164,88%20148,112%2096,150%20Z'%20fill='%23cf9a3f'/%3E%3Ccircle%20cx='96'%20cy='167'%20r='6'%20fill='%23cf9a3f'/%3E%3C/svg%3E", "sizes": "512x512", "type": "image/svg+xml" }
+    { "src": "icon-512.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

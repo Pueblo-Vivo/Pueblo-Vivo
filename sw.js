@@ -1,6 +1,6 @@
 /* Pueblo Vivo · service worker (prototipo) */
-const CACHE='pueblovivo-v2';
-const SHELL=['./','index.html','parcelas-data.js','poi-data.js','lotes-reales.js','manifest.json',
+const CACHE='pueblovivo-v3';
+const SHELL=['./','index.html','parcelas-data.js','poi-data.js','lotes-reales.js','manifest.json','icon-512.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all(SHELL.map(a=>c.add(a).catch(()=>{})))));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
