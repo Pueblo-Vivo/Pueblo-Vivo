@@ -1,5 +1,5 @@
 /* Pueblo Vivo · service worker (prototipo) */
-const CACHE='pueblovivo-v10';
+const CACHE='pueblovivo-v11';
 const SHELL=['./','index.html','parcelas-data.js','poi-data.js','lotes-reales.js','manifest.json','icon-512.png',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all(SHELL.map(a=>c.add(a).catch(()=>{})))));});
@@ -12,6 +12,6 @@ self.addEventListener('fetch',e=>{
     e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return res;})));
     return;
   }
-  // app (html/js/json): network-first, cae a cache si no hay red
-  e.respondWith(fetch(e.request).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return res;}).catch(()=>caches.match(e.request).then(h=>h||caches.match('index.html'))));
+  // app (html/js/json): network-first SIN cache HTTP (siempre fresco), cae a cache si no hay red
+  e.respondWith(fetch(new Request(e.request.url,{cache:'no-store'})).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return res;}).catch(()=>caches.match(e.request).then(h=>h||caches.match('index.html'))));
 });
