@@ -531,6 +531,7 @@ function labelHtml(id){
   const u=uget(id),inf=info(id);
   const heart=u.fav?'❤ ':'';const eye=(MODE==='comprar'&&u.seen)?'✓ ':'';
   if(MODE==='alojar') return heart+(isAlq(inf)?('$'+(inf.total||'')):(f.properties.num!=null?f.properties.num:''));
+  if(isVenta(inf)) return heart+(inf.total!=null?'$'+money(inf.total):(f.properties.num!=null?f.properties.num:''));
   return heart+eye+(f.properties.num!=null?f.properties.num:'');
 }
 const ZNUM=16; // a partir de este zoom se ven los números de parcela
