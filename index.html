@@ -379,9 +379,6 @@ body.poinames .poi-pin .t{display:block}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M8 10l4 4 4-4M5 21h14"/></svg></button>
     <button class="fab loc" id="btnLoc" title="Mi ubicación">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-    <button class="fab" id="btnRoute" title="Recorrido de favoritos" style="position:relative">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="5" r="2.5"/><path d="M8 18c7-1 3-11 9-12"/></svg>
-      <span class="badge" id="routeBadge" style="display:none">0</span></button>
     <button class="fab" id="btnFit" title="Ver todo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
     <button class="fab" id="btnSat" title="Satélite / mapa">
@@ -644,7 +641,6 @@ function setMode(m){
   MODE=m;currentFilter='todos';clearCompare();
   document.getElementById('mComprar').classList.toggle('active',m==='comprar');
   document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
-  document.getElementById('btnRoute').style.display=m==='comprar'?'':'none';
   renderFilters();renderLegend();applyFilter();
 }
 document.getElementById('mComprar').onclick=()=>setMode('comprar');
@@ -997,20 +993,7 @@ function syncSheets(){
 document.getElementById('btnInv').onclick=openInventory;
 
 /* ============ Recorrido favoritos ============ */
-let routeLine=null;
-function favIds(){return Object.keys(centers).filter(id=>uget(id).fav&&!info(id).isCasa);}
-function updateRouteBadge(){const n=favIds().length,b=document.getElementById('routeBadge');b.style.display=n?'':'none';b.textContent=n;}
-document.getElementById('btnRoute').onclick=()=>{
-  if(routeLine){map.removeLayer(routeLine);routeLine=null;document.getElementById('btnRoute').classList.remove('on');return;}
-  const ids=favIds();if(ids.length<2){toast('Marcá al menos 2 lotes como favoritos ❤');return;}
-  // nearest-neighbor desde el primero
-  let pts=ids.map(id=>({id,c:centers[id]}));const order=[pts.shift()];
-  while(pts.length){let last=order[order.length-1].c,bi=0,bd=1e12;pts.forEach((p,i)=>{const d=haversine(last,p.c);if(d<bd){bd=d;bi=i;}});order.push(pts.splice(bi,1)[0]);}
-  routeLine=L.polyline(order.map(o=>o.c),{color:'#b5532a',weight:4,dashArray:'2,9',lineCap:'round'}).addTo(map);
-  let tot=0;for(let i=1;i<order.length;i++)tot+=haversine(order[i-1].c,order[i].c);
-  document.getElementById('btnRoute').classList.add('on');map.fitBounds(routeLine.getBounds(),{padding:[60,60]});
-  toast('Recorrido: '+order.length+' lotes · '+fmtDist(tot));
-};
+function updateRouteBadge(){} // (recorrido de favoritos removido)
 
 /* ============ Compartir ============ */
 function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
