@@ -540,7 +540,7 @@ function refreshLabels(){
   document.body.classList.toggle('barriossm', z<15);   // barrios más chicos de lejos
   for(const id in labels){
     const m=labels[id],el=m.getElement(),inf=info(id);
-    const casaV = isVenta(inf)&&conCasa(inf);
+    const casaV = MODE==='comprar'&&isVenta(inf)&&conCasa(inf);
     if(!passesFilter(id)){if(el)el.style.display='none';continue;}
     if(!showNums && !casaV){if(el)el.style.display='none';continue;} // de lejos: solo casita en los lotes con casa
     if(el)el.style.display='';
