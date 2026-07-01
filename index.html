@@ -155,6 +155,23 @@ body.poinames .poi-pin .t{display:block}
 .adminbar svg{width:15px;height:15px}
 .adminhint{font-size:11px;color:#8a7f6b;margin-top:6px;line-height:1.35}
 .gphoto.adminimg{cursor:pointer}
+#stayBar{display:none;background:var(--cream);padding:0 12px 9px;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+#stayBar.show{display:flex}
+#stayBar .stlab{font-size:16px}
+#stayBar input[type=date]{border:1.5px solid #d9d0bf;border-radius:9px;padding:6px 8px;font-size:13px;background:#fff;color:var(--ink);min-width:0;flex:1}
+#stayBar .starrow{color:#8a7f6b}
+#stayBar .stclear{background:#e7ded0;border:0;border-radius:8px;width:28px;height:28px;color:#6b6152;font-weight:700;cursor:pointer}
+#stayBar .ststat{flex-basis:100%;font-size:12px;color:#1d7a45;font-weight:700}
+.availbox{margin:8px 0;padding:9px 12px;border-radius:10px;font-weight:700;font-size:14px}
+.availbox.ok{background:#dff0e4;color:#1d7a45}
+.availbox.no{background:#fbe3de;color:#b23a29}
+.occ-t{font-size:12px;color:#8a7f6b;margin:6px 0 4px}
+.occ{display:inline-block;background:#f0e8da;color:#6b6152;border-radius:8px;padding:3px 9px;font-size:12px;margin:0 5px 5px 0}
+.occ-empty{font-size:12.5px;color:#8a7f6b;margin-top:6px}
+.occrow{display:flex;justify-content:space-between;align-items:center;background:#f5efe4;border-radius:8px;padding:5px 10px;margin-bottom:5px;font-size:13px}
+.occrow button{background:#e7ded0;border:0;border-radius:6px;width:24px;height:24px;color:#b23a29;font-weight:700;cursor:pointer}
+.occadd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.occadd input{border:1.5px solid #d9d0bf;border-radius:8px;padding:6px;font-size:12px;flex:1;min-width:0}
 
 /* ---------- Sheets ---------- */
 .scrim{position:fixed;inset:0;background:rgba(28,26,21,.42);z-index:1400;opacity:0;pointer-events:none;transition:opacity .28s}
@@ -396,6 +413,7 @@ body.poinames .poi-pin .t{display:block}
 </div>
 
 <div class="filters" id="filters"></div>
+<div id="stayBar"></div>
 
 <div id="map">
   <div class="fab-col" style="top:14px">
@@ -536,7 +554,8 @@ function isAlq(inf){return !!inf.fromSheet&&(opOf(inf)==='alquiler'||inf.alsoAlq
 function isDual(inf){return isVenta(inf)&&isAlq(inf);}
 function estilo(id){
   const inf=info(id),u=uget(id),sel=compare.includes(id);
-  const active = MODE==='comprar'? isVenta(inf) : isAlq(inf);
+  let active = MODE==='comprar'? isVenta(inf) : isAlq(inf);
+  if(MODE==='alojar'&&active){const d=stayDates(); if(d&&!isFreeFor(inf,d[0],d[1]))active=false;}
   if(!active){ // gris transparente (contexto)
     return {color:sel?'#b5532a':'#7d766a',weight:sel?3:1,fillColor:'#8c857a',fillOpacity:0.07,opacity:u.fav?0.85:0.45,dashArray:null};
   }
@@ -645,6 +664,33 @@ function applyFilter(){
   refreshLabels();
 }
 function conCasa(inf){return inf.casa===true||/casa|mono|local|casita|d[uú]plex/i.test(inf.tipo||'')||parseFloat(inf.mtCub)>0;}
+/* ===== Disponibilidad por fechas (Alojarte estilo Airbnb) ===== */
+let stayIn=null, stayOut=null;
+function stayDates(){ return (stayIn&&stayOut&&stayOut>stayIn)?[stayIn,stayOut]:null; }
+function isFreeFor(inf,inD,outD){ const occ=inf.ocupado||[]; return !occ.some(r=>r&&r.from&&r.to&&inD<r.to&&outD>r.from); }
+function fmtD(iso){ if(!iso)return''; const p=String(iso).split('-'); return p[2]+'/'+p[1]; }
+function updateStayStat(){ const st=document.getElementById('stStat'); if(!st)return; const d=stayDates(); if(!d){st.textContent='';return;} let n=0; for(const id in DATA){const inf=info(id); if(isAlq(inf)&&isFreeFor(inf,d[0],d[1]))n++;} st.textContent='✓ '+n+' disponible'+(n===1?'':'s')+' en esas fechas'; }
+function buildStayBar(){
+  const bar=document.getElementById('stayBar'); if(!bar)return;
+  if(MODE!=='alojar'){bar.classList.remove('show');return;}
+  bar.classList.add('show');
+  const today=new Date().toISOString().slice(0,10);
+  bar.innerHTML=`<span class="stlab">📅</span><input type="date" id="stIn" min="${today}" value="${stayIn||''}"><span class="starrow">→</span><input type="date" id="stOut" min="${today}" value="${stayOut||''}"><button id="stClear" class="stclear">✕</button><span class="ststat" id="stStat"></span>`;
+  const inp=document.getElementById('stIn'), out=document.getElementById('stOut');
+  const upd=()=>{applyFilter();renderFilters();updateStayStat();const c=document.getElementById('stClear');if(c)c.style.display=(stayIn||stayOut)?'':'none';if(openId!=null)render();};
+  inp.onchange=()=>{stayIn=inp.value||null;if(stayIn){out.min=stayIn;if(stayOut&&stayOut<=stayIn){stayOut=null;out.value='';}}upd();};
+  out.onchange=()=>{stayOut=out.value||null;upd();};
+  document.getElementById('stClear').onclick=()=>{stayIn=stayOut=null;inp.value='';out.value='';upd();};
+  document.getElementById('stClear').style.display=(stayIn||stayOut)?'':'none';
+  updateStayStat();
+}
+function availabilityBlock(inf){
+  const d=stayDates(), occ=(inf.ocupado||[]).slice().sort((a,b)=>a.from<b.from?-1:1);
+  let head='';
+  if(d){const free=isFreeFor(inf,d[0],d[1]); head=`<div class="availbox ${free?'ok':'no'}">${free?'✓ Disponible':'✕ Ocupada'} · ${fmtD(d[0])} al ${fmtD(d[1])}</div>`;}
+  const list=occ.length?`<div class="occ-t">Fechas ocupadas:</div>${occ.map(r=>`<span class="occ">${fmtD(r.from)}–${fmtD(r.to)}</span>`).join('')}`:'<div class="occ-empty">Sin fechas ocupadas cargadas — consultá disponibilidad.</div>';
+  return `<div class="sec-t">${ic('cal')} Disponibilidad</div>${head}${list}`;
+}
 function counts(){
   let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,alquiler:0};
   for(const id in DATA){const inf=info(id),u=uget(id);
@@ -688,7 +734,7 @@ function setMode(m){
   MODE=m;currentFilter='todos';clearCompare();
   document.getElementById('mComprar').classList.toggle('active',m==='comprar');
   document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
-  renderFilters();renderLegend();applyFilter();
+  renderFilters();renderLegend();applyFilter();buildStayBar();
 }
 document.getElementById('mComprar').onclick=()=>setMode('comprar');
 document.getElementById('mAlojar').onclick=()=>setMode('alojar');
@@ -738,7 +784,8 @@ function renderLote(id){
       <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
       <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(alq?'Alquiler':'Venta')}</div></div></div>
-    ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta casa también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/mes`:' — consultá disponibilidad y precio'}.</span></div>`:''}`;
+    ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta casa también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/mes`:' — consultá disponibilidad y precio'}.</span></div>`:''}
+    ${isAlq(inf)?availabilityBlock(inf):''}`;
   }else{
     body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
     <div class="actions">
@@ -861,6 +908,9 @@ function adminBox(id,inf,p){
       <input type="file" id="adFileIn" accept="image/*" multiple style="display:none">
       <div class="adminhint">Tocá una foto de la galería de arriba para quitarla. Quedan guardadas en este teléfono.</div>
     </div>
+    ${isAlq(inf)?`<div class="field"><label>Fechas ocupadas (alquiler)</label>
+      <div id="occList">${(inf.ocupado||[]).map((r,i)=>`<div class="occrow"><span>${fmtD(r.from)} – ${fmtD(r.to)}</span><button type="button" data-occ="${i}">✕</button></div>`).join('')||'<div class="adminhint">Ninguna cargada. Bloqueá las fechas que ya están alquiladas.</div>'}</div>
+      <div class="occadd"><input type="date" id="occFrom"><input type="date" id="occTo"><button type="button" id="occAdd" class="save" style="background:#8a6d3b;margin:0">Bloquear</button></div></div>`:''}
     <button class="save" id="adSave">Guardar cambios</button>
     ${inf.fromSheet?`<button class="save" id="adUnlink" style="background:#fff;border:1.5px solid var(--terra);color:var(--terra);margin-top:8px">Desvincular de la planilla</button>`:''}
   </div>`;
@@ -902,6 +952,12 @@ function wireAdmin(id){
     ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);
   };
   // (el borrado de fotos del aviso ahora se hace desde el visor / lightbox)
+  // Fechas ocupadas (alquiler)
+  const occAdd=document.getElementById('occAdd');
+  if(occAdd)occAdd.onclick=()=>{const f=document.getElementById('occFrom').value,t=document.getElementById('occTo').value;
+    if(!f||!t||t<=f){toast('Elegí desde y hasta (la salida después de la entrada)');return;}
+    const ov=Object.assign({},ADMIN[id]); ov.ocupado=(ov.ocupado||[]).concat([{from:f,to:t}]); ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); toast('Fechas bloqueadas ✓');};
+  scroll.querySelectorAll('[data-occ]').forEach(b=>b.onclick=()=>{const i=+b.dataset.occ; const ov=Object.assign({},ADMIN[id]); ov.ocupado=(ov.ocupado||[]).filter((_,j)=>j!==i); ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);});
   document.getElementById('adSave').onclick=()=>{
     const g=i=>document.getElementById(i), ov=Object.assign({},ADMIN[id]);
     ov.inmueble=g('adNombre').value.trim()||null;
@@ -1072,7 +1128,10 @@ function updateRouteBadge(){} // (recorrido de favoritos removido)
 
 /* ============ Compartir ============ */
 function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
-  const txt=`*Pueblo Vivo · Parcela ${p.num}* (${p.barrio})\n${money(p.sup)} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;
+  let txt;
+  if(isAlq(inf)){const d=stayDates();const nom=inf.inmueble||('Casa '+(p.num!=null?p.num:id));
+    txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/mes`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
+  else{txt=`*Pueblo Vivo · Parcela ${p.num}* (${p.barrio})\n${money(p.sup)} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
