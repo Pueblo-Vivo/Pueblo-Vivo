@@ -457,7 +457,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.casa=L.casa;o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   return Object.assign(o,ADMIN[id]||{});
 }
 
@@ -597,7 +597,7 @@ function applyFilter(){
   }
   refreshLabels();
 }
-function conCasa(inf){return /casa|mono|local|casita|d[uú]plex/i.test(inf.tipo||'')||!!inf.mtCub;}
+function conCasa(inf){return inf.casa===true||/casa|mono|local|casita|d[uú]plex/i.test(inf.tipo||'')||parseFloat(inf.mtCub)>0;}
 function counts(){
   let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,alquiler:0};
   for(const id in DATA){const inf=info(id),u=uget(id);
