@@ -59,6 +59,17 @@ button{font-family:inherit;cursor:pointer}
 #loginModal .lgbtns button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:700;font-size:15px}
 #loginModal #lgEntrar{background:var(--forest);color:#fff}
 #loginModal #lgCancel{background:#fff;border:1.5px solid #d9d0bf;color:var(--ink)}
+#lightbox{display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,9,7,.93);align-items:center;justify-content:center;flex-direction:column}
+#lightbox.show{display:flex}
+#lightbox img{max-width:94vw;max-height:78vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#lightbox .lbclose{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;border:0;font-size:20px;cursor:pointer}
+#lightbox .lbnav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;border:0;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#lightbox .lbprev{left:10px}
+#lightbox .lbnext{right:10px}
+#lightbox .lbbar{margin-top:16px;display:flex;gap:16px;align-items:center;color:#fff}
+#lightbox .lbcount{font-size:14px;opacity:.85}
+#lightbox .lbdel{background:rgba(214,74,54,.92);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;font-size:14px;display:none;cursor:pointer}
+#lightbox .lbdel.show{display:inline-block}
 .fav-pill{display:flex;align-items:center;gap:5px;background:#fff;
   border:1px solid var(--line);color:var(--terra);padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
 .fav-pill svg{width:15px;height:15px}
@@ -422,6 +433,13 @@ body.poinames .poi-pin .t{display:block}
   <input id="lgPass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <div class="lgbtns"><button id="lgCancel">Cancelar</button><button id="lgEntrar">Entrar</button></div>
 </div></div>
+<div id="lightbox">
+  <button class="lbclose" id="lbClose">✕</button>
+  <button class="lbnav lbprev" id="lbPrev">‹</button>
+  <img id="lbImg" src="" alt="">
+  <button class="lbnav lbnext" id="lbNext">›</button>
+  <div class="lbbar"><span class="lbcount" id="lbCount"></span><button class="lbdel" id="lbDel">🗑 Eliminar</button></div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -697,8 +715,15 @@ function renderLote(id){
   const linked=!!inf.fromSheet, alq=opOf(inf)==='alquiler';
   const stKey=!linked?'novender':(alq?'disp':'libre');
   const stL=!linked?'No listado':(isDual(inf)?'Venta y alquiler':(alq?'En alquiler':'En venta'));
-  const offF=linked?inf.fotos.map((s,i)=>gphoto(s,adminMode?i:null)).join(''):'';
-  const userF=u.photos.map((s,i)=>`<img class="gphoto user" src="${s}" data-up="${i}" alt="">`).join('');
+  const gal=[];
+  if(linked) inf.fotos.forEach(s=>gal.push({src:driveSrc(s),raw:s,kind:'official'}));
+  u.photos.forEach((s,i)=>gal.push({src:s,kind:'user',idx:i}));
+  currentGallery=gal; currentGalleryId=id;
+  const galHtml=gal.map((g,i)=>{
+    const cls='gphoto'+(g.kind==='user'?' user':'');
+    const err=(g.kind==='official'&&!isPath(g.raw))?`onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://lh3.googleusercontent.com/d/${g.raw}=w1400'}"`:'';
+    return `<img class="${cls}" data-gi="${i}" loading="lazy" src="${g.src}" ${err} alt="">`;
+  }).join('');
   const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map(c=>`<div class="comment"><div class="meta"><span>Vos</span><span>${c.when}</span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
   const title=inf.inmueble||('Parcela '+(p.num!=null?p.num:('#'+id)));
@@ -731,8 +756,8 @@ function renderLote(id){
     <span class="statusbadge st-${stKey}"><span class="sw"></span>${stL}</span></div>`+body+`
   <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
   <div class="sec-t">${ic('camera')} Fotos</div>
-  <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
-  ${u.photos.length?'<div class="usertag">Las fotos con borde verde las subiste vos</div>':''}
+  <div class="gallery">${galHtml}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
+  ${u.photos.length?'<div class="usertag">Tocá una foto para verla en grande. Las de borde verde las subiste vos.</div>':'<div class="usertag" style="opacity:.7">Tocá una foto para verla en grande.</div>'}
   <input type="file" id="fileIn" accept="image/*" style="display:none">`+
   acciones+
   (adminMode&&linked?adminBox(id,inf,p):'')+`
@@ -846,7 +871,7 @@ function wireCommon(id){
   document.getElementById('btnLike').onclick=()=>{u.fav=!u.fav;save();render();renderFilters();estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');};
   const add=document.getElementById('addPhoto');if(add)add.onclick=()=>document.getElementById('fileIn').click();
   const fi=document.getElementById('fileIn');if(fi)fi.onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,900,img=>{u.photos.push(img);save();render();toast('Foto agregada 📷');});rd.readAsDataURL(file);};
-  scroll.querySelectorAll('.gphoto.user').forEach(img=>img.onclick=()=>{if(confirm('¿Eliminar esta foto?')){u.photos.splice(+img.dataset.up,1);save();render();}});
+  scroll.querySelectorAll('.gphoto[data-gi]').forEach(img=>img.onclick=()=>openLightbox(+img.dataset.gi));
   if(adminMode)wireAdmin(id);
 }
 function wireLote(id){
@@ -876,16 +901,7 @@ function wireAdmin(id){
     }
     ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);
   };
-  // Quitar una foto del aviso (tocar la foto)
-  const infA=info(id);
-  scroll.querySelectorAll('.gphoto[data-off]').forEach(im=>im.onclick=()=>{
-    const s=infA.fotos[+im.dataset.off];if(s==null)return;
-    if(!confirm('¿Quitar esta foto del aviso?'))return;
-    const ov=Object.assign({},ADMIN[id]);
-    if((ov.addFotos||[]).indexOf(s)>=0){ov.addFotos=ov.addFotos.filter(x=>x!==s);}
-    else{ov.hideFotos=(ov.hideFotos||[]).concat([s]);}
-    ADMIN[id]=ov;saveAdmin();render();pushOverride(id,ov);
-  });
+  // (el borrado de fotos del aviso ahora se hace desde el visor / lightbox)
   document.getElementById('adSave').onclick=()=>{
     const g=i=>document.getElementById(i), ov=Object.assign({},ADMIN[id]);
     ov.inmueble=g('adNombre').value.trim()||null;
@@ -1224,6 +1240,36 @@ document.getElementById('lgEntrar').onclick=doLogin;
 document.getElementById('lgCancel').onclick=()=>document.getElementById('loginModal').classList.remove('show');
 document.getElementById('lgPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('btnLogout').onclick=doLogout;
+
+/* ============ Visor de fotos (lightbox) ============ */
+let currentGallery=[], currentGalleryId=null, lbIndex=0;
+function openLightbox(i){ if(!currentGallery.length)return; lbIndex=i; lbShow(); document.getElementById('lightbox').classList.add('show'); }
+function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
+function lbShow(){
+  const g=currentGallery[lbIndex]; if(!g)return;
+  document.getElementById('lbImg').src=g.src;
+  document.getElementById('lbCount').textContent=(lbIndex+1)+' / '+currentGallery.length;
+  const canDel=(g.kind==='user')||(g.kind==='official'&&adminMode);
+  document.getElementById('lbDel').classList.toggle('show',canDel);
+  document.getElementById('lbPrev').style.display=document.getElementById('lbNext').style.display=(currentGallery.length>1?'':'none');
+}
+function lbMove(d){ lbIndex=(lbIndex+d+currentGallery.length)%currentGallery.length; lbShow(); }
+function lbDelete(){
+  const g=currentGallery[lbIndex], id=currentGalleryId; if(!g)return;
+  if(!confirm('¿Eliminar esta foto?'))return;
+  if(g.kind==='user'){ const u=uget(id); u.photos.splice(g.idx,1); save(); closeLightbox(); render(); }
+  else if(g.kind==='official'&&adminMode){
+    const ov=Object.assign({},ADMIN[id]);
+    if((ov.addFotos||[]).indexOf(g.raw)>=0) ov.addFotos=ov.addFotos.filter(x=>x!==g.raw);
+    else ov.hideFotos=(ov.hideFotos||[]).concat([g.raw]);
+    ADMIN[id]=ov; saveAdmin(); closeLightbox(); render(); pushOverride(id,ov);
+  }
+}
+document.getElementById('lbClose').onclick=closeLightbox;
+document.getElementById('lbPrev').onclick=e=>{e.stopPropagation();lbMove(-1);};
+document.getElementById('lbNext').onclick=e=>{e.stopPropagation();lbMove(1);};
+document.getElementById('lbDel').onclick=lbDelete;
+document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id==='lightbox')closeLightbox(); });
 
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
