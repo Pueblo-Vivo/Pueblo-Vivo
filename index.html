@@ -456,7 +456,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.casa=L.casa;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   return Object.assign(o,ADMIN[id]||{});
 }
 // Fotos reales: ruta local del repo (fotos/..), URL completa, o ID de Drive (fallback)
@@ -488,8 +488,9 @@ const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d
 const fmtDist=m=>m<1000?Math.round(m/10)*10+' m':(m/1000).toFixed(1)+' km';
 
 function opOf(inf){return inf.op||'venta';}
-function isVenta(inf){return !!inf.fromSheet&&opOf(inf)==='venta';}
-function isAlq(inf){return !!inf.fromSheet&&opOf(inf)==='alquiler';}
+function isVenta(inf){return !!inf.fromSheet&&(opOf(inf)==='venta'||inf.alsoVenta===true);}
+function isAlq(inf){return !!inf.fromSheet&&(opOf(inf)==='alquiler'||inf.alsoAlq===true);}
+function isDual(inf){return isVenta(inf)&&isAlq(inf);}
 function estilo(id){
   const inf=info(id),u=uget(id),sel=compare.includes(id);
   const active = MODE==='comprar'? isVenta(inf) : isAlq(inf);
@@ -546,7 +547,7 @@ function labelHtml(id){
   const u=uget(id),inf=info(id);
   const heart=u.fav?'❤ ':'';
   const num=(numbersOn&&f.properties.num!=null)?(''+f.properties.num):'';
-  if(MODE==='alojar') return heart+(isAlq(inf)?('$'+(inf.total||'')):num);
+  if(MODE==='alojar') return heart+(isAlq(inf)?(inf.alqPrice?('$'+money(inf.alqPrice)):num):num);
   if(isVenta(inf)) return heart+(inf.total!=null?'$'+money(inf.total):num);
   const eye=(numbersOn&&u.seen)?'✓ ':'';
   return heart+eye+num;
@@ -670,7 +671,7 @@ function renderLote(id){
   const ha=p.sup/10000;
   const linked=!!inf.fromSheet, alq=opOf(inf)==='alquiler';
   const stKey=!linked?'novender':(alq?'disp':'libre');
-  const stL=!linked?'No listado':(alq?'En alquiler':'En venta');
+  const stL=!linked?'No listado':(isDual(inf)?'Venta y alquiler':(alq?'En alquiler':'En venta'));
   const offF=linked?inf.fotos.map(gphoto).join(''):'';
   const userF=u.photos.map((s,i)=>`<img class="gphoto user" src="${s}" data-up="${i}" alt="">`).join('');
   const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
@@ -685,7 +686,8 @@ function renderLote(id){
     <div class="stats">
       <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
-      <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${alq?'Alquiler':'Venta'}</div></div></div>`;
+      <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(alq?'Alquiler':'Venta')}</div></div></div>
+    ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta casa también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/mes`:' — consultá disponibilidad y precio'}.</span></div>`:''}`;
   }else{
     body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
     <div class="actions">
