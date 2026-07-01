@@ -172,6 +172,26 @@ body.poinames .poi-pin .t{display:block}
 .occrow button{background:#e7ded0;border:0;border-radius:6px;width:24px;height:24px;color:#b23a29;font-weight:700;cursor:pointer}
 .occadd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .occadd input{border:1.5px solid #d9d0bf;border-radius:8px;padding:6px;font-size:12px;flex:1;min-width:0}
+#stayBar .stpick{flex:1;background:#fff;border:1.5px solid #d9d0bf;border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink);text-align:left;font-weight:600;cursor:pointer}
+#calModal{display:none;position:fixed;inset:0;z-index:2100;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:20px}
+#calModal.show{display:flex}
+#calModal .card{background:var(--cream);border-radius:18px;padding:18px;max-width:360px;width:100%;box-shadow:var(--shadow)}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.calhead button{background:#efe7d8;border:0;border-radius:8px;width:34px;height:34px;font-size:18px;color:var(--forest);cursor:pointer}
+#calMonth{font-weight:700;color:var(--forest);font-family:'Fraunces',serif;font-size:16px}
+#calTitle{font-size:12px;color:#8a7f6b;margin-bottom:8px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.caldow{text-align:center;font-size:11px;color:#8a7f6b;padding:3px 0;font-weight:700}
+.calday{text-align:center;padding:9px 0;border-radius:8px;font-size:13.5px;cursor:pointer;color:var(--ink);background:#faf6ee}
+.calday.off{color:#c3bbac;cursor:default;background:transparent}
+.calday.occ{text-decoration:line-through;background:#fbe3de;color:#c98a7f}
+.calday.inr{background:#cfe9d8}
+.calday.sel{background:var(--forest);color:#fff;font-weight:700}
+.calselbar{margin:12px 0 4px;font-size:13px;color:var(--ink);text-align:center;font-weight:600}
+.calbtns{display:flex;gap:8px;margin-top:8px}
+.calbtns button{flex:1;border:0;border-radius:11px;padding:11px;font-weight:700;font-size:15px;cursor:pointer}
+#calClear{background:#fff;border:1.5px solid #d9d0bf;color:var(--ink)}
+#calDone{background:var(--forest);color:#fff}
 
 /* ---------- Sheets ---------- */
 .scrim{position:fixed;inset:0;background:rgba(28,26,21,.42);z-index:1400;opacity:0;pointer-events:none;transition:opacity .28s}
@@ -458,6 +478,13 @@ body.poinames .poi-pin .t{display:block}
   <button class="lbnav lbnext" id="lbNext">›</button>
   <div class="lbbar"><span class="lbcount" id="lbCount"></span><button class="lbdel" id="lbDel">🗑 Eliminar</button></div>
 </div>
+<div id="calModal"><div class="card">
+  <div class="calhead"><button id="calPrev" type="button">‹</button><span id="calMonth"></span><button id="calNext" type="button">›</button></div>
+  <div id="calTitle"></div>
+  <div class="calgrid" id="calGrid"></div>
+  <div class="calselbar" id="calSelTxt"></div>
+  <div class="calbtns"><button id="calClear" type="button">Limpiar</button><button id="calDone" type="button">Listo</button></div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -670,26 +697,55 @@ function stayDates(){ return (stayIn&&stayOut&&stayOut>stayIn)?[stayIn,stayOut]:
 function isFreeFor(inf,inD,outD){ const occ=inf.ocupado||[]; return !occ.some(r=>r&&r.from&&r.to&&inD<r.to&&outD>r.from); }
 function fmtD(iso){ if(!iso)return''; const p=String(iso).split('-'); return p[2]+'/'+p[1]; }
 function updateStayStat(){ const st=document.getElementById('stStat'); if(!st)return; const d=stayDates(); if(!d){st.textContent='';return;} let n=0; for(const id in DATA){const inf=info(id); if(isAlq(inf)&&isFreeFor(inf,d[0],d[1]))n++;} st.textContent='✓ '+n+' disponible'+(n===1?'':'s')+' en esas fechas'; }
+function stayRefresh(){buildStayBar();applyFilter();renderFilters();if(openId!=null)render();}
 function buildStayBar(){
   const bar=document.getElementById('stayBar'); if(!bar)return;
   if(MODE!=='alojar'){bar.classList.remove('show');return;}
   bar.classList.add('show');
-  const today=new Date().toISOString().slice(0,10);
-  bar.innerHTML=`<span class="stlab">📅</span><input type="date" id="stIn" min="${today}" value="${stayIn||''}"><span class="starrow">→</span><input type="date" id="stOut" min="${today}" value="${stayOut||''}"><button id="stClear" class="stclear">✕</button><span class="ststat" id="stStat"></span>`;
-  const inp=document.getElementById('stIn'), out=document.getElementById('stOut');
-  const upd=()=>{applyFilter();renderFilters();updateStayStat();const c=document.getElementById('stClear');if(c)c.style.display=(stayIn||stayOut)?'':'none';if(openId!=null)render();};
-  inp.onchange=()=>{stayIn=inp.value||null;if(stayIn){out.min=stayIn;if(stayOut&&stayOut<=stayIn){stayOut=null;out.value='';}}upd();};
-  out.onchange=()=>{stayOut=out.value||null;upd();};
-  document.getElementById('stClear').onclick=()=>{stayIn=stayOut=null;inp.value='';out.value='';upd();};
-  document.getElementById('stClear').style.display=(stayIn||stayOut)?'':'none';
+  const label=stayDates()?(fmtD(stayIn)+' → '+fmtD(stayOut)):(stayIn?('Desde '+fmtD(stayIn)+' — elegí salida'):'Elegí tus fechas');
+  bar.innerHTML=`<button id="stPick" class="stpick">📅 ${label}</button><button id="stClear" class="stclear" ${(stayIn||stayOut)?'':'style="display:none"'}>✕</button><span class="ststat" id="stStat"></span>`;
+  document.getElementById('stPick').onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'¿Qué días querés alojarte?',onDone:(a,b)=>{stayIn=a;stayOut=b;stayRefresh();}});
+  document.getElementById('stClear').onclick=()=>{stayIn=stayOut=null;stayRefresh();};
   updateStayStat();
 }
+/* ===== Calendario visual (selección de rango) ===== */
+let calY,calM,calSel=[null,null],calOnDone=null,calOccupied=[];
+const CAL_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function isoOf(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+function openCal(opts){
+  const base=opts.inDate?new Date(opts.inDate+'T00:00:00'):new Date();
+  calY=base.getFullYear(); calM=base.getMonth();
+  calSel=[opts.inDate||null,opts.outDate||null]; calOccupied=opts.occupied||[]; calOnDone=opts.onDone;
+  document.getElementById('calTitle').textContent=opts.title||'Elegí las fechas';
+  renderCal(); document.getElementById('calModal').classList.add('show');
+}
+function renderCal(){
+  document.getElementById('calMonth').textContent=CAL_MES[calM]+' '+calY;
+  const start=(new Date(calY,calM,1).getDay()+6)%7, days=new Date(calY,calM+1,0).getDate();
+  const today=new Date().toISOString().slice(0,10);
+  let h=['L','M','M','J','V','S','D'].map(d=>`<div class="caldow">${d}</div>`).join('');
+  for(let i=0;i<start;i++)h+='<div></div>';
+  for(let d=1;d<=days;d++){const iso=isoOf(calY,calM,d);
+    const past=iso<today, occ=calOccupied.some(r=>r.from&&r.to&&iso>=r.from&&iso<r.to);
+    const [a,b]=calSel, inr=a&&b&&iso>=a&&iso<=b, sel=(iso===a||iso===b);
+    let c='calday'; if(past||occ)c+=' off'; if(occ)c+=' occ'; if(inr)c+=' inr'; if(sel)c+=' sel';
+    h+=`<div class="${c}" data-iso="${iso}">${d}</div>`;}
+  const g=document.getElementById('calGrid'); g.innerHTML=h;
+  g.querySelectorAll('.calday:not(.off)').forEach(el=>el.onclick=()=>calPick(el.dataset.iso));
+  document.getElementById('calSelTxt').textContent=calSel[0]?(fmtD(calSel[0])+(calSel[1]?(' → '+fmtD(calSel[1])):' → (tocá la salida)')):'Tocá el día de entrada';
+}
+function calPick(iso){let [a,b]=calSel; if(!a||b||iso<=a)calSel=[iso,null]; else calSel=[a,iso]; renderCal();}
+document.getElementById('calPrev').onclick=()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();};
+document.getElementById('calNext').onclick=()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();};
+document.getElementById('calClear').onclick=()=>{calSel=[null,null];renderCal();};
+document.getElementById('calDone').onclick=()=>{document.getElementById('calModal').classList.remove('show'); if(calOnDone)calOnDone(calSel[0],calSel[1]);};
+document.getElementById('calModal').addEventListener('click',e=>{if(e.target.id==='calModal')document.getElementById('calModal').classList.remove('show');});
 function availabilityBlock(inf){
   const d=stayDates(), occ=(inf.ocupado||[]).slice().sort((a,b)=>a.from<b.from?-1:1);
   let head='';
   if(d){const free=isFreeFor(inf,d[0],d[1]); head=`<div class="availbox ${free?'ok':'no'}">${free?'✓ Disponible':'✕ Ocupada'} · ${fmtD(d[0])} al ${fmtD(d[1])}</div>`;}
   const list=occ.length?`<div class="occ-t">Fechas ocupadas:</div>${occ.map(r=>`<span class="occ">${fmtD(r.from)}–${fmtD(r.to)}</span>`).join('')}`:'<div class="occ-empty">Sin fechas ocupadas cargadas — consultá disponibilidad.</div>';
-  return `<div class="sec-t">${ic('cal')} Disponibilidad</div>${head}${list}`;
+  return `<div class="sec-t">${ic('cal')} Disponibilidad</div>${head}${list}<button class="act" id="btnCal" style="margin-top:10px;width:100%">${ic('cal')} Ver calendario</button>`;
 }
 function counts(){
   let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,alquiler:0};
@@ -910,7 +966,7 @@ function adminBox(id,inf,p){
     </div>
     ${isAlq(inf)?`<div class="field"><label>Fechas ocupadas (alquiler)</label>
       <div id="occList">${(inf.ocupado||[]).map((r,i)=>`<div class="occrow"><span>${fmtD(r.from)} – ${fmtD(r.to)}</span><button type="button" data-occ="${i}">✕</button></div>`).join('')||'<div class="adminhint">Ninguna cargada. Bloqueá las fechas que ya están alquiladas.</div>'}</div>
-      <div class="occadd"><input type="date" id="occFrom"><input type="date" id="occTo"><button type="button" id="occAdd" class="save" style="background:#8a6d3b;margin:0">Bloquear</button></div></div>`:''}
+      <div class="occadd"><button type="button" id="occAdd" class="save" style="background:#8a6d3b;margin:0">📅 Bloquear fechas ocupadas</button></div></div>`:''}
     <button class="save" id="adSave">Guardar cambios</button>
     ${inf.fromSheet?`<button class="save" id="adUnlink" style="background:#fff;border:1.5px solid var(--terra);color:var(--terra);margin-top:8px">Desvincular de la planilla</button>`:''}
   </div>`;
@@ -922,6 +978,7 @@ function wireCommon(id){
   const add=document.getElementById('addPhoto');if(add)add.onclick=()=>document.getElementById('fileIn').click();
   const fi=document.getElementById('fileIn');if(fi)fi.onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,900,img=>{u.photos.push(img);save();render();toast('Foto agregada 📷');});rd.readAsDataURL(file);};
   scroll.querySelectorAll('.gphoto[data-gi]').forEach(img=>img.onclick=()=>openLightbox(+img.dataset.gi));
+  const bc=document.getElementById('btnCal'); if(bc)bc.onclick=()=>openCal({inDate:stayIn,outDate:stayOut,occupied:info(id).ocupado||[],title:'Disponibilidad de esta casa',onDone:(a,b)=>{stayIn=a;stayOut=b;stayRefresh();}});
   if(adminMode)wireAdmin(id);
 }
 function wireLote(id){
@@ -954,9 +1011,9 @@ function wireAdmin(id){
   // (el borrado de fotos del aviso ahora se hace desde el visor / lightbox)
   // Fechas ocupadas (alquiler)
   const occAdd=document.getElementById('occAdd');
-  if(occAdd)occAdd.onclick=()=>{const f=document.getElementById('occFrom').value,t=document.getElementById('occTo').value;
-    if(!f||!t||t<=f){toast('Elegí desde y hasta (la salida después de la entrada)');return;}
-    const ov=Object.assign({},ADMIN[id]); ov.ocupado=(ov.ocupado||[]).concat([{from:f,to:t}]); ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); toast('Fechas bloqueadas ✓');};
+  if(occAdd)occAdd.onclick=()=>openCal({occupied:info(id).ocupado||[],title:'Marcá las fechas que ya están ocupadas',onDone:(f,t)=>{
+    if(!f||!t){toast('Tocá el día de entrada y el de salida');return;}
+    const ov=Object.assign({},ADMIN[id]); ov.ocupado=(ov.ocupado||[]).concat([{from:f,to:t}]); ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); toast('Fechas bloqueadas ✓');}});
   scroll.querySelectorAll('[data-occ]').forEach(b=>b.onclick=()=>{const i=+b.dataset.occ; const ov=Object.assign({},ADMIN[id]); ov.ocupado=(ov.ocupado||[]).filter((_,j)=>j!==i); ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);});
   document.getElementById('adSave').onclick=()=>{
     const g=i=>document.getElementById(i), ov=Object.assign({},ADMIN[id]);
