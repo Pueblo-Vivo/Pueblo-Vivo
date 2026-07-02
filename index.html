@@ -772,7 +772,7 @@ function fichaBlock(inf){
   let sel=casaSel; if(sel>=casas.length)sel=0;
   const tabs=casas.length>1?`<div class="casatabs">${casas.map((c,i)=>`<button type="button" class="casatab ${i===sel?'on':''}" data-casa="${i}">${esc(c.n)}</button>`).join('')}</div>`:'';
   const c=casas[sel];
-  const secs={},order=[]; c.f.forEach(([s,l,v])=>{if(!secs[s]){secs[s]=[];order.push(s);}secs[s].push([l,v]);});
+  const secs={},order=[]; c.f.forEach(([s,l,v])=>{if(/cerca de/i.test(l))return;if(!secs[s]){secs[s]=[];order.push(s);}secs[s].push([l,v]);});
   const body=order.map(s=>`<div class="fsec">${esc(s)}</div>`+secs[s].map(([l,v])=>`<div class="frow2"><span class="fl">${esc(l)}</span><span class="fv">${esc(v)}</span></div>`).join('')).join('');
   const precio=(c.pb||c.pa)?`<div class="fichaprice">${c.pb?('Temp. baja: <b>USD '+esc(String(c.pb))+'</b>/noche'):''}${(c.pb&&c.pa)?' · ':''}${c.pa?('alta: <b>USD '+esc(String(c.pa))+'</b>/noche'):''}</div>`:'';
   return `<div class="sec-t">${ic('home')} Ficha del alojamiento${casas.length>1?' · '+casas.length+' casas en este lote':''}</div>${tabs}<div class="fichanom">${esc(c.n)}</div>${precio}<div class="ficha">${body}</div>`;
@@ -881,7 +881,11 @@ function renderLote(id){
     const err=(g.kind==='official'&&!isPath(g.raw))?`onerror="if(!this.dataset.f){this.dataset.f=1;this.src='https://lh3.googleusercontent.com/d/${g.raw}=w1400'}"`:'';
     return `<img class="${cls}" data-gi="${i}" loading="lazy" src="${g.src}" ${err} alt="">`;
   }).join('');
-  const nearby=(inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
+  let cercaSheet='';
+  if(inf.casas&&inf.casas.length){const cs=inf.casas[Math.min(casaSel,inf.casas.length-1)];const row=(cs.f||[]).find(x=>/cerca de/i.test(x[1]));if(row)cercaSheet=row[2];}
+  const nearby=cercaSheet
+    ? cercaSheet.split(/[\/,]/).map(s=>s.trim()).filter(Boolean).map(x=>`<div class="nb"><div class="ico">${featIcon('leaf')}</div><div class="nm">${esc(x)}</div></div>`).join('')
+    : (inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map(c=>`<div class="comment"><div class="meta"><span>Vos</span><span>${c.when}</span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
   const title=inf.inmueble||('Parcela '+p.mapNum);
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.mapNum}`:`${p.barrio} · Parcela ${p.mapNum}`;
