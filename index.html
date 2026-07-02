@@ -649,8 +649,11 @@ function openBarrio(name){
   const rng=arr=>!arr.length?'':(Math.min(...arr)===Math.max(...arr)?'USD '+money(arr[0]):'USD '+money(Math.min(...arr))+'–'+money(Math.max(...arr)));
   const mapNumOf=id=>PARCELAS.features.find(f=>f.properties.id==id).properties.mapNum;
   const row=(x,op)=>{const inf=x.inf;const nom=inf.inmueble||('Parcela '+mapNumOf(x.id));const pr=op==='v'?(inf.total?'USD '+money(inf.total):'Consultar'):(inf.alqPrice?'USD '+money(inf.alqPrice)+'/noche':'Consultar');return `<div class="brow" data-ol="${x.id}"><span class="bnm">${esc(nom)}</span><span class="bpr">${pr}</span></div>`;};
+  const det=BARRIOS_INFO[barrioKey(name)];
+  const detHtml=(det&&det.length)?`<div class="sec-t">${ic('pin')} Sobre el barrio</div><div class="ficha">${det.map(([l,v])=>`<div class="frow2"><span class="fl">${esc(l)}</span><span class="fv">${esc(v)}</span></div>`).join('')}</div>`:'';
   scroll.innerHTML=`<div class="sh-head"><div class="sh-title"><span class="barrio">Barrio</span><h2>${esc(name)}</h2></div></div>
     <div class="bstats"><div class="bstat"><b>${ids.length}</b><span>parcelas</span></div><div class="bstat"><b>${venta.length}</b><span>en venta</span></div><div class="bstat"><b>${alq.length}</b><span>en alquiler</span></div></div>
+    ${detHtml}
     ${venta.length?`<div class="sec-t">${ic('pin')} En venta${rng(vP)?' · '+rng(vP):''}</div>${venta.map(x=>row(x,'v')).join('')}`:''}
     ${alq.length?`<div class="sec-t">${ic('home')} En alquiler${aP.length?' · desde USD '+money(Math.min(...aP))+'/noche':''}</div>${alq.map(x=>row(x,'a')).join('')}`:''}
     ${(!venta.length&&!alq.length)?'<p class="empty-c">Todavía no hay propiedades cargadas en este barrio.</p>':''}
@@ -831,6 +834,26 @@ async function syncRentSheet(){
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncRentSheet',e);}
+}
+/* ===== Detalle de cada barrio (en vivo desde la planilla de venta) ===== */
+let BARRIOS_INFO={};
+const BARRIO_INV_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', BARRIO_GID='100483159';
+function barrioKey(name){let n=String(name||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+  if(n.indexOf('siete lomas')>=0)return '7 lomas';
+  if(n.indexOf('tres rios')>=0)return '3 rios';
+  if(n.indexOf('nogales alto')===0)return 'nogales alto';
+  if(n.indexOf('nogales bajo')===0)return 'nogales bajo';
+  return n;}
+async function syncBarrioSheet(){
+  try{
+    const url='https://docs.google.com/spreadsheets/d/'+BARRIO_INV_ID+'/export?format=csv&gid='+BARRIO_GID;
+    const R=parseCSVtext(await (await fetch(url)).text());
+    const info={}; let cur=null;
+    R.forEach(row=>{const a=String(row[0]||'').replace(/\s+/g,' ').trim(), b=String(row[1]||'').trim();
+      if(a.toLowerCase()==='barrio'){cur=[];info[barrioKey(b)]=cur;return;}
+      if(cur&&a&&b){cur.push([a.replace(/^Nro,?/i,'N°').replace(/,$/,'').trim(),b]);}});
+    BARRIOS_INFO=info;
+  }catch(e){console.warn('syncBarrioSheet',e);}
 }
 function counts(){
   let c={todos:0,fav:0,seen:0,ventaLote:0,ventaCasa:0,alquiler:0};
@@ -1483,7 +1506,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
-syncRentSheet();
+syncRentSheet();syncBarrioSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
 /* Instalar como app */
