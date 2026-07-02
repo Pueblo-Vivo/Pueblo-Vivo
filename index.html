@@ -155,14 +155,11 @@ body.poinames .poi-pin .t{display:block}
 .adminbar svg{width:15px;height:15px}
 .adminhint{font-size:11px;color:#8a7f6b;margin-top:6px;line-height:1.35}
 .gphoto.adminimg{cursor:pointer}
-#stayBar{display:none;background:var(--cream);padding:0 12px 9px;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+#stayBar{display:none;background:var(--cream);padding:0 14px 11px;flex-direction:column;gap:7px;border-bottom:1px solid var(--line)}
 #stayBar.show{display:flex}
-#stayBar .stlab{font-size:16px}
-#stayBar input[type=date]{border:1.5px solid #d9d0bf;border-radius:9px;padding:6px 8px;font-size:13px;background:#fff;color:var(--ink);min-width:0;flex:1}
-#stayBar .starrow{color:#8a7f6b}
-#stayBar .stclear{background:#e7ded0;border:0;border-radius:8px;width:28px;height:28px;color:#6b6152;font-weight:700;cursor:pointer}
-#stayBar .ststat{flex-basis:100%;font-size:12px;color:#1d7a45;font-weight:700}
-#stayBar .ststat.hint{color:#8a7f6b;font-weight:600}
+.stayrow{display:flex;gap:8px;align-items:stretch}
+#stayBar .ststat{font-size:12.5px;color:#5f7a68;font-weight:600;padding-left:2px}
+#stayBar .ststat.hint{color:#9a917f;font-weight:500}
 .availbox{margin:8px 0;padding:9px 12px;border-radius:10px;font-weight:700;font-size:14px}
 .availbox.ok{background:#dff0e4;color:#1d7a45}
 .availbox.no{background:#fbe3de;color:#b23a29}
@@ -173,7 +170,12 @@ body.poinames .poi-pin .t{display:block}
 .occrow button{background:#e7ded0;border:0;border-radius:6px;width:24px;height:24px;color:#b23a29;font-weight:700;cursor:pointer}
 .occadd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .occadd input{border:1.5px solid #d9d0bf;border-radius:8px;padding:6px;font-size:12px;flex:1;min-width:0}
-#stayBar .stpick{flex:1;background:#fff;border:1.5px solid #d9d0bf;border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink);text-align:left;font-weight:600;cursor:pointer}
+#stayBar .stpick{flex:1;display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e0d8c8;border-radius:12px;padding:11px 13px;font-size:14px;color:var(--ink);text-align:left;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+#stayBar .stpick svg{width:18px;height:18px;color:var(--forest);flex:none}
+#stayBar .stpicktxt{flex:1}
+#stayBar .stpicktxt.ph{color:#9a917f;font-weight:500}
+#stayBar .stedit{font-size:12px;color:var(--forest);font-weight:700}
+#stayBar .stclear{background:#efe7d8;border:0;border-radius:11px;width:44px;color:#6b6152;font-weight:700;cursor:pointer;font-size:16px}
 #calModal{display:none;position:fixed;inset:0;z-index:2100;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:20px}
 #calModal.show{display:flex}
 #calModal .card{background:var(--cream);border-radius:18px;padding:18px;max-width:360px;width:100%;box-shadow:var(--shadow)}
@@ -697,19 +699,22 @@ let stayIn=null, stayOut=null;
 function stayDates(){ return (stayIn&&stayOut&&stayOut>stayIn)?[stayIn,stayOut]:null; }
 function isFreeFor(inf,inD,outD){ const occ=inf.ocupado||[]; return !occ.some(r=>r&&r.from&&r.to&&inD<r.to&&outD>r.from); }
 function fmtD(iso){ if(!iso)return''; const p=String(iso).split('-'); return p[2]+'/'+p[1]; }
+const MES3=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fmtShort(iso){ if(!iso)return''; const p=String(iso).split('-'); return (+p[2])+' '+MES3[(+p[1])-1]; }
 function updateStayStat(){ const st=document.getElementById('stStat'); if(!st)return; const d=stayDates();
-  if(!d){ st.textContent='👆 Elegí las fechas de tu alojamiento y te mostramos solo las casas libres'; st.classList.add('hint'); return; }
+  if(!d){ st.textContent='Elegí la entrada y la salida para ver qué alojamientos están disponibles.'; st.classList.add('hint'); return; }
   st.classList.remove('hint'); let n=0; for(const id in DATA){const inf=info(id); if(isAlq(inf)&&isFreeFor(inf,d[0],d[1]))n++;}
-  st.textContent='✓ '+n+' casa'+(n===1?'':'s')+' disponible'+(n===1?'':'s')+' en esas fechas'; }
+  st.textContent=n+' '+(n===1?'alojamiento disponible':'alojamientos disponibles')+' en esas fechas'; }
 function stayRefresh(){buildStayBar();applyFilter();renderFilters();if(openId!=null)render();}
 function buildStayBar(){
   const bar=document.getElementById('stayBar'); if(!bar)return;
   if(MODE!=='alojar'){bar.classList.remove('show');return;}
   bar.classList.add('show');
-  const label=stayDates()?(fmtD(stayIn)+' → '+fmtD(stayOut)):(stayIn?('Desde '+fmtD(stayIn)+' — elegí salida'):'Elegí tus fechas');
-  bar.innerHTML=`<button id="stPick" class="stpick">📅 ${label}</button><button id="stClear" class="stclear" ${(stayIn||stayOut)?'':'style="display:none"'}>✕</button><span class="ststat" id="stStat"></span>`;
-  document.getElementById('stPick').onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'¿Qué días querés alojarte?',onDone:(a,b)=>{stayIn=a;stayOut=b;stayRefresh();}});
-  document.getElementById('stClear').onclick=()=>{stayIn=stayOut=null;stayRefresh();};
+  const has=stayDates();
+  const label=has?(fmtShort(stayIn)+'  →  '+fmtShort(stayOut)):(stayIn?('Desde '+fmtShort(stayIn)+' — falta la salida'):'Seleccioná las fechas de tu estadía');
+  bar.innerHTML=`<div class="stayrow"><button id="stPick" class="stpick">${ic('cal')}<span class="stpicktxt ${(has||stayIn)?'':'ph'}">${label}</span>${has?'<span class="stedit">Editar</span>':''}</button>${(stayIn||stayOut)?'<button id="stClear" class="stclear">✕</button>':''}</div><div class="ststat" id="stStat"></div>`;
+  document.getElementById('stPick').onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'Fechas de tu estadía',onDone:(a,b)=>{stayIn=a;stayOut=b;stayRefresh();}});
+  const cl=document.getElementById('stClear'); if(cl)cl.onclick=()=>{stayIn=stayOut=null;stayRefresh();};
   updateStayStat();
 }
 /* ===== Calendario visual (selección de rango) ===== */
