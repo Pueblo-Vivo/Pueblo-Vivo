@@ -1526,9 +1526,14 @@ try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30
   document.getElementById('iosOk').onclick=()=>document.getElementById('iosHelp').classList.remove('show');
 })();
 
-/* PWA */
+/* PWA + auto-actualización (se refresca solo cuando hay versión nueva) */
 if('serviceWorker' in navigator && location.protocol!=='file:'){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  let swRefreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(swRefreshing)return;swRefreshing=true;location.reload();});
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    reg.update();                       // busca versión nueva al abrir
+    setInterval(()=>reg.update(),60000);// y cada 1 min
+  }).catch(()=>{});
 }
 </script>
 </body>
