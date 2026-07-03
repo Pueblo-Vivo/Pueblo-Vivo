@@ -707,9 +707,13 @@ function refreshLabels(){
   for(const id in labels){
     const m=labels[id],el=m.getElement(),inf=info(id);
     if(!passesFilter(id)){if(el)el.style.display='none';continue;}
-    const casaV = MODE==='comprar'&&isVenta(inf)&&conCasa(inf);
+    let icon='';
+    if(MODE==='comprar'&&isVenta(inf)){
+      const hasTrailer=/trailer|tr[aá]iler|rodante/i.test(inf.tipo||'');
+      icon=(conCasa(inf)?'🏠':'')+(hasTrailer?'🚐':'');
+    }
     const nCasas = (MODE==='alojar'&&isAlq(inf)&&inf.casas)?inf.casas.length:0;
-    let html = casaV?'🏠':(nCasas>1?`<span class="b2">🏠×${nCasas}</span>`:'');
+    let html = icon?icon:(nCasas>1?`<span class="b2">🏠×${nCasas}</span>`:'');
     if(showNums){const lh=labelHtml(id);if(lh)html+=(html?' ':'')+lh;}
     if(!html){if(el)el.style.display='none';continue;}
     if(el)el.style.display='';
