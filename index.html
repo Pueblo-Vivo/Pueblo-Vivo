@@ -107,6 +107,7 @@ button{font-family:inherit;cursor:pointer}
 .parc-label.lib{color:#ffd2a6}
 body.lightbase .parc-label{color:#26241d;text-shadow:0 0 2px #fff,0 0 4px #fff,0 1px 2px #fff}
 body.lightbase .parc-label.lib{color:#b5611a}
+.parc-label .b2{background:#2b9aa0;color:#fff;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:800;text-shadow:none;box-shadow:0 1px 3px rgba(0,0,0,.45)}
 .lbl-barrio{display:flex;justify-content:center;align-items:center;background:transparent;border:0;box-shadow:none;pointer-events:none}
 .lbl-barrio span{background:rgba(122,67,38,.92);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.45);white-space:nowrap;transition:font-size .12s;pointer-events:auto;cursor:pointer}
 .lbl-barrio span:active{transform:scale(.94)}
@@ -707,7 +708,8 @@ function refreshLabels(){
     const m=labels[id],el=m.getElement(),inf=info(id);
     if(!passesFilter(id)){if(el)el.style.display='none';continue;}
     const casaV = MODE==='comprar'&&isVenta(inf)&&conCasa(inf);
-    let html=casaV?'🏠':'';
+    const nCasas = (MODE==='alojar'&&isAlq(inf)&&inf.casas)?inf.casas.length:0;
+    let html = casaV?'🏠':(nCasas>1?`<span class="b2">🏠×${nCasas}</span>`:'');
     if(showNums){const lh=labelHtml(id);if(lh)html+=(html?' ':'')+lh;}
     if(!html){if(el)el.style.display='none';continue;}
     if(el)el.style.display='';
