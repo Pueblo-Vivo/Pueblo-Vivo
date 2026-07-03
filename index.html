@@ -972,7 +972,7 @@ function renderLote(id){
     ? cercaSheet.split(/[\/,]/).map(s=>s.trim()).filter(Boolean).map(x=>`<div class="nb"><div class="ico">${featIcon('leaf')}</div><div class="nm">${esc(x)}</div></div>`).join('')
     : (inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map(c=>`<div class="comment"><div class="meta"><span>Vos</span><span>${c.when}</span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
-  const title=inf.inmueble||p.nombre||('Parcela '+p.mapNum);
+  const title=inf.inmueble||('Parcela '+p.mapNum);
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.mapNum}`:`${p.barrio} · Parcela ${p.mapNum}`;
   let body='';
   if(linked){
