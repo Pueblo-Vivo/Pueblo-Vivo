@@ -647,8 +647,10 @@ const barrioLayer=L.layerGroup().addTo(map);
   const g={};
   PARCELAS.features.forEach(f=>{const id=f.properties.id;if(!centers[id])return;const b=f.properties.barrio;if(!b||norm(b)==='sin barrio')return;
     const k=norm(b);if(!g[k])g[k]={name:b,pts:[]};g[k].pts.push(centers[id]);});
+  const BARRIO_POS={'los cuarzos':[-32.2035,-64.7416]}; // posiciones manuales del cartel (barrios chicos)
   for(const k in g){const pts=g[k].pts;const lat=pts.reduce((s,p)=>s+p[0],0)/pts.length,lng=pts.reduce((s,p)=>s+p[1],0)/pts.length;
-    L.marker([lat,lng],{icon:L.divIcon({className:'lbl-barrio',html:'<span>'+g[k].name+'</span>',iconSize:[140,22],iconAnchor:[70,11]}),interactive:false,zIndexOffset:-200}).addTo(barrioLayer);}
+    const pos=BARRIO_POS[k]||[lat,lng];
+    L.marker(pos,{icon:L.divIcon({className:'lbl-barrio',html:'<span>'+g[k].name+'</span>',iconSize:[140,22],iconAnchor:[70,11]}),interactive:false,zIndexOffset:-200}).addTo(barrioLayer);}
 })();
 /* Tocar el nombre de un barrio → panel de info del barrio */
 map.getContainer().addEventListener('click',e=>{const sp=e.target&&e.target.closest?e.target.closest('.lbl-barrio span'):null;if(sp){e.stopPropagation();openBarrio(sp.textContent.trim());}},true);
