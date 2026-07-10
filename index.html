@@ -121,11 +121,11 @@ body.lightbase .parc-label.lib{color:#b5611a}
 .brow .bpr{font-size:13px;color:var(--forest);font-weight:700;white-space:nowrap}
 body.barriossm .lbl-barrio span{font-size:7.5px;padding:1px 4px;letter-spacing:.02em;opacity:.92;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .poi-icon{background:transparent;border:0}
-.poi-pin{display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.poi-pin{position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
 .poi-pin .b{width:26px;height:26px;border-radius:50% 50% 50% 2px;transform:rotate(45deg);display:grid;place-items:center;
   background:#fff;border:2px solid var(--forest)}
 .poi-pin .b svg{transform:rotate(-45deg);width:15px;height:15px;color:var(--forest)}
-.poi-pin .t{display:none;margin-top:3px;background:rgba(95,110,55,.94);color:#fff;font-size:10.5px;font-weight:700;
+.poi-pin .t{display:none;position:absolute;left:43px;top:15px;transform:translateY(-50%);margin:0;background:rgba(95,110,55,.94);color:#fff;font-size:10.5px;font-weight:700;
   padding:2px 6px;border-radius:5px;white-space:nowrap}
 body.poinames .poi-pin .t{display:block}
 .poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
