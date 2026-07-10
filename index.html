@@ -61,7 +61,7 @@ button{font-family:inherit;cursor:pointer}
 #loginModal #lgCancel{background:#fff;border:1.5px solid #d9d0bf;color:var(--ink)}
 #lightbox{display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,9,7,.93);align-items:center;justify-content:center;flex-direction:column}
 #lightbox.show{display:flex}
-#lightbox img{max-width:94vw;max-height:78vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#lightbox img{max-width:94vw;max-height:78vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,.5);touch-action:none;transform-origin:center center;cursor:zoom-in}
 #lightbox .lbclose{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;border:0;font-size:20px;cursor:pointer}
 #lightbox .lbnav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.16);color:#fff;border:0;font-size:28px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 #lightbox .lbprev{left:10px}
@@ -130,6 +130,9 @@ body.barriossm .lbl-barrio span{font-size:7.5px;padding:1px 4px;letter-spacing:.
 body.poinames .poi-pin .t{display:block}
 .poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
+.poi-pin.pv .b{width:36px;height:36px;background:linear-gradient(135deg,#bf6f27,#ddae4c);border-color:#fff;border-width:2.5px}
+.poi-pin.pv .b svg{width:24px;height:24px}
+.poi-pin.pv .t{display:block;background:linear-gradient(135deg,#bf6f27,#ddae4c);font-size:11.5px}
 
 /* map floating controls */
 .fab-col{position:absolute;right:14px;z-index:1000;display:flex;flex-direction:column;gap:10px}
@@ -680,9 +683,12 @@ function onLoteClick(id){ if(linkMode!=null){linkListing(linkMode,id);return;} i
 /* ---- POI markers ---- */
 const poiLayer=L.layerGroup().addTo(map);
 function poiIconSvg(k){const I={cart:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6 5 3H2"/>',tea:'<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h2a2 2 0 0 1 0 5h-2"/><path d="M7 4c0 1-1 1-1 2M11 4c0 1-1 1-1 2"/>',school:'<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11v5c0 1 5 3 5 3s5-2 5-3v-5"/>',water:'<path d="M12 3c4 5 6 8 6 11a6 6 0 1 1-12 0c0-3 2-6 6-11z"/>',tree:'<path d="M12 2l5 7h-3l4 6h-4v5h-4v-5H6l4-6H7z"/>',sport:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>',star:'<path d="M12 3l2.6 5.6 6 .8-4.4 4.1 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.4l6-.8z"/>',pin:'<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/>'};return I[k]||I.pin;}
+const PV_LOGO='<svg viewBox="0 0 100 100"><g transform="translate(50,80)" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="4" fill="#fff"/></svg>';
 (window.POIS||[]).forEach(p=>{
-  const html=`<div class="poi-pin ${p.cat}"><div class="b"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${poiIconSvg(p.icon)}</svg></div><div class="t">${p.name}</div></div>`;
-  L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[60,46],iconAnchor:[30,40]})}).addTo(poiLayer);
+  const pv=p.icon==='pv';
+  const inner=pv?PV_LOGO:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${poiIconSvg(p.icon)}</svg>`;
+  const html=`<div class="poi-pin ${p.cat}"><div class="b">${inner}</div><div class="t">${p.name}</div></div>`;
+  L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[70,52],iconAnchor:[35,44]}),zIndexOffset:pv?1000:0}).addTo(poiLayer);
 });
 document.getElementById('btnPoi').classList.add('on');
 document.getElementById('btnPoi').onclick=function(){poiVisible=!poiVisible;this.classList.toggle('on',poiVisible);
@@ -1520,6 +1526,7 @@ function openLightbox(i){ if(!currentGallery.length)return; lbIndex=i; lbShow();
 function closeLightbox(){ document.getElementById('lightbox').classList.remove('show'); }
 function lbShow(){
   const g=currentGallery[lbIndex]; if(!g)return;
+  if(window.lbResetZoom)window.lbResetZoom();
   document.getElementById('lbImg').src=g.src;
   document.getElementById('lbCount').textContent=(lbIndex+1)+' / '+currentGallery.length;
   const canDel=(g.kind==='user')||(g.kind==='official'&&adminMode);
@@ -1543,9 +1550,41 @@ document.getElementById('lbPrev').onclick=e=>{e.stopPropagation();lbMove(-1);};
 document.getElementById('lbNext').onclick=e=>{e.stopPropagation();lbMove(1);};
 document.getElementById('lbDel').onclick=lbDelete;
 document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id==='lightbox')closeLightbox(); });
-(function(){var x0=null;const lb=document.getElementById('lightbox');
-  lb.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});
-  lb.addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>40&&currentGallery.length>1)lbMove(dx<0?1:-1);x0=null;},{passive:true});})();
+(function(){
+  const img=document.getElementById('lbImg');
+  let scale=1,tx=0,ty=0;                         // estado de zoom/paneo
+  let startDist=0,startScale=1,pinching=false;   // pellizco (2 dedos)
+  let panning=false,px=0,py=0,stx=0,sty=0;       // paneo (1 dedo, con zoom)
+  let x0=null,y0=null,t0=0,lastTap=0;            // deslizar / doble toque
+  function apply(){img.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';img.style.cursor=scale>1?'grab':'zoom-in';}
+  function reset(){scale=1;tx=0;ty=0;img.style.transition='';apply();}
+  window.lbResetZoom=reset;
+  function zoomTo(s){scale=Math.max(1,Math.min(5,s));if(scale===1){tx=ty=0;}img.style.transition='transform .15s ease';apply();setTimeout(()=>img.style.transition='',160);}
+  function dist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);}
+  img.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){pinching=true;startDist=dist(e.touches);startScale=scale;x0=null;panning=false;}
+    else if(e.touches.length===1){
+      const t=e.touches[0];
+      if(scale>1){panning=true;px=t.clientX;py=t.clientY;stx=tx;sty=ty;}
+      else{x0=t.clientX;y0=t.clientY;t0=Date.now();}
+    }
+  },{passive:true});
+  img.addEventListener('touchmove',e=>{
+    if(pinching&&e.touches.length===2){e.preventDefault();scale=Math.max(1,Math.min(5,startScale*dist(e.touches)/startDist));apply();}
+    else if(panning&&e.touches.length===1){e.preventDefault();tx=stx+(e.touches[0].clientX-px);ty=sty+(e.touches[0].clientY-py);apply();}
+  },{passive:false});
+  img.addEventListener('touchend',e=>{
+    if(pinching){ if(e.touches.length===0){pinching=false; if(scale<1.05)reset();} return; }
+    if(panning){ if(e.touches.length===0)panning=false; return; }
+    if(x0==null)return;
+    const c=e.changedTouches[0], dx=c.clientX-x0, dy=c.clientY-y0;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)){ if(currentGallery.length>1)lbMove(dx<0?1:-1); x0=null; lastTap=0; return; }
+    if(Math.abs(dx)<12&&Math.abs(dy)<12&&Date.now()-t0<300){ const now=Date.now(); if(now-lastTap<320){ zoomTo(scale>1?1:2.5); lastTap=0; } else lastTap=now; }
+    x0=null;
+  },{passive:true});
+  img.addEventListener('dblclick',e=>{e.preventDefault();zoomTo(scale>1?1:2.5);});
+  img.addEventListener('wheel',e=>{e.preventDefault();scale=Math.max(1,Math.min(5,scale-e.deltaY*0.0016));if(scale===1){tx=ty=0;}apply();},{passive:false});
+})();
 
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
