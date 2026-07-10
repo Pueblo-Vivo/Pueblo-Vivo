@@ -1143,6 +1143,7 @@ function wireLote(id){
 }
 function wireAdmin(id){
   const casaBtn=document.getElementById('adCasa');
+  if(!casaBtn)return;   // lote sin aviso: no hay editor admin para enganchar (evita romper el render)
   casaBtn.onclick=()=>casaBtn.classList.toggle('on');
   const txt2feats=(s,ic)=>s.split(',').map(x=>x.trim()).filter(Boolean).map(t=>{const m=AMEN.find(a=>a[0].toLowerCase()===t.toLowerCase())||FEATS.find(a=>a[0].toLowerCase()===t.toLowerCase());return [t,m?m[1]:ic];});
   // Agregar fotos al aviso (desde la galería, quedan guardadas)
@@ -1388,9 +1389,8 @@ function openFilterSheet(){
 
 /* ============ Admin / POI / geo ============ */
 document.getElementById('btnAdmin').onclick=function(){
-  if(adminMode){ enterAdmin(false); toast('Modo inmobiliaria desactivado'); return; }
-  if(sb && !sbUser){ openLogin(); return; }          // con central: requiere login para publicar
-  enterAdmin(true); toast('Modo inmobiliaria activado');
+  const on=!adminMode; enterAdmin(on);               // entra sin login (edicion local); el login solo para publicar
+  toast(on?'Modo inmobiliaria activado':'Modo inmobiliaria desactivado');
 };
 
 let meMarker=null,meCircle=null,watchId=null;const btnLoc=document.getElementById('btnLoc');
