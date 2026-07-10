@@ -864,10 +864,16 @@ async function syncRentSheet(){
         else if(q==='Precio por noche (temporada baja)')h.pb=v||null;
         else if(q==='Precio por noche (temporada alta)')h.pa=v||null;
         else if(SKIP.indexOf(q)<0&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});
+    // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
+    // Así, si Santiago le saca el N° de lote a una casa en la planilla, esa casa DESAPARECE de la app.
+    const fotosByName={};
+    REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)fotosByName[c.n]=c.fotos;});});
+    REALES=REALES.filter(r=>!(r.op==='alquiler'&&r.valor==null));      // saca alquileres puros de planilla
+    REALES.forEach(r=>{delete r.casas;delete r.alsoAlq;delete r.alqPrice;}); // limpia el overlay de alquiler de las ventas
     const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
       const price=hs[0].pb?parseInt(String(hs[0].pb).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>{const old=(r&&r.casas)?r.casas.find(c=>c.n===h.name):null;return {n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:old?old.fotos:[],f:h.f};});
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:fotosByName[h.name]||[],f:h.f}));
       if(r){r.casas=casas;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
