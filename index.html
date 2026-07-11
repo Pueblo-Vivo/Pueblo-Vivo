@@ -172,6 +172,8 @@ body.poinames .poi-pin .t{display:block}
 .comu-strip{display:flex;gap:8px;overflow-x:auto;margin:10px 0 2px;scrollbar-width:none}
 .comu-strip::-webkit-scrollbar{height:0}
 .comu-strip img{width:72px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto}
+.gwrap{position:relative}
+.gwrap .gdel{position:absolute;top:4px;right:4px;background:rgba(214,74,54,.95);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1;padding:0}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
 #regGate.show{display:flex}
 #regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
@@ -650,6 +652,11 @@ function info(id){
     if(A.addFotos&&A.addFotos.length)f=f.concat(A.addFotos);
     o.fotos=f;}
   o.ocupado=(window.DISP&&DISP[numById[id]])||[];   // disponibilidad compartida (Supabase)
+  const cov=window.COV&&COV[numById[id]];           // cambios del dueño (precio + fotos)
+  if(cov){
+    if(cov.precio!=null)o.alqPrice=cov.precio;
+    if(cov.fotos&&cov.fotos.length){ if(o.casas&&o.casas.length)o.casas=o.casas.map((c,i)=>i===0?Object.assign({},c,{fotos:(c.fotos||[]).concat(cov.fotos)}):c); else o.fotos=(o.fotos||[]).concat(cov.fotos); }
+  }
   return o;
 }
 // Fotos reales: ruta local del repo (fotos/..), URL completa, o ID de Drive (fallback)
@@ -1205,8 +1212,53 @@ function initDispLink(){
     const mod=p.get('mod'); if(mod){ MOD_CLAVE=mod; try{sessionStorage.setItem('pv_mod',mod);}catch(e){} }
     else { try{MOD_CLAVE=sessionStorage.getItem('pv_mod')||null;}catch(e){} }
     const casa=p.get('casa'), clave=p.get('clave');
-    if(casa&&clave){ setMode('alojar'); loadDisp().then(()=>openDispEditor(casa,clave)); }
+    if(casa&&clave){ setMode('alojar'); Promise.all([loadDisp(),loadCasaOverride()]).then(()=>openCasaEditor(casa,clave)); }
   }catch(e){}
+}
+
+/* ===== Editor del dueño: precio + fotos + disponibilidad (con su clave) ===== */
+let COV={};
+async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
+function guardarCasa(lote,clave,data,cb){
+  if(!sb){toast('Sin conexión');return;}
+  sb.rpc('set_casa',{p_lote:Number(lote),p_clave:String(clave),p_data:data}).then(function(res){
+    if(res.error){ console.warn('set_casa',res.error); toast('No se pudo guardar (¿clave incorrecta?)'); return; }
+    COV[lote]=JSON.parse(JSON.stringify(data)); applyFilter(); if(openId!=null)render(); toast('Guardado ✓'); if(cb)cb();
+  });
+}
+async function uploadFotoAnon(lote,dataUrl){
+  if(!sb)return null;
+  try{ const blob=await (await fetch(dataUrl)).blob(); const path='casas/'+lote+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
+    const {error}=await sb.storage.from('fotos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error;
+    return sb.storage.from('fotos').getPublicUrl(path).data.publicUrl;
+  }catch(e){ console.warn('uploadFotoAnon',e); return null; }
+}
+function openCasaEditor(lote,clave){
+  lote=Number(lote);
+  const base=REALES.find(r=>r.loteNum===lote)||{};
+  const nom=base.inmueble||('Casa '+lote);
+  const data=Object.assign({precio:null,fotos:[]}, JSON.parse(JSON.stringify(COV[lote]||{})));
+  if(!Array.isArray(data.fotos))data.fotos=[];
+  function draw(){
+    const precioVal=data.precio!=null?data.precio:(base.alqPrice||'');
+    scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">Editar mi casa · Lote '+lote+'</span><h2>'+esc(nom)+'</h2></div></div>'+
+      '<p class="comu-desc">Editá el precio, las fotos y las fechas ocupadas de tu casa. Los cambios se ven al instante en la app.</p>'+
+      '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
+      '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
+      '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
+      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+u+'"><button class="gdel" data-delf="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      '<input type="file" id="ceFile" accept="image/*" style="display:none">'+
+      '<div class="sec-t">'+ic('cal')+' Disponibilidad</div>'+
+      '<div class="actions"><button class="btn-primary" id="ceDisp" style="grid-column:1/-1;background:#7a4a16">'+ic('cal')+' Editar fechas ocupadas</button></div>';
+    document.getElementById('ceSaveP').onclick=()=>{ data.precio=+document.getElementById('ceP').value||null; guardarCasa(lote,clave,data); };
+    document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
+    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1100,async img=>{ toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); }); rd.readAsDataURL(f); };
+    scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ data.fotos.splice(+b.dataset.delf,1); guardarCasa(lote,clave,data,draw); });
+    document.getElementById('ceDisp').onclick=()=>openDispEditor(lote,clave);
+    scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:u,raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
+    openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
+  }
+  draw();
 }
 
 /* ============ Bottom sheet detalle ============ */
@@ -1260,7 +1312,7 @@ function renderLote(id){
       <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(alq?'Alquiler':'Venta')}</div></div></div>
     ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta propiedad también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}.</span></div>`:''}
     ${isAlq(inf)?fichaBlock(inf)+availabilityBlock(inf):''}
-    ${(isAlq(inf)&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('cal')} Editar disponibilidad</button></div>`:''}`;
+    ${(isAlq(inf)&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('pencil')} Editar casa (precio · fotos · fechas)</button></div>`:''}`;
   }else{
     body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
     <div class="actions">
@@ -1295,7 +1347,7 @@ function renderLote(id){
     document.getElementById('btnCmp').onclick=()=>{toggleCompare(id);render();};
     document.getElementById('btnWA').onclick=()=>shareWA(id);
     document.getElementById('btnPdf').onclick=()=>sharePDF(id);
-    const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openDispEditor(numById[id],MOD_CLAVE);
+    const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openCasaEditor(numById[id],MOD_CLAVE);
   }else{
     document.getElementById('btnPonerVenta').onclick=()=>setOp(id,'venta');
     document.getElementById('btnPonerAlq').onclick=()=>setOp(id,'alquiler');
@@ -1874,7 +1926,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
-loadDisp(); initDispLink();
+loadDisp(); loadCasaOverride(); initDispLink();
 initVisitorGate();
 syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
