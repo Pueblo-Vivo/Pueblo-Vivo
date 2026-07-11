@@ -725,7 +725,8 @@ for(const id in centers){DATA[id].dist=REF_POIS.map(p=>({name:p.name,desc:p.desc
 const barrioLayer=L.layerGroup().addTo(map);
 (function(){const norm=s=>(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
   const g={};
-  PARCELAS.features.forEach(f=>{const id=f.properties.id;if(!centers[id])return;const b=f.properties.barrio;if(!b||norm(b)==='sin barrio')return;
+  const SIN_LABEL=['sin barrio','la esquina'];   // barrios sin etiqueta en el mapa (pero sí en la ficha)
+  PARCELAS.features.forEach(f=>{const id=f.properties.id;if(!centers[id])return;const b=f.properties.barrio;if(!b||SIN_LABEL.indexOf(norm(b))>=0)return;
     const k=norm(b);if(!g[k])g[k]={name:b,pts:[]};g[k].pts.push(centers[id]);});
   const BARRIO_POS={'los cuarzos':[-32.2035,-64.7416]}; // posiciones manuales del cartel (barrios chicos)
   for(const k in g){const pts=g[k].pts;const lat=pts.reduce((s,p)=>s+p[0],0)/pts.length,lng=pts.reduce((s,p)=>s+p[1],0)/pts.length;
