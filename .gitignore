@@ -4,3 +4,6 @@ node_modules/
 *.log
 .vscode/
 .idea/
+SECRET_IGNORE_disponibilidad
+disponibilidad.sql
+links-disponibilidad.txt
