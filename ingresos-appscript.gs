@@ -14,9 +14,9 @@ function doPost(e){
   try{
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName('Ingresos') || ss.insertSheet('Ingresos');
-    if(sh.getLastRow() === 0) sh.appendRow(['Fecha','Nombre','WhatsApp']);
+    if(sh.getLastRow() === 0) sh.appendRow(['Fecha','Nombre','WhatsApp','Tipo']);
     var d = JSON.parse(e.postData.contents);
-    sh.appendRow([new Date(), d.nombre || '', d.whatsapp || '']);
+    sh.appendRow([new Date(), d.nombre || '', d.whatsapp || '', d.tipo || 'registro']);
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
       .setMimeType(ContentService.MimeType.JSON);
   }catch(err){

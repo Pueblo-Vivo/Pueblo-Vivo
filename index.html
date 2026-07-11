@@ -1838,7 +1838,7 @@ async function uploadFoto(id,dataUrl){
 const VKEY='pv_visitor_v2';  // subir la versión = re-pedir el registro a TODOS los que ya habían entrado
 const INGRESOS_URL='https://script.google.com/macros/s/AKfycbzU47H1pdtJ-pSokBtsSB13gksUNJqjnQhhkEfjR25Sdc5frSFQHGDSLAuVhpi2QhKL/exec';
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
-  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp})}); }catch(e){} }
+  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,tipo:v.tipo||'registro'})}); }catch(e){} }
 async function sendVisitor(v){ if(!sb)return false;   // respaldo en Supabase (confirmable)
   try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(error)throw error; return true; }
   catch(e){ console.warn('visitante',e); return false; } }
@@ -1846,7 +1846,12 @@ function initVisitorGate(){
   const g=document.getElementById('regGate'); if(!g)return;
   if(esLinkEditor())return;   // dueños/moderadores que entran por su link no pasan por el registro
   let cur=null; try{cur=JSON.parse(localStorage.getItem(VKEY)||'null');}catch(e){}
-  if(cur){ if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); } return; }
+  if(cur){
+    if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); }
+    // avisar cada vez que este celu vuelve a entrar (1 sola vez por sesión, así el auto-refresh no duplica)
+    try{ if(!sessionStorage.getItem('pv_entry_logged')){ sessionStorage.setItem('pv_entry_logged','1'); sendToSheet({nombre:cur.nombre,whatsapp:cur.whatsapp,tipo:'reingreso'}); sendVisitor(cur); } }catch(e){}
+    return;
+  }
   g.classList.add('show');
   const nom=document.getElementById('rgNom'),wa=document.getElementById('rgWA'),btn=document.getElementById('rgBtn'),err=document.getElementById('rgErr');
   btn.onclick=async()=>{
@@ -1855,7 +1860,8 @@ function initVisitorGate(){
     if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
     const v={nombre:n,whatsapp:w,when:Date.now()};
-    sendToSheet(v);                       // a la hoja Ingresos (una sola vez)
+    try{sessionStorage.setItem('pv_entry_logged','1');}catch(e){}  // ya queda avisado en esta sesión
+    sendToSheet(v);                       // a la hoja Ingresos (registro nuevo)
     const ok=await sendVisitor(v); v.pending=!ok;   // respaldo Supabase (con reintento)
     try{localStorage.setItem(VKEY,JSON.stringify(v));}catch(e){}
     g.classList.remove('show');
