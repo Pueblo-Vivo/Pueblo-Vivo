@@ -174,6 +174,7 @@ body.poinames .poi-pin .t{display:block}
 .comu-strip img{width:72px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto}
 .gwrap{position:relative}
 .gwrap .gdel{position:absolute;top:4px;right:4px;background:rgba(214,74,54,.95);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1;padding:0}
+.gotobtn{display:block;margin-top:7px;background:none;border:0;color:var(--terra);font-weight:800;font-size:13px;cursor:pointer;padding:2px 0}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
 #regGate.show{display:flex}
 #regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
@@ -1302,16 +1303,19 @@ function renderLote(id){
   let body='';
   if(linked){
     const ppm=inf.total&&p.sup?Math.round(inf.total/p.sup):'';
-    const shownP=alq?inf.alqPrice:inf.total;
-    body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${shownP?money(shownP):'—'}${alq?'<span class="per"> /noche</span>':''}</span>${(!alq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
-    ${planillaBox(inf)}
+    const showAlq = isDual(inf) ? (MODE==='alojar') : (opOf(inf)==='alquiler');
+    const shownP=showAlq?inf.alqPrice:inf.total;
+    body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${shownP?money(shownP):'—'}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
+    ${showAlq?'':planillaBox(inf)}
     <div class="stats">
       <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
-      <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(alq?'Alquiler':'Venta')}</div></div></div>
-    ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta propiedad también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}.</span></div>`:''}
-    ${isAlq(inf)?fichaBlock(inf)+availabilityBlock(inf):''}
-    ${(isAlq(inf)&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('pencil')} Editar casa (precio · fotos · fechas)</button></div>`:''}`;
+      <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(showAlq?'Alquiler':'Venta')}</div></div></div>
+    ${isDual(inf)?(showAlq
+      ? `<div class="notlisted alt" style="margin-top:10px">${ic('pin')}<span>También está <b>en venta</b>${inf.total?` · USD ${money(inf.total)}`:''}.</span><button class="gotobtn" data-goto="comprar">Ver info de venta ›</button></div>`
+      : `<div class="notlisted alt" style="margin-top:10px">${ic('pin')}<span>También se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}.</span><button class="gotobtn" data-goto="alojar">Ver info de alojamiento ›</button></div>`):''}
+    ${showAlq?fichaBlock(inf)+availabilityBlock(inf):''}
+    ${(showAlq&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('pencil')} Editar casa (precio · fotos · fechas)</button></div>`:''}`;
   }else{
     body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
     <div class="actions">
@@ -1347,6 +1351,7 @@ function renderLote(id){
     document.getElementById('btnWA').onclick=()=>shareWA(id);
     document.getElementById('btnPdf').onclick=()=>sharePDF(id);
     const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openCasaEditor(numById[id],MOD_CLAVE);
+    scroll.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{ setMode(b.dataset.goto); openSheet(id); });
   }else{
     document.getElementById('btnPonerVenta').onclick=()=>setOp(id,'venta');
     document.getElementById('btnPonerAlq').onclick=()=>setOp(id,'alquiler');
