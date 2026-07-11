@@ -1427,10 +1427,10 @@ function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).prop
   if(isAlq(inf)){const d=stayDates();const nom=inf.inmueble||('Casa '+p.mapNum);
     txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
   else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(p.sup)} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
-  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
+  window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
-  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');}
+  window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const feats=inf.feats.map(f=>f[0]).join(' · ');
   const w=window.open('','_blank');if(!w){toast('Permití las ventanas emergentes');return;}
