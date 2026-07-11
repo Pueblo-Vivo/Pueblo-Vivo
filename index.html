@@ -1591,7 +1591,7 @@ async function uploadFoto(id,dataUrl){
   }catch(e){ console.warn('upload',e); toast('No se pudo subir la foto (queda local)'); return dataUrl; }
 }
 /* ===== Registro de visitantes (control de acceso) ===== */
-const VKEY='pv_visitor_v1';
+const VKEY='pv_visitor_v2';  // subir la versión = re-pedir el registro a TODOS los que ya habían entrado
 const INGRESOS_URL='https://script.google.com/macros/s/AKfycbzU47H1pdtJ-pSokBtsSB13gksUNJqjnQhhkEfjR25Sdc5frSFQHGDSLAuVhpi2QhKL/exec';
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
   try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp})}); }catch(e){} }
