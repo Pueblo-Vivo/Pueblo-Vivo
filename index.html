@@ -150,16 +150,16 @@ body.poinames .poi-pin .t{display:block}
 .comu-list{flex:1;min-height:0;overflow-y:auto;padding:2px 14px 26px;display:flex;flex-direction:column;gap:13px}
 .comu-list>*{flex:0 0 auto}
 .comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
-.comu-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm)}
-.comu-thumb{height:116px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.comu-thumb .cic{width:40px;height:40px;color:rgba(255,255,255,.92)}
+.comu-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
+.comu-thumb{flex:0 0 116px;align-self:stretch;min-height:112px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.comu-thumb .cic{width:38px;height:38px;color:rgba(255,255,255,.92)}
 .comu-photo{width:100%;height:100%;object-fit:cover;display:block}
-.comu-cb{padding:11px 13px 13px}
-.comu-cb .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin-bottom:6px}
-.comu-cb h3{margin:0 0 3px;font-size:15.5px;font-weight:700;color:var(--ink);text-transform:capitalize}
-.comu-cb p{margin:0;font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.comu-act{display:flex;gap:8px;margin-top:11px}
-.comu-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;border:0;cursor:pointer}
+.comu-cb{flex:1;min-width:0;padding:10px 12px;display:flex;flex-direction:column;justify-content:center}
+.comu-cb .pill{align-self:flex-start;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;margin-bottom:5px}
+.comu-cb h3{margin:0 0 2px;font-size:15px;font-weight:700;color:var(--ink);text-transform:capitalize;line-height:1.2}
+.comu-cb p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.comu-act{display:flex;gap:7px;margin-top:9px}
+.comu-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 6px;border-radius:9px;font-size:12px;font-weight:700;text-decoration:none;border:0;cursor:pointer}
 .comu-btn svg{width:15px;height:15px}
 .comu-btn.wa{background:#25a35a;color:#fff}
 .comu-btn.ig{background:#fbeaf3;color:#b83280}
