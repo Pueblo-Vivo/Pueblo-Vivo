@@ -573,10 +573,9 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
-  o=Object.assign(o,ADMIN[id]||{});
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   const A=ADMIN[id];
-  if(A){let f=(o.fotos||[]).slice();
+  if(A){let f=(o.fotos||[]).slice();  // las planillas mandan: del override de admin SOLO aplico las fotos, no los campos viejos
     if(A.hideFotos&&A.hideFotos.length)f=f.filter(x=>A.hideFotos.indexOf(x)<0);
     if(A.addFotos&&A.addFotos.length)f=f.concat(A.addFotos);
     o.fotos=f;}
@@ -865,6 +864,8 @@ function fichaBlock(inf){
 /* ===== Sincronización en vivo con la planilla de alquileres ===== */
 const RENT_SHEET_ID='1ljsG-Sc6j9XNmoXrWjvn-JDKzvY95UJG', RENT_GID='765860150';
 function parseCSVtext(t){const rows=[];let row=[],cur="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}else{if(c==='"')q=true;else if(c===","){row.push(cur);cur="";}else if(c==="\n"){row.push(cur);rows.push(row);row=[];cur="";}else if(c==="\r"){}else cur+=c;}}if(cur!==""||row.length){row.push(cur);rows.push(row);}return rows;}
+let PHOTOS_BY_NAME={}; // cache acumulativo de fotos de casas por nombre (sobrevive a los resets de venta y alquiler)
+function capturePhotos(){ REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});}); }
 async function syncRentSheet(){
   try{
     const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+RENT_GID;
@@ -880,18 +881,49 @@ async function syncRentSheet(){
         else if(SKIP.indexOf(q)<0&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
     // Así, si Santiago le saca el N° de lote a una casa en la planilla, esa casa DESAPARECE de la app.
-    const fotosByName={};
-    REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)fotosByName[c.n]=c.fotos;});});
+    capturePhotos();
     REALES=REALES.filter(r=>!(r.op==='alquiler'&&r.valor==null));      // saca alquileres puros de planilla
     REALES.forEach(r=>{delete r.casas;delete r.alsoAlq;delete r.alqPrice;}); // limpia el overlay de alquiler de las ventas
     const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
       const price=hs[0].pb?parseInt(String(hs[0].pb).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:fotosByName[h.name]||[],f:h.f}));
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:PHOTOS_BY_NAME[h.name]||[],f:h.f}));
       if(r){r.casas=casas;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncRentSheet',e);}
+}
+/* ===== VENTA: la hoja "En venta" (transpuesta) es la fuente de verdad de la solapa Comprar ===== */
+const VENTA_GID='67607999';
+async function syncVentaSheet(){
+  try{
+    const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+VENTA_GID;
+    const R=parseCSVtext(await (await fetch(url)).text());
+    if(!R.length)return;
+    const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const rowBy=sub=>R.find(r=>norm(r[0]).indexOf(sub)>=0)||[];
+    const rBarrio=R[0]||[], rProp=rowBy('propiedad'), rTipo=rowBy('tipo de inmueble'), rLote=rowBy('de lote'),
+          rLegal=rowBy('legalidad'), rTer=rowBy('superficie de terreno'), rCub=rowBy('superficie cubierta'),
+          rSemi=rowBy('superficie semicubierta'), rValor=rowBy('valor (usd'), rCarac=rowBy('caracteristica'),
+          rPago=rowBy('forma de pago'), rPromo=rowBy('valor promocional'), rExp=rowBy('expensas');
+    const nCols=rProp.length; if(nCols<2)return;               // hoja vacía/rota: no toco nada
+    const g=(row,j)=>((row&&row[j])||'').trim();
+    capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
+    REALES=REALES.filter(r=>r.valor==null);                     // saco TODO el venta; el alquiler puro queda
+    let barrio='';
+    for(let j=1;j<nCols;j++){
+      const b=g(rBarrio,j); if(b)barrio=b;
+      const name=g(rProp,j); if(!name)continue;
+      const tipo=g(rTipo,j); if(/local/i.test(tipo))continue;   // locales comerciales: por ahora no
+      const loteS=g(rLote,j).replace(/[^\d]/g,''); if(!loteS)continue; // sin N° de lote: no se puede enlazar
+      const lote=+loteS, valorRaw=g(rValor,j), valor=valorRaw?parseInt(valorRaw.replace(/[^\d]/g,'')):null;
+      REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
+        mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
+        formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
+        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta'});
+    }
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render();
+  }catch(e){console.warn('syncVentaSheet',e);}
 }
 /* ===== Detalle de cada barrio (en vivo desde la planilla de venta) ===== */
 let BARRIOS_INFO={};
@@ -1253,7 +1285,7 @@ function loteIdByNum(n){const f=PARCELAS.features.find(x=>x.properties.mapNum==n
 function placedCount(){return REALES.filter(r=>r.loteNum!=null).length;}
 function notaBadge(n){const k=(n||'').toUpperCase().replace(/[^A-Z]/g,'');return `<span class="nota-badge nb-${k}">${esc(n)}</span>`;}
 function planillaBox(inf){
-  const rows=[['Dueño / inmueble',inf.inmueble],['Legalidad',inf.legalidad],['Tipo',inf.tipo],['m² cubiertos',inf.mtCub],['Otros',inf.otros],['N° en planilla',inf.sheetMapaN!=null?('#'+inf.sheetMapaN):null],['Valor planilla',inf.valorRaw?('USD '+inf.valorRaw):null]].filter(r=>r[1]);
+  const rows=[['Dueño / inmueble',inf.inmueble],['Legalidad',inf.legalidad],['Tipo',inf.tipo],['m² cubiertos',inf.mtCub],['m² semicubiertos',inf.semicub],['Características',inf.carac],['Forma de pago',inf.formaPago],['Valor promocional',inf.valorPromo?('USD '+inf.valorPromo):null],['Expensas',inf.expensas],['Otros',inf.otros],['N° en planilla',inf.sheetMapaN!=null?('#'+inf.sheetMapaN):null]].filter(r=>r[1]);
   return `<div class="sheet-fields"><h4>${ic('clip')} Datos de la planilla${inf.nota?' '+notaBadge(inf.nota):''}</h4>${rows.map(r=>`<div class="kv"><span class="k">${r[0]}</span><span class="v">${esc(String(r[1]))}</span></div>`).join('')}</div>`;
 }
 const invsheet=document.getElementById('invsheet'),invScroll=document.getElementById('invScroll');
@@ -1597,7 +1629,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
-syncRentSheet();syncBarrioSheet();
+syncVentaSheet().then(syncRentSheet);syncBarrioSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
 /* Instalar como app */
