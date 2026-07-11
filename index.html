@@ -109,6 +109,7 @@ button{font-family:inherit;cursor:pointer}
 body.lightbase .parc-label{color:#26241d;text-shadow:0 0 2px #fff,0 0 4px #fff,0 1px 2px #fff}
 body.lightbase .parc-label.lib{color:#b5611a}
 .parc-label .b2{background:#2b9aa0;color:#fff;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:800;text-shadow:none;box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.parc-label .b2.loc{background:#b5651d;white-space:nowrap}
 .lbl-barrio{display:flex;justify-content:center;align-items:center;background:transparent;border:0;box-shadow:none;pointer-events:none}
 .lbl-barrio span{background:rgba(122,67,38,.92);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,.45);white-space:nowrap;transition:font-size .12s;pointer-events:auto;cursor:pointer}
 .lbl-barrio span:active{transform:scale(.94)}
@@ -468,6 +469,13 @@ body.poinames .poi-pin .t{display:block}
 .sheet-fields h4 svg{width:16px;height:16px;flex:0 0 auto;color:var(--terra)}
 .sheet-fields .kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0;border-bottom:1px dashed #d3e4d6}
 .sheet-fields .kv:last-child{border:0}.sheet-fields .kv .k{color:var(--muted);font-weight:600}.sheet-fields .kv .v{font-weight:600;text-align:right}
+.locales-wrap{margin-top:18px}
+.locales-wrap>h4{font-family:'Fraunces',serif;color:var(--forest);font-size:14px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.locales-wrap>h4 svg{width:16px;height:16px;flex:0 0 auto;color:var(--terra)}
+.loc-card{background:#fbf1e7;border:1px solid #e6cfb4;border-radius:14px;padding:12px;margin-bottom:10px}
+.loc-card .loc-nm{font-weight:800;color:#8a4b12;margin-bottom:7px;font-size:14px}
+.loc-card .kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0;border-bottom:1px dashed #e6cfb4}
+.loc-card .kv:last-child{border:0}.loc-card .kv .k{color:var(--muted);font-weight:600}.loc-card .kv .v{font-weight:600;text-align:right}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:1700;
   background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:500;
   opacity:0;pointer-events:none;transition:.25s;box-shadow:var(--shadow)}
@@ -646,7 +654,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   const A=ADMIN[id];
   if(A){let f=(o.fotos||[]).slice();  // las planillas mandan: del override de admin SOLO aplico las fotos, no los campos viejos
     if(A.hideFotos&&A.hideFotos.length)f=f.filter(x=>A.hideFotos.indexOf(x)<0);
@@ -821,8 +829,9 @@ function refreshLabels(){
       icon=(conCasa(inf)?'🏠':'')+(hasTrailer?'🚐':'');
     }
     const nCasas = (MODE==='alojar'&&isAlq(inf)&&inf.casas)?inf.casas.length:0;
-    let html = icon?icon:(nCasas>1?`<span class="b2">🏠×${nCasas}</span>`:'');
-    if(showNums){const lh=labelHtml(id);if(lh)html+=(html?' ':'')+lh;}
+    const nLoc = (MODE==='comprar'&&inf.locales&&inf.locales.length)?inf.locales.length:0;
+    let html = nLoc?`<span class="b2 loc">🏪 Locales comerciales ×${nLoc}</span>` : (icon?icon:(nCasas>1?`<span class="b2">🏠×${nCasas}</span>`:''));
+    if(showNums&&!nLoc){const lh=labelHtml(id);if(lh)html+=(html?' ':'')+lh;}
     if(!html){if(el)el.style.display='none';continue;}
     if(el)el.style.display='';
     m.setIcon(L.divIcon({className:'parc-label '+(inf.estado==='libre'?'lib':''),html,iconSize:[50,20]}));
@@ -1005,18 +1014,28 @@ async function syncVentaSheet(){
     const g=(row,j)=>((row&&row[j])||'').trim();
     capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
     REALES=REALES.filter(r=>r.valor==null);                     // saco TODO el venta; el alquiler puro queda
-    let barrio='';
+    let barrio='', localesByLote={};
     for(let j=1;j<nCols;j++){
       const b=g(rBarrio,j); if(b)barrio=b;
       const name=g(rProp,j); if(!name)continue;
-      const tipo=g(rTipo,j); if(/local/i.test(tipo))continue;   // locales comerciales: por ahora no
+      const tipo=g(rTipo,j);
       const loteS=g(rLote,j).replace(/[^\d]/g,''); if(!loteS)continue; // sin N° de lote: no se puede enlazar
       const lote=+loteS, valorRaw=g(rValor,j), valor=valorRaw?parseInt(valorRaw.replace(/[^\d]/g,'')):null;
+      if(/local/i.test(tipo)){   // locales comerciales: se agrupan por lote (varios locales en una parcela)
+        (localesByLote[lote]=localesByLote[lote]||[]).push({nombre:name,valor:valor,valorRaw:valorRaw||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,legalidad:g(rLegal,j)||null,barrio:barrio});
+        continue;
+      }
       REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
         mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
         formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
         valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta'});
     }
+    Object.keys(localesByLote).forEach(k=>{const lote=+k,locs=localesByLote[k];
+      const precios=locs.map(l=>l.valor).filter(v=>v!=null), min=precios.length?Math.min(...precios):null;
+      let r=REALES.find(x=>x.loteNum===lote);
+      if(r){ r.locales=locs; }
+      else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs});
+    });
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncVentaSheet',e);}
 }
@@ -1308,6 +1327,7 @@ function renderLote(id){
     const shownP=showAlq?inf.alqPrice:inf.total;
     body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${shownP?money(shownP):'—'}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
     ${showAlq?'':planillaBox(inf)}
+    ${(!showAlq&&inf.locales&&inf.locales.length)?localesBlock(inf):''}
     <div class="stats">
       <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
@@ -1562,6 +1582,14 @@ function notaBadge(n){const k=(n||'').toUpperCase().replace(/[^A-Z]/g,'');return
 function planillaBox(inf){
   const rows=[['Dueño / inmueble',inf.inmueble],['Legalidad',inf.legalidad],['Tipo',inf.tipo],['m² cubiertos',inf.mtCub],['m² semicubiertos',inf.semicub],['Características',inf.carac],['Forma de pago',inf.formaPago],['Valor promocional',inf.valorPromo?('USD '+inf.valorPromo):null],['Expensas',inf.expensas],['Otros',inf.otros],['N° en planilla',inf.sheetMapaN!=null?('#'+inf.sheetMapaN):null]].filter(r=>r[1]);
   return `<div class="sheet-fields"><h4>${ic('clip')} Datos de la planilla${inf.nota?' '+notaBadge(inf.nota):''}</h4>${rows.map(r=>`<div class="kv"><span class="k">${r[0]}</span><span class="v">${esc(String(r[1]))}</span></div>`).join('')}</div>`;
+}
+function localesBlock(inf){
+  const locs=inf.locales||[];
+  const cards=locs.map((l,i)=>{
+    const rows=[['Valor',l.valor!=null?('USD '+money(l.valor)):(l.valorRaw?('USD '+esc(l.valorRaw)):null)],['m² cubiertos',l.mtCub],['m² compartidos',l.semicub],['Características',l.carac],['Legalidad',l.legalidad]].filter(r=>r[1]);
+    return `<div class="loc-card"><div class="loc-nm">🏪 ${esc(l.nombre||('Local '+(i+1)))}</div>${rows.map(r=>`<div class="kv"><span class="k">${r[0]}</span><span class="v">${esc(String(r[1]))}</span></div>`).join('')}</div>`;
+  }).join('');
+  return `<div class="locales-wrap"><h4>${ic('clip')} ${locs.length} locales comerciales</h4>${cards}</div>`;
 }
 const invsheet=document.getElementById('invsheet'),invScroll=document.getElementById('invScroll');
 function openInventory(){
