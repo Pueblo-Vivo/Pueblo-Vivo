@@ -1592,7 +1592,10 @@ async function uploadFoto(id,dataUrl){
 }
 /* ===== Registro de visitantes (control de acceso) ===== */
 const VKEY='pv_visitor_v1';
-async function sendVisitor(v){ if(!sb)return false;
+const INGRESOS_URL='https://script.google.com/macros/s/AKfycbzU47H1pdtJ-pSokBtsSB13gksUNJqjnQhhkEfjR25Sdc5frSFQHGDSLAuVhpi2QhKL/exec';
+function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
+  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp})}); }catch(e){} }
+async function sendVisitor(v){ if(!sb)return false;   // respaldo en Supabase (confirmable)
   try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(error)throw error; return true; }
   catch(e){ console.warn('visitante',e); return false; } }
 function initVisitorGate(){
@@ -1607,7 +1610,8 @@ function initVisitorGate(){
     if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
     const v={nombre:n,whatsapp:w,when:Date.now()};
-    const ok=await sendVisitor(v); v.pending=!ok;
+    sendToSheet(v);                       // a la hoja Ingresos (una sola vez)
+    const ok=await sendVisitor(v); v.pending=!ok;   // respaldo Supabase (con reintento)
     try{localStorage.setItem(VKEY,JSON.stringify(v));}catch(e){}
     g.classList.remove('show');
   };
