@@ -649,6 +649,7 @@ function info(id){
     if(A.hideFotos&&A.hideFotos.length)f=f.filter(x=>A.hideFotos.indexOf(x)<0);
     if(A.addFotos&&A.addFotos.length)f=f.concat(A.addFotos);
     o.fotos=f;}
+  o.ocupado=(window.DISP&&DISP[numById[id]])||[];   // disponibilidad compartida (Supabase)
   return o;
 }
 // Fotos reales: ruta local del repo (fotos/..), URL completa, o ID de Drive (fallback)
@@ -1171,6 +1172,43 @@ function openComu(x){
 }
 document.getElementById('comuQ').addEventListener('input',e=>{comuQ=e.target.value.toLowerCase().trim();renderComu();});
 
+/* ===== Disponibilidad por dueño (calendario, editable con clave; moderadores editan todo) ===== */
+let DISP={}, MOD_CLAVE=null;
+async function loadDisp(){ if(!sb)return; try{ const {data,error}=await sb.from('disp').select('lote,ocupado'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=Array.isArray(r.ocupado)?r.ocupado:[]; }); DISP=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadDisp',e);} }
+function guardarDisp(lote,clave,ocupado,cb){
+  if(!sb){toast('Sin conexión');return;}
+  sb.rpc('set_disp',{p_lote:Number(lote),p_clave:String(clave),p_ocupado:ocupado}).then(function(res){
+    if(res.error){ console.warn('set_disp',res.error); toast('No se pudo guardar (¿clave incorrecta?)'); return; }
+    DISP[lote]=ocupado.slice(); applyFilter(); if(openId!=null&&numById[openId]==lote)render(); toast('Disponibilidad guardada ✓'); if(cb)cb();
+  });
+}
+function openDispEditor(lote,clave){
+  lote=Number(lote);
+  const oc=(DISP[lote]||[]).map(r=>({from:r.from,to:r.to}));
+  const nom=(REALES.find(r=>r.loteNum===lote)||{}).inmueble||('Casa '+lote);
+  function draw(){
+    scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">Disponibilidad · Lote '+lote+'</span><h2>'+esc(nom)+'</h2></div></div>'+
+      '<p class="comu-desc">Marcá las fechas que están <b>ocupadas</b> (ya alquiladas). Lo que no marques queda como libre en la app.</p>'+
+      '<div class="actions" style="margin:12px 0"><button class="btn-primary" id="dispAdd" style="grid-column:1/-1">'+ic('cal')+' Agregar fechas ocupadas</button></div>'+
+      '<div class="sec-t">'+ic('cal')+' Fechas ocupadas</div>'+
+      '<div id="dispList">'+(oc.length?oc.map((r,i)=>'<div class="occrow"><span>'+fmtD(r.from)+' – '+fmtD(r.to)+'</span><button type="button" data-x="'+i+'">✕</button></div>').join(''):'<div class="adminhint">Sin fechas ocupadas. La casa figura libre.</div>')+'</div>';
+    document.getElementById('dispAdd').onclick=()=>openCal({occupied:oc,title:'Fechas ocupadas de '+nom,onDone:function(f,t){ if(f&&t){oc.push({from:f,to:t}); guardarDisp(lote,clave,oc,draw);} }});
+    scroll.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{ oc.splice(+b.dataset.x,1); guardarDisp(lote,clave,oc,draw); });
+    openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
+  }
+  draw();
+}
+function esLinkEditor(){ try{const p=new URLSearchParams(location.search);return !!(p.get('mod')||(p.get('casa')&&p.get('clave')));}catch(e){return false;} }
+function initDispLink(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const mod=p.get('mod'); if(mod){ MOD_CLAVE=mod; try{sessionStorage.setItem('pv_mod',mod);}catch(e){} }
+    else { try{MOD_CLAVE=sessionStorage.getItem('pv_mod')||null;}catch(e){} }
+    const casa=p.get('casa'), clave=p.get('clave');
+    if(casa&&clave){ setMode('alojar'); loadDisp().then(()=>openDispEditor(casa,clave)); }
+  }catch(e){}
+}
+
 /* ============ Bottom sheet detalle ============ */
 const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),scroll=document.getElementById('sheetScroll');
 let openId=null;
@@ -1221,7 +1259,8 @@ function renderLote(id){
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
       <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(alq?'Alquiler':'Venta')}</div></div></div>
     ${isDual(inf)?`<div class="notlisted" style="margin-top:10px">${ic('pin')}<span>Esta propiedad también se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}.</span></div>`:''}
-    ${isAlq(inf)?fichaBlock(inf)+availabilityBlock(inf):''}`;
+    ${isAlq(inf)?fichaBlock(inf)+availabilityBlock(inf):''}
+    ${(isAlq(inf)&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('cal')} Editar disponibilidad</button></div>`:''}`;
   }else{
     body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
     <div class="actions">
@@ -1256,6 +1295,7 @@ function renderLote(id){
     document.getElementById('btnCmp').onclick=()=>{toggleCompare(id);render();};
     document.getElementById('btnWA').onclick=()=>shareWA(id);
     document.getElementById('btnPdf').onclick=()=>sharePDF(id);
+    const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openDispEditor(numById[id],MOD_CLAVE);
   }else{
     document.getElementById('btnPonerVenta').onclick=()=>setOp(id,'venta');
     document.getElementById('btnPonerAlq').onclick=()=>setOp(id,'alquiler');
@@ -1719,6 +1759,7 @@ async function sendVisitor(v){ if(!sb)return false;   // respaldo en Supabase (c
   catch(e){ console.warn('visitante',e); return false; } }
 function initVisitorGate(){
   const g=document.getElementById('regGate'); if(!g)return;
+  if(esLinkEditor())return;   // dueños/moderadores que entran por su link no pasan por el registro
   let cur=null; try{cur=JSON.parse(localStorage.getItem(VKEY)||'null');}catch(e){}
   if(cur){ if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); } return; }
   g.classList.add('show');
@@ -1833,6 +1874,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
+loadDisp(); initDispLink();
 initVisitorGate();
 syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
