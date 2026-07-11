@@ -147,11 +147,13 @@ body.poinames .poi-pin .t{display:block}
 .comu-chip{white-space:nowrap;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px}
 .comu-chip .ic{width:15px;height:15px}
 .comu-chip.on{background:var(--forest);border-color:var(--forest);color:#fff}
-.comu-list{flex:1;overflow-y:auto;padding:2px 14px 26px;display:flex;flex-direction:column;gap:13px}
+.comu-list{flex:1;min-height:0;overflow-y:auto;padding:2px 14px 26px;display:flex;flex-direction:column;gap:13px}
+.comu-list>*{flex:0 0 auto}
 .comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
 .comu-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm)}
-.comu-thumb{height:116px;display:flex;align-items:center;justify-content:center}
+.comu-thumb{height:116px;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .comu-thumb .cic{width:40px;height:40px;color:rgba(255,255,255,.92)}
+.comu-photo{width:100%;height:100%;object-fit:cover;display:block}
 .comu-cb{padding:11px 13px 13px}
 .comu-cb .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin-bottom:6px}
 .comu-cb h3{margin:0 0 3px;font-size:15.5px;font-weight:700;color:var(--ink);text-transform:capitalize}
@@ -163,7 +165,7 @@ body.poinames .poi-pin .t{display:block}
 .comu-btn.ig{background:#fbeaf3;color:#b83280}
 .comu-btn.off{background:#efe7d6;color:#b3a68c}
 .comu-empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
-.comu-hero{height:150px;display:flex;align-items:center;justify-content:center;border-radius:12px;margin-bottom:12px}
+.comu-hero{height:150px;display:flex;align-items:center;justify-content:center;border-radius:12px;margin-bottom:12px;overflow:hidden}
 .comu-hero .cic{width:52px;height:52px;color:rgba(255,255,255,.92)}
 .comu-desc{font-size:14.5px;line-height:1.6;color:#4b4438;white-space:pre-line}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
@@ -1108,6 +1110,10 @@ function comuGrad(cat){var c=(COMU_CATS[cat]||{}).c||'#b5532a';return 'linear-gr
 function comuWA(t){var d=(t||'').replace(/\D/g,'');return d?'https://wa.me/'+d+'?text='+encodeURIComponent('Hola, te contacto desde la app de Pueblo Vivo.'):null;}
 function comuIG(s){s=(s||'').trim();if(!s||/\S+@\S+\.\w/.test(s)||(s.indexOf(' ')>=0&&s[0]!=='@'))return null;var h=s.replace(/^@/,'').replace(/\s/g,'');return h?'https://instagram.com/'+h:null;}
 function comuIgIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';}
+// Fotos de comunidad: 1ra imagen de cada carpeta de Drive de la col FOTOS (resueltas a mano; se re-resuelven al agregar nuevas)
+const COMU_FOTOS={'1B_bB57E4Yn01zUoZJaFNzdKf7fBtzgaC':'fotos/comu-almacen.jpg','1w7wZZjZhyItf8xy_DT3OwZeu1ebILLcB':'fotos/comu-acroyoga.jpg','1Mc_uHp3Ft9EvgVr0RwAQaLsHrSJQUP3W':'fotos/comu-cauce.jpg','1Fvu7JUpCeq0qqS-9IELg2229FQsTIjUP':'fotos/comu-focusing.jpg','1L_I8ov5Cy4i6oaQXcrKCIy41E70XlzMn':'fotos/comu-luces.jpg'};
+function comuFolderId(link){var m=(link||'').match(/folders\/([A-Za-z0-9_-]+)/);return m?m[1]:null;}
+function comuThumb(x,cls){const inner=x.img?'<img class="comu-photo" src="'+driveSrc(x.img)+'" loading="lazy" onerror="this.remove()">':comuIcSvg(x.cat,cls||'cic');return '<div class="comu-thumb" style="background:'+comuGrad(x.cat)+'">'+inner+'</div>';}
 async function syncComunidadSheet(){
   try{
     const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+COMU_GID;
@@ -1116,7 +1122,8 @@ async function syncComunidadSheet(){
     for(let i=1;i<R.length;i++){const r=R[i];const tipo=(r[0]||'').trim(),nom=(r[1]||'').trim();
       if(tipo)cat=tipo.toUpperCase();
       if(!nom||/^nombre$/i.test(nom))continue;
-      out.push({cat:cat,nombre:nom,desc:(r[2]||'').trim(),tel:(r[3]||'').trim(),ig:(r[4]||'').trim(),fotos:(r[5]||'').trim()});
+      const fotos=(r[5]||'').trim();
+      out.push({cat:cat,nombre:nom,desc:(r[2]||'').trim(),tel:(r[3]||'').trim(),ig:(r[4]||'').trim(),fotos:fotos,img:COMU_FOTOS[comuFolderId(fotos)]||null});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
@@ -1134,7 +1141,7 @@ function renderComu(){
   items.forEach((x,i)=>{
     if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div>';}
     const wa=comuWA(x.tel),ig=comuIG(x.ig),cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
-    html+='<div class="comu-card" data-i="'+i+'"><div class="comu-thumb" style="background:'+comuGrad(x.cat)+'">'+comuIcSvg(x.cat,'cic')+'</div><div class="comu-cb"><div class="pill" style="background:'+cc+'22;color:'+cc+'">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div><h3>'+esc(x.nombre.toLowerCase())+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'<p style="opacity:.55">Sin descripción todavía.</p>')+'<div class="comu-act">'+(wa?'<a class="comu-btn wa" href="'+wa+'" target="_blank" rel="noopener">'+ic('wa')+'WhatsApp</a>':'')+(ig?'<a class="comu-btn ig" href="'+ig+'" target="_blank" rel="noopener">'+comuIgIco()+'Instagram</a>':'')+(!wa&&!ig?'<button class="comu-btn off">Ver ficha</button>':'')+'</div></div></div>';
+    html+='<div class="comu-card" data-i="'+i+'">'+comuThumb(x,'cic')+'<div class="comu-cb"><div class="pill" style="background:'+cc+'22;color:'+cc+'">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div><h3>'+esc(x.nombre.toLowerCase())+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'<p style="opacity:.55">Sin descripción todavía.</p>')+'<div class="comu-act">'+(wa?'<a class="comu-btn wa" href="'+wa+'" target="_blank" rel="noopener">'+ic('wa')+'WhatsApp</a>':'')+(ig?'<a class="comu-btn ig" href="'+ig+'" target="_blank" rel="noopener">'+comuIgIco()+'Instagram</a>':'')+(!wa&&!ig?'<button class="comu-btn off">Ver ficha</button>':'')+'</div></div></div>';
   });
   list.innerHTML=html;
   const shown=items.slice();
@@ -1143,7 +1150,7 @@ function renderComu(){
 function openComu(x){
   const wa=comuWA(x.tel),ig=comuIG(x.ig);
   scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</span><h2>'+esc(x.nombre.toLowerCase())+'</h2></div></div>'+
-    '<div class="comu-hero" style="background:'+comuGrad(x.cat)+'">'+comuIcSvg(x.cat,'cic')+'</div>'+
+    '<div class="comu-hero" style="background:'+comuGrad(x.cat)+'">'+(x.img?'<img class="comu-photo" src="'+driveSrc(x.img)+'" onerror="this.remove()">':comuIcSvg(x.cat,'cic'))+'</div>'+
     (x.desc?'<p class="comu-desc">'+esc(x.desc)+'</p>':'<p class="empty-c">Sin descripción cargada todavía.</p>')+
     '<div class="actions" style="margin-top:14px">'+
       (wa?'<a class="btn-primary" href="'+wa+'" target="_blank" rel="noopener" style="grid-column:1/-1;background:#25a35a">'+ic('wa')+' Escribir por WhatsApp</a>':'')+
