@@ -651,8 +651,8 @@ function info(id){
     if(A.hideFotos&&A.hideFotos.length)f=f.filter(x=>A.hideFotos.indexOf(x)<0);
     if(A.addFotos&&A.addFotos.length)f=f.concat(A.addFotos);
     o.fotos=f;}
-  o.ocupado=(window.DISP&&DISP[numById[id]])||[];   // disponibilidad compartida (Supabase)
-  const cov=window.COV&&COV[numById[id]];           // cambios del dueño (precio + fotos)
+  o.ocupado=DISP[numById[id]]||[];                 // disponibilidad compartida (Supabase)
+  const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos)
   if(cov){
     if(cov.precio!=null)o.alqPrice=cov.precio;
     if(cov.fotos&&cov.fotos.length){ if(o.casas&&o.casas.length)o.casas=o.casas.map((c,i)=>i===0?Object.assign({},c,{fotos:(c.fotos||[]).concat(cov.fotos)}):c); else o.fotos=(o.fotos||[]).concat(cov.fotos); }
@@ -676,6 +676,7 @@ document.getElementById('btnNums').onclick=function(){numbersOn=!numbersOn;this.
 const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
 let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true, numbersOn=false;
+let DISP={}, COV={}, MOD_CLAVE=null;   // disponibilidad + overrides del dueño (se declaran temprano por el orden de info())
 const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258', INVKEY='pv_inv_v1';
 let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
 const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.mapNum); // mapNum = clave interna de enlace (no el num original)
@@ -1180,7 +1181,6 @@ function openComu(x){
 document.getElementById('comuQ').addEventListener('input',e=>{comuQ=e.target.value.toLowerCase().trim();renderComu();});
 
 /* ===== Disponibilidad por dueño (calendario, editable con clave; moderadores editan todo) ===== */
-let DISP={}, MOD_CLAVE=null;
 async function loadDisp(){ if(!sb)return; try{ const {data,error}=await sb.from('disp').select('lote,ocupado'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=Array.isArray(r.ocupado)?r.ocupado:[]; }); DISP=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadDisp',e);} }
 function guardarDisp(lote,clave,ocupado,cb){
   if(!sb){toast('Sin conexión');return;}
@@ -1217,7 +1217,6 @@ function initDispLink(){
 }
 
 /* ===== Editor del dueño: precio + fotos + disponibilidad (con su clave) ===== */
-let COV={};
 async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
 function guardarCasa(lote,clave,data,cb){
   if(!sb){toast('Sin conexión');return;}
