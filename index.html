@@ -130,6 +130,7 @@ body.barriossm .lbl-barrio span{font-size:7.5px;padding:1px 4px;letter-spacing:.
 body.poinames .poi-pin .t{display:block}
 .poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
+.poi-pin.pv .b{width:32px;height:32px} .poi-pin.pv .b svg{width:19px;height:19px} .poi-pin.pv .t{left:48px}
 
 /* map floating controls */
 .fab-col{position:absolute;right:14px;z-index:1000;display:flex;flex-direction:column;gap:10px}
@@ -684,9 +685,10 @@ const poiLayer=L.layerGroup().addTo(map);
 function poiIconSvg(k){const I={cart:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M6 6 5 3H2"/>',tea:'<path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h2a2 2 0 0 1 0 5h-2"/><path d="M7 4c0 1-1 1-1 2M11 4c0 1-1 1-1 2"/>',school:'<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11v5c0 1 5 3 5 3s5-2 5-3v-5"/>',water:'<path d="M12 3c4 5 6 8 6 11a6 6 0 1 1-12 0c0-3 2-6 6-11z"/>',tree:'<path d="M12 2l5 7h-3l4 6h-4v5h-4v-5H6l4-6H7z"/>',sport:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>',star:'<path d="M12 3l2.6 5.6 6 .8-4.4 4.1 1.1 6L12 16.9 6.7 19.5l1.1-6L3.4 9.4l6-.8z"/>',pin:'<path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/>'};return I[k]||I.pin;}
 const PV_LOGO='<svg viewBox="0 0 100 100"><g transform="translate(50,80)" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="4" fill="currentColor"/></svg>';
 (window.POIS||[]).forEach(p=>{
-  const inner=p.icon==='pv'?PV_LOGO:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${poiIconSvg(p.icon)}</svg>`;
-  const html=`<div class="poi-pin ${p.cat}"><div class="b">${inner}</div><div class="t">${p.name}</div></div>`;
-  const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[60,46],iconAnchor:[30,40]})}).addTo(poiLayer);
+  const pv=p.icon==='pv';
+  const inner=pv?PV_LOGO:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${poiIconSvg(p.icon)}</svg>`;
+  const html=`<div class="poi-pin ${p.cat}${pv?' pv':''}"><div class="b">${inner}</div><div class="t">${p.name}</div></div>`;
+  const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[60,46],iconAnchor:[30,40]}),zIndexOffset:pv?2000:0}).addTo(poiLayer);
   mk.on('click',()=>openPOI(p));
 });
 function openPOI(p){
