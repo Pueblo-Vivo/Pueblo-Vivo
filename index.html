@@ -132,6 +132,19 @@ body.poinames .poi-pin .t{display:block}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
 .poi-pin.pv .b{width:32px;height:32px} .poi-pin.pv .b svg{width:19px;height:19px} .poi-pin.pv .t{left:48px}
 .poi-desc{padding:2px 2px 8px;font-size:14.5px;line-height:1.5;color:#37332b}
+#regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
+#regGate.show{display:flex}
+#regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
+#regGate .rglogo{width:64px;height:64px;margin:0 auto 2px;display:block}
+#regGate h2{font-size:21px;color:#7a4a16;margin:6px 0 4px}
+#regGate p.sub{color:#7c7264;font-size:14px;margin:0 0 14px;line-height:1.45}
+#regGate label{display:block;text-align:left;font-size:12.5px;font-weight:700;color:#6b6152;margin:12px 0 5px}
+#regGate input{width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e2d7c2;border-radius:11px;font-size:16px;background:#fdfbf6;color:#2a2620}
+#regGate input:focus{outline:none;border-color:#bf6f27}
+#regGate .rgbtn{width:100%;margin-top:20px;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#bf6f27,#ddae4c);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+#regGate .rgbtn:disabled{opacity:.55}
+#regGate .rgerr{color:#c0392b;font-size:12.5px;margin-top:9px;min-height:15px}
+#regGate .rgnote{color:#a89e8d;font-size:11px;margin-top:10px}
 
 /* map floating controls */
 .fab-col{position:absolute;right:14px;z-index:1000;display:flex;flex-direction:column;gap:10px}
@@ -514,6 +527,18 @@ body.poinames .poi-pin .t{display:block}
   <button class="lbnav lbnext" id="lbNext">›</button>
   <div class="lbbar"><span class="lbcount" id="lbCount"></span><button class="lbdel" id="lbDel">🗑 Eliminar</button></div>
 </div>
+<div id="regGate"><div class="rgcard">
+  <svg class="rglogo" viewBox="0 0 100 100" aria-label="Pueblo Vivo"><defs><linearGradient id="pvg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs><g transform="translate(50,80)" fill="none" stroke="url(#pvg2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="3.3" fill="url(#pvg2)"/></svg>
+  <h2>Bienvenido a Pueblo Vivo</h2>
+  <p class="sub">Dejanos tus datos para ingresar y conocer los lotes y casas de Umepay.</p>
+  <label>Tu nombre</label>
+  <input id="rgNom" type="text" placeholder="Nombre y apellido" autocomplete="name">
+  <label>Tu WhatsApp</label>
+  <input id="rgWA" type="tel" placeholder="Ej: 3546 51-0397" autocomplete="tel" inputmode="tel">
+  <button class="rgbtn" id="rgBtn">Ingresar</button>
+  <div class="rgerr" id="rgErr"></div>
+  <div class="rgnote">Tus datos son solo para contactarte sobre Umepay.</div>
+</div></div>
 <div id="calModal"><div class="card">
   <div class="calhead"><button id="calPrev" type="button">‹</button><span id="calMonth"></span><button id="calNext" type="button">›</button></div>
   <div id="calTitle"></div>
@@ -1565,6 +1590,28 @@ async function uploadFoto(id,dataUrl){
     return sb.storage.from('fotos').getPublicUrl(path).data.publicUrl;
   }catch(e){ console.warn('upload',e); toast('No se pudo subir la foto (queda local)'); return dataUrl; }
 }
+/* ===== Registro de visitantes (control de acceso) ===== */
+const VKEY='pv_visitor_v1';
+async function sendVisitor(v){ if(!sb)return false;
+  try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(error)throw error; return true; }
+  catch(e){ console.warn('visitante',e); return false; } }
+function initVisitorGate(){
+  const g=document.getElementById('regGate'); if(!g)return;
+  let cur=null; try{cur=JSON.parse(localStorage.getItem(VKEY)||'null');}catch(e){}
+  if(cur){ if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); } return; }
+  g.classList.add('show');
+  const nom=document.getElementById('rgNom'),wa=document.getElementById('rgWA'),btn=document.getElementById('rgBtn'),err=document.getElementById('rgErr');
+  btn.onclick=async()=>{
+    const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,'');
+    if(n.length<2){err.textContent='Escribí tu nombre.';nom.focus();return;}
+    if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
+    err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
+    const v={nombre:n,whatsapp:w,when:Date.now()};
+    const ok=await sendVisitor(v); v.pending=!ok;
+    try{localStorage.setItem(VKEY,JSON.stringify(v));}catch(e){}
+    g.classList.remove('show');
+  };
+}
 function enterAdmin(on){
   adminMode=on;
   document.getElementById('btnAdmin').classList.toggle('on',on);
@@ -1663,6 +1710,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
+initVisitorGate();
 syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
