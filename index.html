@@ -131,6 +131,7 @@ body.poinames .poi-pin .t{display:block}
 .poi-pin.servicio .b{border-color:var(--terra)} .poi-pin.servicio .b svg{color:var(--terra)}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
 .poi-pin.pv .b{width:32px;height:32px} .poi-pin.pv .b svg{width:19px;height:19px} .poi-pin.pv .t{left:48px}
+.poi-desc{padding:2px 2px 8px;font-size:14.5px;line-height:1.5;color:#37332b}
 
 /* map floating controls */
 .fab-col{position:absolute;right:14px;z-index:1000;display:flex;flex-direction:column;gap:10px}
@@ -690,10 +691,24 @@ const PV_LOGO='<svg viewBox="0 0 100 100"><g transform="translate(50,80)" fill="
   const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'poi-icon',html,iconSize:[60,46],iconAnchor:[30,40]}),zIndexOffset:pv?2000:0}).addTo(poiLayer);
   mk.on('click',()=>openPOI(p));
 });
+function poiKey(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');}
+function poiInfoFor(p){
+  if(p.sheetName&&POI_INFO[poiKey(p.sheetName)])return POI_INFO[poiKey(p.sheetName)];
+  const pk=poiKey(p.name); if(POI_INFO[pk])return POI_INFO[pk];
+  const k=Object.keys(POI_INFO).find(x=>pk&&(x.indexOf(pk)>=0||pk.indexOf(x)>=0));
+  return k?POI_INFO[k]:null;
+}
 function openPOI(p){
-  scroll.innerHTML=`<div class="sh-head"><div class="sh-title"><span class="barrio">Punto de interés</span><h2>${esc(p.name)}</h2></div></div>
-    ${p.desc?`<div class="ficha"><div class="frow2"><span class="fl">Lugar</span><span class="fv">${esc(p.desc)}</span></div></div>`:''}
-    <p class="disclaimer">Pronto vamos a agregar más información y fotos de este lugar.</p>`;
+  const inf=poiInfoFor(p);
+  let body='';
+  if(inf){
+    body=(inf.desc?`<p class="poi-desc">${esc(inf.desc)}</p>`:'')
+      +(inf.rules&&inf.rules.length?`<div class="sec-t">${ic('clip')} Reglas del espacio</div><div class="ficha">${inf.rules.map(r=>`<div class="frow2"><span class="fl">${esc(r[0])}</span><span class="fv">${esc(r[1])}</span></div>`).join('')}</div>`:'');
+  }else{
+    body=(p.desc?`<div class="ficha"><div class="frow2"><span class="fl">Lugar</span><span class="fv">${esc(p.desc)}</span></div></div>`:'')
+      +'<p class="disclaimer">Pronto vamos a agregar más información y fotos de este lugar.</p>';
+  }
+  scroll.innerHTML=`<div class="sh-head"><div class="sh-title"><span class="barrio">Punto de interés</span><h2>${esc(p.name)}</h2></div></div>`+body;
   openId=null; casaSel=0;
   scrim.classList.add('show'); sheet.classList.add('open');
 }
@@ -924,6 +939,25 @@ async function syncVentaSheet(){
     }
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncVentaSheet',e);}
+}
+/* ===== Info de los Puntos de interés (hoja "Puntos de Interes", transpuesta) ===== */
+let POI_INFO={};
+async function syncPoiSheet(){
+  try{
+    const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('Puntos de Interes');
+    const R=parseCSVtext(await (await fetch(url)).text());
+    let nameRow=-1;                                            // la fila de nombres: col0 vacía y >=2 columnas con texto
+    for(let i=0;i<Math.min(R.length,5);i++){ if(!(R[i][0]||'').trim() && R[i].slice(1).filter(x=>(x||'').trim()).length>=2){nameRow=i;break;} }
+    if(nameRow<0)return;
+    const names=R[nameRow], info={};
+    for(let j=1;j<names.length;j++){ const nm=(names[j]||'').trim(); if(!nm)continue;
+      let desc=''; const rules=[];
+      for(let i=nameRow+1;i<R.length;i++){ const lbl=(R[i][0]||'').trim(), val=(R[i][j]||'').trim(); if(!lbl||!val)continue;
+        if(/descrip/i.test(lbl))desc=val; else rules.push([lbl,val]); }
+      info[poiKey(nm)]={name:nm,desc,rules};
+    }
+    POI_INFO=info;
+  }catch(e){console.warn('syncPoiSheet',e);}
 }
 /* ===== Detalle de cada barrio (en vivo desde la planilla de venta) ===== */
 let BARRIOS_INFO={};
@@ -1629,7 +1663,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
-syncVentaSheet().then(syncRentSheet);syncBarrioSheet();
+syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
 /* Instalar como app */
