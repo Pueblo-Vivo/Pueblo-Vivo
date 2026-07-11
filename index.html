@@ -78,11 +78,12 @@ button{font-family:inherit;cursor:pointer}
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
 .seg{display:flex;background:#ece5d8;border-radius:999px;padding:4px;gap:3px;width:100%;max-width:420px;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.06)}
-.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:14px;
-  padding:9px 6px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:7px;transition:.18s}
-.seg button svg{width:17px;height:17px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:12.5px;
+  padding:9px 3px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:5px;transition:.18s}
+.seg button svg{width:15px;height:15px;flex:0 0 auto}
 .seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
 .seg button.active.alq{color:var(--terra)}
+.seg button.active.comu{color:#a26b2a}
 
 /* ---------- Filtros ---------- */
 .filters{position:relative;z-index:1100;background:var(--cream);border-bottom:1px solid var(--line);
@@ -132,6 +133,39 @@ body.poinames .poi-pin .t{display:block}
 .poi-pin.naturaleza .b{border-color:#2b7bba} .poi-pin.naturaleza .b svg{color:#2b7bba}
 .poi-pin.pv .b{width:32px;height:32px} .poi-pin.pv .b svg{width:19px;height:19px} .poi-pin.pv .t{left:48px}
 .poi-desc{padding:2px 2px 8px;font-size:14.5px;line-height:1.5;color:#37332b}
+/* ===== Vista Comunidad (directorio de emprendimientos) ===== */
+#comuView{flex:1;display:none;flex-direction:column;background:var(--cream);overflow:hidden;z-index:2}
+#comuView.show{display:flex}
+.comu-head{padding:12px 16px 2px}
+.comu-head h2{margin:0;font-size:18px;color:var(--terra);font-weight:800}
+.comu-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.comu-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin:10px 16px 0}
+.comu-search input{border:0;outline:0;font-size:15px;width:100%;background:transparent;color:var(--ink)}
+.comu-search svg{width:17px;height:17px;color:var(--muted);flex:0 0 auto}
+.comu-chips{display:flex;gap:7px;overflow-x:auto;padding:11px 16px 10px;scrollbar-width:none}
+.comu-chips::-webkit-scrollbar{height:0}
+.comu-chip{white-space:nowrap;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px}
+.comu-chip .ic{width:15px;height:15px}
+.comu-chip.on{background:var(--forest);border-color:var(--forest);color:#fff}
+.comu-list{flex:1;overflow-y:auto;padding:2px 14px 26px;display:flex;flex-direction:column;gap:13px}
+.comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
+.comu-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm)}
+.comu-thumb{height:116px;display:flex;align-items:center;justify-content:center}
+.comu-thumb .cic{width:40px;height:40px;color:rgba(255,255,255,.92)}
+.comu-cb{padding:11px 13px 13px}
+.comu-cb .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin-bottom:6px}
+.comu-cb h3{margin:0 0 3px;font-size:15.5px;font-weight:700;color:var(--ink);text-transform:capitalize}
+.comu-cb p{margin:0;font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.comu-act{display:flex;gap:8px;margin-top:11px}
+.comu-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;border:0;cursor:pointer}
+.comu-btn svg{width:15px;height:15px}
+.comu-btn.wa{background:#25a35a;color:#fff}
+.comu-btn.ig{background:#fbeaf3;color:#b83280}
+.comu-btn.off{background:#efe7d6;color:#b3a68c}
+.comu-empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
+.comu-hero{height:150px;display:flex;align-items:center;justify-content:center;border-radius:12px;margin-bottom:12px}
+.comu-hero .cic{width:52px;height:52px;color:rgba(255,255,255,.92)}
+.comu-desc{font-size:14.5px;line-height:1.6;color:#4b4438;white-space:pre-line}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
 #regGate.show{display:flex}
 #regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
@@ -474,10 +508,13 @@ body.poinames .poi-pin .t{display:block}
   <div class="seg">
     <button id="mComprar" class="active" data-mode="comprar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-6h6v6"/></svg>
-      Comprar Propiedad</button>
+      Comprar</button>
     <button id="mAlojar" class="alq" data-mode="alojar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
       Alojarte</button>
+    <button id="mComunidad" class="comu" data-mode="comunidad">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-8M12 13c0-3 2-6 6-6 0 4-3 6-6 6zM12 15c0-3-2-5-5-5 0 3 2 5 5 5z"/></svg>
+      Comunidad</button>
   </div>
 </div>
 
@@ -504,6 +541,13 @@ body.poinames .poi-pin .t{display:block}
     <button id="trayCmp">Comparar</button>
     <button class="x" id="trayX">✕</button>
   </div>
+</div>
+
+<div id="comuView">
+  <div class="comu-head"><h2>Comunidad</h2><p>Emprendimientos, servicios y espacios de Umepay</p></div>
+  <div class="comu-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="comuQ" placeholder="Buscar emprendimiento o servicio…"></div>
+  <div class="comu-chips" id="comuChips"></div>
+  <div class="comu-list" id="comuList"></div>
 </div>
 
 <div class="scrim" id="scrim"></div>
@@ -1047,10 +1091,74 @@ function setMode(m){
   MODE=m;currentFilter='todos';clearCompare();
   document.getElementById('mComprar').classList.toggle('active',m==='comprar');
   document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
-  renderFilters();renderLegend();applyFilter();buildStayBar();
+  document.getElementById('mComunidad').classList.toggle('active',m==='comunidad');
+  const isComu=m==='comunidad';
+  document.getElementById('comuView').classList.toggle('show',isComu);
+  document.getElementById('map').style.display=isComu?'none':'';
+  document.getElementById('filters').style.display=isComu?'none':'';
+  buildStayBar();
+  if(isComu){ renderComu(); }
+  else{ renderFilters();renderLegend();applyFilter(); try{map.invalidateSize();}catch(e){} }
 }
 document.getElementById('mComprar').onclick=()=>setMode('comprar');
 document.getElementById('mAlojar').onclick=()=>setMode('alojar');
+document.getElementById('mComunidad').onclick=()=>setMode('comunidad');
+
+/* ===== Comunidad: directorio de emprendimientos (hoja "Comunidad") ===== */
+const COMU_GID='1221939102';
+let COMUNIDAD=[], comuCat='TODOS', comuQ='';
+const COMU_CATS={LOCAL:{label:'Locales',c:'#c9772e'},EMPRESA:{label:'Empresas',c:'#7d6a3a'},SERVICIO:{label:'Servicios',c:'#2b7bba'},COMUNIDAD:{label:'Comunidad',c:'#5f8a3f'},PROFESIONALES:{label:'Profesionales',c:'#a05a86'},TERAPIAS:{label:'Terapias',c:'#3f9a8f'},EMPRENDIMIENTOS:{label:'Emprendimientos',c:'#c96a4a'}};
+const COMU_IC={LOCAL:'<path d="M3 9l1-5h16l1 5M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/>',EMPRESA:'<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 21V9h5a1 1 0 0 1 1 1v11M7 8h4M7 12h4M7 16h4"/>',SERVICIO:'<path d="M14 7a4 4 0 0 0-5 5l-6 6 2 2 6-6a4 4 0 0 0 5-5l-2 2-2-2 2-2z"/>',COMUNIDAD:'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3 20a6 6 0 0 1 12 0M14 20a5 5 0 0 1 7-4"/>',PROFESIONALES:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',TERAPIAS:'<path d="M12 3c3 4 3 7 0 10-3-3-3-6 0-10zM6 10c4 1 6 3 6 7-4 0-6-3-6-7zM18 10c-4 1-6 3-6 7 4 0 6-3 6-7z"/>',EMPRENDIMIENTOS:'<path d="M12 21v-8M12 13c0-3 2-6 6-6 0 4-3 6-6 6zM12 15c0-3-2-5-5-5 0 3 2 5 5 5z"/>'};
+function comuIcSvg(cat,cls){return '<svg class="'+cls+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(COMU_IC[cat]||COMU_IC.EMPRENDIMIENTOS)+'</svg>';}
+function comuGrad(cat){var c=(COMU_CATS[cat]||{}).c||'#b5532a';return 'linear-gradient(135deg,'+c+',#cf9a3f)';}
+function comuWA(t){var d=(t||'').replace(/\D/g,'');return d?'https://wa.me/'+d+'?text='+encodeURIComponent('Hola, te contacto desde la app de Pueblo Vivo.'):null;}
+function comuIG(s){s=(s||'').trim();if(!s||/\S+@\S+\.\w/.test(s)||(s.indexOf(' ')>=0&&s[0]!=='@'))return null;var h=s.replace(/^@/,'').replace(/\s/g,'');return h?'https://instagram.com/'+h:null;}
+function comuIgIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';}
+async function syncComunidadSheet(){
+  try{
+    const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+COMU_GID;
+    const R=parseCSVtext(await (await fetch(url)).text());
+    let cat='', out=[];
+    for(let i=1;i<R.length;i++){const r=R[i];const tipo=(r[0]||'').trim(),nom=(r[1]||'').trim();
+      if(tipo)cat=tipo.toUpperCase();
+      if(!nom||/^nombre$/i.test(nom))continue;
+      out.push({cat:cat,nombre:nom,desc:(r[2]||'').trim(),tel:(r[3]||'').trim(),ig:(r[4]||'').trim(),fotos:(r[5]||'').trim()});
+    }
+    COMUNIDAD=out;
+    if(MODE==='comunidad')renderComu();
+  }catch(e){console.warn('syncComunidadSheet',e);}
+}
+function renderComu(){
+  if(!document.getElementById('comuView'))return;
+  const cats=['TODOS'].concat(Object.keys(COMU_CATS));
+  document.getElementById('comuChips').innerHTML=cats.map(k=>{const lab=k==='TODOS'?'Todos':COMU_CATS[k].label;const n=k==='TODOS'?COMUNIDAD.length:COMUNIDAD.filter(x=>x.cat===k).length;return '<div class="comu-chip'+(comuCat===k?' on':'')+'" data-k="'+k+'">'+(k==='TODOS'?'':comuIcSvg(k,'ic'))+esc(lab)+' · '+n+'</div>';}).join('');
+  document.querySelectorAll('#comuChips .comu-chip').forEach(el=>el.onclick=()=>{comuCat=el.dataset.k;renderComu();});
+  const items=COMUNIDAD.filter(x=>{if(comuCat!=='TODOS'&&x.cat!==comuCat)return false;if(comuQ&&(x.nombre+' '+x.desc).toLowerCase().indexOf(comuQ)<0)return false;return true;});
+  const list=document.getElementById('comuList');
+  if(!items.length){list.innerHTML='<div class="comu-empty">No encontramos nada con eso. Probá otra palabra o categoría.</div>';return;}
+  let html='',lastCat=null;
+  items.forEach((x,i)=>{
+    if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div>';}
+    const wa=comuWA(x.tel),ig=comuIG(x.ig),cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
+    html+='<div class="comu-card" data-i="'+i+'"><div class="comu-thumb" style="background:'+comuGrad(x.cat)+'">'+comuIcSvg(x.cat,'cic')+'</div><div class="comu-cb"><div class="pill" style="background:'+cc+'22;color:'+cc+'">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div><h3>'+esc(x.nombre.toLowerCase())+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'<p style="opacity:.55">Sin descripción todavía.</p>')+'<div class="comu-act">'+(wa?'<a class="comu-btn wa" href="'+wa+'" target="_blank" rel="noopener">'+ic('wa')+'WhatsApp</a>':'')+(ig?'<a class="comu-btn ig" href="'+ig+'" target="_blank" rel="noopener">'+comuIgIco()+'Instagram</a>':'')+(!wa&&!ig?'<button class="comu-btn off">Ver ficha</button>':'')+'</div></div></div>';
+  });
+  list.innerHTML=html;
+  const shown=items.slice();
+  list.querySelectorAll('.comu-card').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;openComu(shown[+el.dataset.i]);});
+}
+function openComu(x){
+  const wa=comuWA(x.tel),ig=comuIG(x.ig);
+  scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</span><h2>'+esc(x.nombre.toLowerCase())+'</h2></div></div>'+
+    '<div class="comu-hero" style="background:'+comuGrad(x.cat)+'">'+comuIcSvg(x.cat,'cic')+'</div>'+
+    (x.desc?'<p class="comu-desc">'+esc(x.desc)+'</p>':'<p class="empty-c">Sin descripción cargada todavía.</p>')+
+    '<div class="actions" style="margin-top:14px">'+
+      (wa?'<a class="btn-primary" href="'+wa+'" target="_blank" rel="noopener" style="grid-column:1/-1;background:#25a35a">'+ic('wa')+' Escribir por WhatsApp</a>':'')+
+      (ig?'<a class="btn-primary" href="'+ig+'" target="_blank" rel="noopener" style="grid-column:1/-1;background:#b83280">Instagram</a>':'')+
+      (!wa&&!ig?'<p class="empty-c">Sin datos de contacto todavía.</p>':'')+
+    '</div>';
+  openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
+}
+document.getElementById('comuQ').addEventListener('input',e=>{comuQ=e.target.value.toLowerCase().trim();renderComu();});
 
 /* ============ Bottom sheet detalle ============ */
 const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),scroll=document.getElementById('sheetScroll');
@@ -1715,7 +1823,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
 initVisitorGate();
-syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();
+syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 
 /* Instalar como app */
