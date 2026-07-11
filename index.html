@@ -902,7 +902,7 @@ function fichaBlock(inf){
     <details class="fichadet"><summary>Ver todos los detalles del alojamiento</summary><div class="ficha">${body}</div></details>`;
 }
 /* ===== Sincronización en vivo con la planilla de alquileres ===== */
-const RENT_SHEET_ID='1ljsG-Sc6j9XNmoXrWjvn-JDKzvY95UJG', RENT_GID='765860150';
+const RENT_SHEET_ID='17yWE-8ZddG2gUA3L8kWKvGNHoFQikSiHMoCarb_MmUo', RENT_GID='765860150';
 function parseCSVtext(t){const rows=[];let row=[],cur="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}else{if(c==='"')q=true;else if(c===","){row.push(cur);cur="";}else if(c==="\n"){row.push(cur);rows.push(row);row=[];cur="";}else if(c==="\r"){}else cur+=c;}}if(cur!==""||row.length){row.push(cur);rows.push(row);}return rows;}
 let PHOTOS_BY_NAME={}; // cache acumulativo de fotos de casas por nombre (sobrevive a los resets de venta y alquiler)
 function capturePhotos(){ REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});}); }
@@ -986,7 +986,7 @@ async function syncPoiSheet(){
 }
 /* ===== Detalle de cada barrio (en vivo desde la planilla de venta) ===== */
 let BARRIOS_INFO={};
-const BARRIO_INV_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', BARRIO_GID='100483159';
+const BARRIO_INV_ID='17yWE-8ZddG2gUA3L8kWKvGNHoFQikSiHMoCarb_MmUo', BARRIO_GID='340770089';
 function barrioKey(name){let n=String(name||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
   if(n.indexOf('siete lomas')>=0)return '7 lomas';
   if(n.indexOf('tres rios')>=0)return '3 rios';
