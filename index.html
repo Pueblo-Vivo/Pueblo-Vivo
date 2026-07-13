@@ -483,8 +483,10 @@ body.poinames .poi-pin .t{display:block}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media(min-width:820px){
-  .sheet{left:auto;right:18px;bottom:18px;top:120px;width:430px;border-radius:24px;transform:translateX(135%)}
-  .sheet.open{transform:translateX(0)}
+  .sheet{left:50%;right:auto;top:50%;bottom:auto;width:min(620px,92vw);max-height:88vh;border-radius:24px;
+    transform:translate(-50%,-50%) scale(.94);opacity:0;pointer-events:none;
+    transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .22s ease}
+  .sheet.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
   .sheet .grip{display:none}
 }
 </style>
