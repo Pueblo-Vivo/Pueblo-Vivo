@@ -593,8 +593,6 @@ body.listmode .lv-tolist{display:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
     <button class="fab" id="btnSat" title="Satélite / mapa">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></button>
-    <button class="fab" id="btnNums" title="Mostrar números de lote">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3L7 21M17 3l-2 18M4 8.5h16M3 15.5h16"/></svg></button>
     <button class="fab" id="btnPoi" title="Puntos de interés">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
   </div>
@@ -742,7 +740,6 @@ const sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Worl
 const calle=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
 calle.addTo(map);let satOn=false;document.body.classList.add('lightbase'); // default: mapa claro
 document.getElementById('btnSat').onclick=()=>{satOn=!satOn;document.body.classList.toggle('lightbase',!satOn);if(satOn){map.removeLayer(calle);sat.addTo(map);}else{map.removeLayer(sat);calle.addTo(map);}refreshLabels();};
-document.getElementById('btnNums').onclick=function(){numbersOn=!numbersOn;this.classList.toggle('on',numbersOn);refreshLabels();toast(numbersOn?'Números de lote activados':'Números de lote ocultos');};
 
 const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
