@@ -1628,7 +1628,8 @@ function renderLote(id){
       <button class="btn-primary" id="btnPonerVenta" style="grid-column:1/-1">${ic('plus')} Poner en venta</button>
       <button class="btn-primary" id="btnPonerAlq" style="grid-column:1/-1;background:#2b9aa0">${ic('plus')} Poner en alquiler</button></div>`;
   }
-  const acciones=`<div class="actions">
+  const acciones=`<button class="btn-primary" id="btnVerMapa" style="margin-top:12px;background:#2b6ca3">${ic('pin')} Ver en el mapa</button>
+    <div class="actions">
       <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
@@ -1649,6 +1650,7 @@ function renderLote(id){
   <div class="cbox"><input id="cIn" placeholder="Escribí una nota…" maxlength="280"><button id="cSend">Enviar</button></div>
   <p class="disclaimer">Prototipo · cartografía y puntos de interés: Umepay.</p>`;
   wireCommon(id);
+  document.getElementById('btnVerMapa').onclick=()=>{ LISTON=false; closeSheet(); if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar'); else setMode(MODE); setTimeout(()=>{try{highlight(id);}catch(e){}},90); };
   document.getElementById('btnSeen').onclick=()=>{u.seen=!u.seen;save();render();renderFilters();estiloRefresh(id);};
   document.getElementById('cSend').onclick=sendComment;
   document.getElementById('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendComment();});
