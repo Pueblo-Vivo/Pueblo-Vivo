@@ -2134,9 +2134,14 @@ async function uploadFoto(id,dataUrl){
 /* ===== Registro de visitantes (control de acceso) ===== */
 const VKEY='pv_visitor_v2';  // subir la versión = re-pedir el registro a TODOS los que ya habían entrado
 const INGRESOS_URL='https://script.google.com/macros/s/AKfycbzU47H1pdtJ-pSokBtsSB13gksUNJqjnQhhkEfjR25Sdc5frSFQHGDSLAuVhpi2QhKL/exec';
+// Dueños de la app: NO se registran ni cuentan como reingreso (solo se loguean los clientes)
+const DUENOS=['santiago','fran silveyra','candelaria','santiago moretto','candelaria rivas','santi prueba'];
+function esDueno(nombre){ const n=(nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); return DUENOS.indexOf(n)>=0; }
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
+  if(esDueno(v.nombre))return;   // los dueños no se loguean
   try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,tipo:v.tipo||'registro'})}); }catch(e){} }
-async function sendVisitor(v){ if(!sb)return false;   // respaldo en Supabase (confirmable)
+async function sendVisitor(v){ if(esDueno(v.nombre))return true;   // los dueños no se loguean
+  if(!sb)return false;   // respaldo en Supabase (confirmable)
   try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(error)throw error; return true; }
   catch(e){ console.warn('visitante',e); return false; } }
 function initVisitorGate(){
