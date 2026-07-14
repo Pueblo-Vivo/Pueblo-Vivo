@@ -295,7 +295,10 @@ body.poinames .poi-pin .t{display:block}
   transform:translateY(105%);transition:transform .34s cubic-bezier(.22,1,.36,1);max-height:92vh;display:flex;flex-direction:column}
 .sheet.open{transform:translateY(0)}
 .grip{width:42px;height:5px;border-radius:99px;background:#d9cfbd;margin:10px auto 4px;flex:0 0 auto}
-.sheet-scroll{overflow-y:auto;padding:4px 18px 30px;overscroll-behavior:contain}
+.sheet-scroll{overflow-y:auto;padding:46px 18px 30px;overscroll-behavior:contain}
+.sheet-back{position:absolute;top:8px;left:11px;z-index:6;width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid var(--line);box-shadow:0 2px 9px rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);padding:0}
+.sheet-back svg{width:21px;height:21px}
+.sheet-back:active{transform:scale(.9)}
 
 .sh-head{display:flex;align-items:flex-start;gap:12px;padding-top:6px}
 .sh-title{flex:1}
@@ -566,7 +569,7 @@ body.poinames .poi-pin .t{display:block}
 
 <div class="scrim" id="scrim"></div>
 
-<div class="sheet" id="sheet"><div class="grip"></div><div class="sheet-scroll" id="sheetScroll"></div></div>
+<div class="sheet" id="sheet"><div class="grip"></div><button class="sheet-back" id="sheetBack" aria-label="Volver al mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><div class="sheet-scroll" id="sheetScroll"></div></div>
 <div class="sheet" id="fsheet"><div class="grip"></div><div class="fsheet-scroll" id="fsheetScroll"></div></div>
 <div class="sheet" id="cmpsheet"><div class="grip"></div><div class="cmp-scroll" id="cmpScroll"></div></div>
 <div class="sheet" id="invsheet"><div class="grip"></div><div class="cmp-scroll" id="invScroll"></div></div>
@@ -1309,6 +1312,7 @@ function closeSheet(){sheet.classList.remove('open');document.getElementById('fs
   document.getElementById('cmpsheet').classList.remove('open');document.getElementById('invsheet').classList.remove('open');
   scrim.classList.remove('show');openId=null;renderFilters();applyFilter();}
 scrim.onclick=closeSheet;
+document.getElementById('sheetBack').onclick=closeSheet;
 function highlight(id){const lyr=layers[id];if(!lyr)return;try{map.fitBounds(lyr.getBounds(),{maxZoom:18,paddingTopLeft:[40,40],paddingBottomRight:[40,window.innerHeight*0.55]});}catch(e){}}
 
 function render(){
