@@ -1183,6 +1183,43 @@ function comuEff(x){
     igUrl:c.ig||null, webUrl:c.web||null, mail:(x.mail||c.email||'').trim()||null,
     imgs:x.imgs, img:x.img};
 }
+/* ===== Búsqueda de Comunidad: palabras clave + fuzzy (tolera errores de tipeo) ===== */
+const COMU_CAT_KW={LOCAL:'comer comida local comercio tienda negocio',TERAPIAS:'terapia sanacion bienestar salud mental acompañamiento emocional',EMPRENDIMIENTOS:'emprendimiento producto artesanal hecho a mano',EMPRESA:'empresa servicio profesional',SERVICIO:'servicio profesional oficio',BIENESTAR:'bienestar salud cuerpo relax terapia cuidado',PROPUESTAS:'propuesta experiencia taller actividad plan',CLASES:'clase clases aprender curso taller ensena',COMUNIDAD:'comunidad umepay espacio comun','CENTRO HOLÍSTICO':'holistico bienestar espiritual salud retiro'};
+const COMU_KW={
+'siembra-dicha':'comer comida merienda te cafe casa de te gastronomia dulce torta pasteleria desayuno bar almuerzo oficios taller artesania',
+'almacen-sen-de-campo':'comer comida despensa almacen mercado verduleria fruta verdura productos alimentos provisiones kiosco compras super supermercado dietetica ramos generales',
+'centro-umepay':'hospedaje alojamiento dormir hotel posada cabaña hospedarse quedarse estadia retiro descanso vacaciones holistico',
+'pueblo-vivo':'inmobiliaria comprar lote lotes terreno terrenos casa casas alquiler alquilar venta vender propiedad propiedades mudarse vivir desarrollo',
+'andaluz-solar':'solar energia panel paneles fotovoltaico luz electricidad sustentable renovable bateria autoconsumo',
+'bosques-de-agua':'agua bosque ecosistema restauracion ambiente naturaleza reforestacion arboles ecologia sustentable fundacion nativo',
+'agrimensura-umepay':'agrimensura agrimensor mensura plano planos medicion lote terreno catastro deslinde topografia amojonamiento',
+'lumbral-estudio':'diseño grafico branding marca marcas logo identidad publicidad creativo web comunicacion estudio arte',
+'raices-y-tinta':'impresion impresiones imprenta papel vinilo cartel carteles sticker grafica print lona banner copias',
+'traslados-umepay':'traslado traslados remis taxi auto viaje transporte llevar chofer movilidad flete aeropuerto',
+'acroyoga':'acroyoga yoga acrobacia clases movimiento cuerpo bienestar festival formacion gimnasia equilibrio',
+'cauce-sonoro':'sonido sonora voz canto sanacion energia terapia musica meditacion armonizacion bienestar vibracion',
+'masajes-californiano-tejido-profundo-y-abhyanga':'masaje masajes spa relax cuerpo terapia californiano abhyanga tejido profundo descontracturante bienestar salud aceites',
+'micaela-piccirilli':'terapia decodificacion bioemocional emocional soundtouch transformacion sanacion biodescodificacion bienestar',
+'psicologia-del-ser':'psicologia psicologo terapia conciencia bienestar crecimiento personal salud mental acompañamiento emocional',
+'lucas-grimi':'psicoterapia terapia sueños coaching biohacking marketing consultoria mente psicologo acompañamiento',
+'focusing':'focusing terapia cuerpo sensacion escucha sesion bienestar emocional sanacion meditacion',
+'oliverio':'aceite oliva virgen agroecologico comer comida gourmet alimento producto condimento cocina',
+'cleopatra-esencias-herbales':'esencia esencias herbal hierbas aromas aromaterapia natural cosmetica perfume tintura bienestar planta',
+'luces-y-peces':'arte iluminacion luces deco diseño evento creativo decoracion',
+'22-tarot':'tarot arcanos cartas espiritual autoconocimiento terapia online lectura adivinacion esoterico',
+'origen':'juego autoconocimiento sentido taller experiencia personal dinamica grupo',
+'canto-para-el-ser':'canto cantar voz musica taller coro bienestar sonido',
+'paseos-nauticos':'paseo nautico lago agua paddle surf sup kayak excursion aventura naturaleza deporte turismo actividad navegar',
+'taller-de-arte':'arte taller pintura dibujo creatividad clases artistico manualidades expresion',
+'sonora-deriva-poetica':'arte sonora poesia poetico mapa obra cultural instalacion experiencia caminata',
+'yoga':'yoga clases meditacion cuerpo bienestar estiramiento relajacion salud movimiento',
+'musica':'musica clases flauta guitarra canto composicion instrumento tocar profesor aprender',
+'somos-raices':'alimento comer comida plantas lavanda aromaticas hierbas huerta agroecologico natural producto cultivo'
+};
+function comuNorm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+function comuLev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let prev=[],cur=[];for(let j=0;j<=n;j++)prev[j]=j;for(let i=1;i<=m;i++){cur[0]=i;for(let j=1;j<=n;j++){const c=a[i-1]===b[j-1]?0:1;cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+c);}prev=cur.slice();}return prev[n];}
+function comuSearchText(x){const e=comuEff(x);const cl=(COMU_CATS[x.cat]||{}).label||x.cat;return comuNorm(x.nombre+' '+(e.desc||'')+' '+cl+' '+(COMU_KW[x.slug]||'')+' '+(COMU_CAT_KW[x.cat]||''));}
+function comuMatch(x,q){const hay=comuSearchText(x);if(!q)return true;const qn=comuNorm(q);const toks=qn.split(/\s+/).filter(Boolean);const words=hay.split(/\s+/).filter(Boolean);return toks.every(t=>{if(hay.indexOf(t)>=0)return true;if(t.length<3)return words.some(w=>w.startsWith(t));const th=t.length<=5?1:2;return words.some(w=>Math.abs(w.length-t.length)<=th&&comuLev(w,t)<=th);});}
 function comuIgIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';}
 function comuWebIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>';}
 // Fotos de comunidad: 1ra imagen de cada carpeta de Drive de la col FOTOS (resueltas a mano; se re-resuelven al agregar nuevas)
@@ -1211,7 +1248,7 @@ function renderComu(){
   const cats=['TODOS'].concat(Object.keys(COMU_CATS));
   document.getElementById('comuChips').innerHTML=cats.map(k=>{const lab=k==='TODOS'?'Todos':COMU_CATS[k].label;const n=k==='TODOS'?COMUNIDAD.length:COMUNIDAD.filter(x=>x.cat===k).length;return '<div class="comu-chip'+(comuCat===k?' on':'')+'" data-k="'+k+'">'+(k==='TODOS'?'':comuIcSvg(k,'ic'))+esc(lab)+' · '+n+'</div>';}).join('');
   document.querySelectorAll('#comuChips .comu-chip').forEach(el=>el.onclick=()=>{comuCat=el.dataset.k;renderComu();});
-  const items=COMUNIDAD.filter(x=>{if(comuCat!=='TODOS'&&x.cat!==comuCat)return false;if(comuQ&&(x.nombre+' '+x.desc).toLowerCase().indexOf(comuQ)<0)return false;return true;});
+  const items=COMUNIDAD.filter(x=>{if(comuCat!=='TODOS'&&x.cat!==comuCat)return false;if(comuQ&&!comuMatch(x,comuQ))return false;return true;});
   const _ord=Object.keys(COMU_CATS); items.sort((a,b)=>_ord.indexOf(a.cat)-_ord.indexOf(b.cat));  // secciones en el orden de COMU_CATS (sort estable conserva el orden dentro de cada categoría)
   const list=document.getElementById('comuList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No encontramos nada con eso. Probá otra palabra o categoría.</div>';return;}
