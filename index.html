@@ -346,6 +346,10 @@ body.listmode .lv-tolist{display:none}
 
 .sh-head{display:flex;align-items:flex-start;gap:12px;padding-top:6px}
 .sh-title{flex:1}
+.sh-head--map{justify-content:space-between;flex-wrap:wrap}
+.sh-head--map .sh-title{flex:0 1 auto}
+.sh-mapbtn{flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;gap:6px;background:#2b6ca3;color:#fff;border:0;border-radius:10px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:var(--shadow-sm)}
+.sh-mapbtn svg{width:15px;height:15px}
 .sh-title .barrio{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--terra);font-weight:700}
 .sh-title h2{font-family:'Fraunces',serif;font-weight:600;font-size:25px;line-height:1.08;margin-top:2px}
 .statusbadge{font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:999px;white-space:nowrap;display:flex;align-items:center;gap:6px}
@@ -1628,15 +1632,15 @@ function renderLote(id){
       <button class="btn-primary" id="btnPonerVenta" style="grid-column:1/-1">${ic('plus')} Poner en venta</button>
       <button class="btn-primary" id="btnPonerAlq" style="grid-column:1/-1;background:#2b9aa0">${ic('plus')} Poner en alquiler</button></div>`;
   }
-  const acciones=`<button class="btn-primary" id="btnVerMapa" style="margin-top:12px;background:#2b6ca3">${ic('pin')} Ver en el mapa</button>
-    <div class="actions">
+  const acciones=`<div class="actions">
       <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
     </div>
     ${linked?`<div class="share-row"><button class="act" id="btnWA">${ic('wa')}WhatsApp</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
   scroll.innerHTML=`
-  <div class="sh-head"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
+  <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
+    <button class="sh-mapbtn" id="btnVerMapa">${ic('pin')} Ver en el mapa</button>
     <span class="statusbadge st-${stKey}"><span class="sw"></span>${stL}</span></div>`+body+`
   <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
   <div class="sec-t">${ic('camera')} Fotos</div>
