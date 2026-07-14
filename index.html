@@ -1319,9 +1319,11 @@ function render(){
   const id=openId;if(id==null)return;
   return renderLote(id);
 }
+// Superficie a mostrar: la de la planilla (col "Superficie terreno") si existe; si no, la del polígono
+function supOf(p,inf){const s=(inf&&inf.mtTerreno)?(parseInt(String(inf.mtTerreno).replace(/[^\d]/g,''))||null):null;return s!=null?s:p.sup;}
 function renderLote(id){
   const f=PARCELAS.features.find(x=>x.properties.id==id),p=f.properties,inf=info(id),u=uget(id);
-  const ha=p.sup/10000;
+  const sup=supOf(p,inf),ha=sup/10000;
   const linked=!!inf.fromSheet, alq=opOf(inf)==='alquiler';
   const stKey=!linked?'novender':(alq?'disp':'libre');
   const stL=!linked?'No listado':(isDual(inf)?'Venta y alquiler':(alq?'En alquiler':'En venta'));
@@ -1344,14 +1346,14 @@ function renderLote(id){
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.mapNum}`:`${p.barrio} · Parcela ${p.mapNum}`;
   let body='';
   if(linked){
-    const ppm=inf.total&&p.sup?Math.round(inf.total/p.sup):'';
+    const ppm=inf.total&&sup?Math.round(inf.total/sup):'';
     const showAlq = isDual(inf) ? (MODE==='alojar') : (opOf(inf)==='alquiler');
     const shownP=showAlq?inf.alqPrice:inf.total;
     body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${shownP?money(shownP):'—'}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
     ${showAlq?'':planillaBox(inf)}
     ${(!showAlq&&inf.locales&&inf.locales.length)?localesBlock(inf):''}
     <div class="stats">
-      <div class="stat"><div class="lab">Superficie</div><div class="val">${money(p.sup)} <small>m²</small></div></div>
+      <div class="stat"><div class="lab">Superficie</div><div class="val">${money(sup)} <small>m²</small></div></div>
       <div class="stat"><div class="lab">Hectáreas</div><div class="val">${ha.toFixed(2)} <small>ha</small></div></div>
       <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(showAlq?'Alquiler':'Venta')}</div></div></div>
     ${isDual(inf)?(showAlq
@@ -1571,7 +1573,7 @@ document.getElementById('trayCmp').onclick=openCompare;
 function openCompare(){
   if(compare.length<2){toast('Elegí al menos 2 lotes');return;}
   const rows=[['Precio',id=>'USD '+money(info(id).total)],['USD/m²',id=>'USD '+info(id).usd],
-    ['Superficie',id=>money(PARCELAS.features.find(x=>x.properties.id==id).properties.sup)+' m²'],
+    ['Superficie',id=>money(supOf(PARCELAS.features.find(x=>x.properties.id==id).properties,info(id)))+' m²'],
     ['Barrio',id=>PARCELAS.features.find(x=>x.properties.id==id).properties.barrio],
     ['Estado',id=>({libre:'Libre',reservado:'Reservado',vendido:'Vendido'})[info(id).estado]],
     ['Orientación',id=>info(id).orient],
@@ -1717,12 +1719,13 @@ function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).prop
   let txt;
   if(isAlq(inf)){const d=stayDates();const nom=inf.inmueble||('Casa '+p.mapNum);
     txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
-  else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(p.sup)} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
+  else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
+  const supP=supOf(p,inf), ppmP=inf.total&&supP?Math.round(inf.total/supP):inf.usd;
   const feats=inf.feats.map(f=>f[0]).join(' · ');
   const w=window.open('','_blank');if(!w){toast('Permití las ventanas emergentes');return;}
   w.document.write(`<html><head><title>Parcela ${p.mapNum} · Pueblo Vivo</title><style>
@@ -1734,8 +1737,8 @@ function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).pro
     .badge{display:inline-block;background:#dff0e4;color:#1d7a45;padding:4px 12px;border-radius:99px;font-size:14px}</style></head>
     <body><h1>Pueblo Vivo · Parcela ${p.mapNum}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
     <p class="p">USD ${money(inf.total)}</p><span class="badge">${inf.estado}</span>
-    <table><tr><td>Superficie</td><td>${money(p.sup)} m² (${(p.sup/10000).toFixed(2)} ha)</td></tr>
-    <tr><td>Precio por m²</td><td>USD ${inf.usd}</td></tr><tr><td>Orientación</td><td>${inf.orient}</td></tr>
+    <table><tr><td>Superficie</td><td>${money(supP)} m² (${(supP/10000).toFixed(2)} ha)</td></tr>
+    <tr><td>Precio por m²</td><td>USD ${ppmP}</td></tr><tr><td>Orientación</td><td>${inf.orient}</td></tr>
     <tr><td>Características</td><td>${feats}</td></tr></table>
     <div class="imgs">${inf.fotos.map(s=>`<img src="${driveSrc(s)}">`).join('')}</div>
     <p style="color:#867d6c;font-size:12px;margin-top:30px">Prototipo · datos de muestra · cartografía Umepay</p>
