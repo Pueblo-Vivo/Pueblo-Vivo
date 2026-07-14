@@ -692,6 +692,7 @@ const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
 let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true, numbersOn=false;
 let DISP={}, COV={}, MOD_CLAVE=null;   // disponibilidad + overrides del dueño (se declaran temprano por el orden de info())
+let COMU_OV={};   // overrides de cada emprendedor de Comunidad (por slug)
 const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258', INVKEY='pv_inv_v1';
 let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
 const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.mapNum); // mapNum = clave interna de enlace (no el num original)
@@ -1160,6 +1161,28 @@ function comuContacts(s){
   return out;
 }
 function comuIG(s){return comuContacts(s).ig||null;}
+// slug estable por nombre (clave del override/clave del emprendedor)
+function comuSlug(n){return (n||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+// datos efectivos: si el emprendedor editó su ficha (COMU_OV), pisa lo del sheet
+function comuEff(x){
+  const o=COMU_OV[x.slug];
+  if(o){
+    const igH=(o.ig||'').trim().replace(/^@/,'');
+    let webU=(o.web||'').trim(); if(webU&&!/^https?:\/\//i.test(webU))webU='https://'+webU;
+    const fotos=(o.fotos&&o.fotos.length)?o.fotos:null;
+    return {nombre:x.nombre,cat:x.cat,slug:x.slug,
+      desc:(o.desc!=null&&o.desc!=='')?o.desc:x.desc,
+      tel:(o.tel!=null?o.tel:x.tel),
+      igUrl:igH?('https://instagram.com/'+igH):null,
+      webUrl:webU||null,
+      mail:(o.mail||'').trim()||null,
+      imgs:fotos||x.imgs, img:(fotos?fotos[0]:x.img)};
+  }
+  const c=comuContacts(x.ig);
+  return {nombre:x.nombre,cat:x.cat,slug:x.slug,desc:x.desc,tel:x.tel,
+    igUrl:c.ig||null, webUrl:c.web||null, mail:(x.mail||c.email||'').trim()||null,
+    imgs:x.imgs, img:x.img};
+}
 function comuIgIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';}
 function comuWebIco(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></svg>';}
 // Fotos de comunidad: 1ra imagen de cada carpeta de Drive de la col FOTOS (resueltas a mano; se re-resuelven al agregar nuevas)
@@ -1177,7 +1200,7 @@ async function syncComunidadSheet(){
       if(tipo){let ct=tipo.toUpperCase();if(ct==='EMPENDIMIENTO')ct='EMPRENDIMIENTOS';cat=ct;}
       if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=(r[6]||'').trim(), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
-      out.push({cat:cat||'LOCAL',nombre:nom,desc:(r[2]||'').trim(),tel:(r[3]||'').trim(),ig:(r[4]||'').trim(),mail:(r[5]||'').trim(),fotos:fotos,imgs:imgs,img:imgs[0]||null});
+      out.push({cat:cat||'LOCAL',nombre:nom,slug:comuSlug(nom),desc:(r[2]||'').trim(),tel:(r[3]||'').trim(),ig:(r[4]||'').trim(),mail:(r[5]||'').trim(),fotos:fotos,imgs:imgs,img:imgs[0]||null});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
@@ -1195,21 +1218,21 @@ function renderComu(){
   let html='',lastCat=null;
   items.forEach((x,i)=>{
     if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div>';}
-    const wa=comuWA(x.tel),_ct=comuContacts(x.ig),ig=_ct.ig,web=_ct.web,cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
-    html+='<div class="comu-card" data-i="'+i+'">'+comuThumb(x,'cic')+'<div class="comu-cb"><div class="pill" style="background:'+cc+'22;color:'+cc+'">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div><h3>'+esc(x.nombre.toLowerCase())+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'<p style="opacity:.55">Sin descripción todavía.</p>')+'<div class="comu-act">'+(wa?'<a class="comu-btn wa" href="'+wa+'" target="_blank" rel="noopener">'+ic('wa')+'WhatsApp</a>':'')+(ig?'<a class="comu-btn ig" href="'+ig+'" target="_blank" rel="noopener">'+comuIgIco()+'Instagram</a>':'')+(web?'<a class="comu-btn web" href="'+web+'" target="_blank" rel="noopener">'+comuWebIco()+'Sitio web</a>':'')+(!wa&&!ig&&!web?'<button class="comu-btn off">Ver ficha</button>':'')+'</div></div></div>';
+    const e=comuEff(x),wa=comuWA(e.tel),ig=e.igUrl,web=e.webUrl,cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
+    html+='<div class="comu-card" data-i="'+i+'">'+comuThumb(e,'cic')+'<div class="comu-cb"><div class="pill" style="background:'+cc+'22;color:'+cc+'">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</div><h3>'+esc(x.nombre.toLowerCase())+'</h3>'+(e.desc?'<p>'+esc(e.desc)+'</p>':'<p style="opacity:.55">Sin descripción todavía.</p>')+'<div class="comu-act">'+(wa?'<a class="comu-btn wa" href="'+wa+'" target="_blank" rel="noopener">'+ic('wa')+'WhatsApp</a>':'')+(ig?'<a class="comu-btn ig" href="'+ig+'" target="_blank" rel="noopener">'+comuIgIco()+'Instagram</a>':'')+(web?'<a class="comu-btn web" href="'+web+'" target="_blank" rel="noopener">'+comuWebIco()+'Sitio web</a>':'')+(!wa&&!ig&&!web?'<button class="comu-btn off">Ver ficha</button>':'')+'</div></div></div>';
   });
   list.innerHTML=html;
   const shown=items.slice();
   list.querySelectorAll('.comu-card').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;openComu(shown[+el.dataset.i]);});
 }
 function openComu(x){
-  const wa=comuWA(x.tel),_ct=comuContacts(x.ig),ig=_ct.ig,web=_ct.web,email=(x.mail||_ct.email||'').trim()||null,imgs=x.imgs||[];
+  const e=comuEff(x),wa=comuWA(e.tel),ig=e.igUrl,web=e.webUrl,email=e.mail,imgs=e.imgs||[];
   currentGallery=imgs.map(s=>({src:driveSrc(s),raw:s,kind:'comu'})); currentGalleryId=null;
   const heroInner=imgs.length?'<img class="comu-photo" data-lb="0" src="'+driveSrc(imgs[0])+'" onerror="this.remove()">':comuIcSvg(x.cat,'cic');
   const strip=imgs.length>1?'<div class="comu-strip">'+imgs.map((s,i)=>'<img data-lb="'+i+'" loading="lazy" src="'+driveSrc(s)+'">').join('')+'</div>':'';
   scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">'+esc((COMU_CATS[x.cat]||{}).label||x.cat)+'</span><h2>'+esc(x.nombre.toLowerCase())+'</h2></div></div>'+
     '<div class="comu-hero'+(imgs.length?' tap':'')+'" style="background:'+comuGrad(x.cat)+'">'+heroInner+'</div>'+strip+
-    (x.desc?'<p class="comu-desc">'+esc(x.desc)+'</p>':'<p class="empty-c">Sin descripción cargada todavía.</p>')+
+    (e.desc?'<p class="comu-desc">'+esc(e.desc)+'</p>':'<p class="empty-c">Sin descripción cargada todavía.</p>')+
     '<div class="actions" style="margin-top:14px">'+
       (wa?'<a class="btn-primary" href="'+wa+'" target="_blank" rel="noopener" style="grid-column:1/-1;background:#25a35a">'+ic('wa')+' Escribir por WhatsApp</a>':'')+
       (ig?'<a class="btn-primary" href="'+ig+'" target="_blank" rel="noopener" style="grid-column:1/-1;background:#b83280">Instagram</a>':'')+
@@ -1247,14 +1270,15 @@ function openDispEditor(lote,clave){
   }
   draw();
 }
-function esLinkEditor(){ try{const p=new URLSearchParams(location.search);return !!(p.get('mod')||(p.get('casa')&&p.get('clave')));}catch(e){return false;} }
+function esLinkEditor(){ try{const p=new URLSearchParams(location.search);return !!(p.get('mod')||(p.get('casa')&&p.get('clave'))||(p.get('emp')&&p.get('clave')));}catch(e){return false;} }
 function initDispLink(){
   try{
     const p=new URLSearchParams(location.search);
     const mod=p.get('mod'); if(mod){ MOD_CLAVE=mod; try{sessionStorage.setItem('pv_mod',mod);}catch(e){} }
     else { try{MOD_CLAVE=sessionStorage.getItem('pv_mod')||null;}catch(e){} }
-    const casa=p.get('casa'), clave=p.get('clave');
+    const casa=p.get('casa'), clave=p.get('clave'), emp=p.get('emp');
     if(casa&&clave){ setMode('alojar'); Promise.all([loadDisp(),loadCasaOverride()]).then(()=>openCasaEditor(casa,clave)); }
+    else if(emp&&clave){ setMode('comunidad'); Promise.all([syncComunidadSheet(),loadComuOverride()]).then(()=>openComuEditor(emp,clave)); }
   }catch(e){}
 }
 
@@ -1273,6 +1297,58 @@ async function uploadFotoAnon(lote,dataUrl){
     const {error}=await sb.storage.from('fotos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error;
     return sb.storage.from('fotos').getPublicUrl(path).data.publicUrl;
   }catch(e){ console.warn('uploadFotoAnon',e); return null; }
+}
+/* ===== Editor del emprendedor de Comunidad (con su clave): descripción + contacto + fotos ===== */
+async function loadComuOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('comu_override').select('slug,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.slug!=null)m[r.slug]=r.data||{}; }); COMU_OV=m; if(MODE==='comunidad')renderComu(); }catch(e){console.warn('loadComuOverride',e);} }
+function guardarComu(slug,clave,data,cb){
+  if(!sb){toast('Sin conexión');return;}
+  sb.rpc('set_comu',{p_slug:String(slug),p_clave:String(clave),p_data:data}).then(function(res){
+    if(res.error){ console.warn('set_comu',res.error); toast('No se pudo guardar (¿clave incorrecta?)'); return; }
+    COMU_OV[slug]=JSON.parse(JSON.stringify(data)); if(MODE==='comunidad')renderComu(); toast('Guardado ✓'); if(cb)cb();
+  });
+}
+async function uploadComuFoto(slug,dataUrl){
+  if(!sb)return null;
+  try{ const blob=await (await fetch(dataUrl)).blob(); const path='comu/'+slug+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,7)+'.jpg';
+    const {error}=await sb.storage.from('fotos').upload(path,blob,{contentType:'image/jpeg'}); if(error)throw error;
+    return sb.storage.from('fotos').getPublicUrl(path).data.publicUrl;
+  }catch(e){ console.warn('uploadComuFoto',e); return null; }
+}
+function openComuEditor(slug,clave){
+  const item=COMUNIDAD.find(x=>x.slug===slug);
+  const nom=item?item.nombre:slug;
+  const ov=COMU_OV[slug], seedC=item?comuContacts(item.ig):{};
+  const data={
+    desc:(ov&&ov.desc!=null)?ov.desc:(item?item.desc:''),
+    tel:(ov&&ov.tel!=null)?ov.tel:(item?item.tel:''),
+    ig:(ov&&ov.ig!=null)?ov.ig:((seedC.ig||'').replace('https://instagram.com/','')),
+    web:(ov&&ov.web!=null)?ov.web:(seedC.web||''),
+    mail:(ov&&ov.mail!=null)?ov.mail:((item&&item.mail)||seedC.email||''),
+    fotos:(ov&&ov.fotos&&ov.fotos.length)?ov.fotos.slice():((item&&item.imgs)?item.imgs.slice():[])
+  };
+  const inp='width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:15px';
+  function readForm(){ const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';}; data.desc=g('ceDesc');data.tel=g('ceTel');data.ig=g('ceIg');data.web=g('ceWeb');data.mail=g('ceMail'); }
+  function draw(){
+    scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">Editar mi ficha</span><h2>'+esc(nom.toLowerCase())+'</h2></div></div>'+
+      '<p class="comu-desc">Editá tu descripción, contacto y fotos. Los cambios se ven al instante en la app para todos.</p>'+
+      '<div class="sec-t">'+ic('chat')+' Descripción</div>'+
+      '<textarea id="ceDesc" rows="4" style="'+inp+';font-family:inherit;resize:vertical">'+esc(data.desc||'')+'</textarea>'+
+      '<div class="sec-t">'+ic('wa')+' WhatsApp</div><input id="ceTel" value="'+esc(data.tel||'')+'" placeholder="ej: 5493546510397" style="'+inp+'">'+
+      '<div class="sec-t">Instagram</div><input id="ceIg" value="'+esc(data.ig||'')+'" placeholder="@tuusuario" style="'+inp+'">'+
+      '<div class="sec-t">Sitio web</div><input id="ceWeb" value="'+esc(data.web||'')+'" placeholder="www.tusitio.com" style="'+inp+'">'+
+      '<div class="sec-t">Mail</div><input id="ceMail" value="'+esc(data.mail||'')+'" placeholder="tucorreo@mail.com" style="'+inp+'">'+
+      '<div class="actions" style="margin:12px 0"><button class="btn-primary" id="ceSave" style="grid-column:1/-1">Guardar cambios</button></div>'+
+      '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
+      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3"><button class="gdel" data-delf="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      '<input type="file" id="ceFile" accept="image/*" style="display:none">';
+    document.getElementById('ceSave').onclick=()=>{ readForm(); guardarComu(slug,clave,data); };
+    document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
+    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1200,async img=>{ readForm(); toast('Subiendo foto…'); const url=await uploadComuFoto(slug,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarComu(slug,clave,data,draw); }); rd.readAsDataURL(f); };
+    scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ readForm(); data.fotos.splice(+b.dataset.delf,1); guardarComu(slug,clave,data,draw); });
+    scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:driveSrc(u),raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
+    openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
+  }
+  draw();
 }
 function openCasaEditor(lote,clave){
   lote=Number(lote);
@@ -1990,7 +2066,7 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 /* ============ init ============ */
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
 if(sb){ sbInitAuth(); loadShared(); }
-loadDisp(); loadCasaOverride(); initDispLink();
+loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
 syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
