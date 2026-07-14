@@ -952,7 +952,7 @@ function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); 
   else if(s==='ppm')out.sort((a,b)=>a.ppm-b.ppm);
   else out.sort((a,b)=>(a.inf.total||1e12)-(b.inf.total||1e12));
   return out; }
-function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LFILT.maxPrice&&price&&price>LFILT.maxPrice)continue; if(LFILT.minCap&&cap&&cap<LFILT.minCap)continue; if(LFILT.minHab&&hab&&hab<LFILT.minHab)continue; if(LFILT.amen&&LFILT.amen.length&&!LFILT.amen.every(mk=>casaHas(inf,mk)))continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
+function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LFILT.maxPrice&&price&&price>LFILT.maxPrice)continue; if(LFILT.minCap&&cap&&cap<LFILT.minCap)continue; if(LFILT.minHab&&hab&&hab<LFILT.minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
   if(LFILT.sort==='precio-desc')out.sort((a,b)=>(b.price||0)-(a.price||0));
   else out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
   return out; }
@@ -988,7 +988,7 @@ function renderListView(){
   list.querySelectorAll('.lot-card').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-map]'))return;openSheet(+el.dataset.id);});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
 }
-function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||(LFILT.amen&&LFILT.amen.length)||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.minSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
+function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.minSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
 function renderLvFilters(isAlojar){
   const el=document.getElementById('lvFilters');if(!el)return;
   const opt=(v,cur,lab)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+lab+'</option>';
@@ -1000,7 +1000,6 @@ function renderLvFilters(isAlojar){
     html+='<select id="lfHab"><option value="0">Habitaciones: todas</option>'+[1,2,3].map(v=>opt(v,LFILT.minHab,v+'+ hab.')).join('')+'</select>';
     html+='<button class="lvchip'+(d?' on':'')+'" id="lfDates">'+ic('cal')+(d?(fmtShort(d[0])+' → '+fmtShort(d[1])):'Fechas')+'</button>';
     html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+'</select>';
-    html+='<div class="lvamen">'+LV_AMEN.map(a=>'<button class="lvchip'+(LFILT.amen.indexOf(a[0])>=0?' on':'')+'" data-am="'+a[0]+'">'+esc(a[1])+'</button>').join('')+'</div>';
   }else{
     html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
     html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.minSup,'Desde '+money(v)+' m²')).join('')+'</select>';
@@ -1016,7 +1015,6 @@ function renderLvFilters(isAlojar){
     const C=document.getElementById('lfCap');if(C)C.onchange=e=>{LFILT.minCap=+e.target.value||0;renderListView();};
     const H=document.getElementById('lfHab');if(H)H.onchange=e=>{LFILT.minHab=+e.target.value||0;renderListView();};
     const D=document.getElementById('lfDates');if(D)D.onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'Fechas de tu estadía',onDone:(a,b)=>{stayIn=a;stayOut=b;renderListView();}});
-    el.querySelectorAll('[data-am]').forEach(b=>b.onclick=()=>{const mk=b.dataset.am,i=LFILT.amen.indexOf(mk);if(i>=0)LFILT.amen.splice(i,1);else LFILT.amen.push(mk);renderListView();});
   }else{
     const S=document.getElementById('lfSup');if(S)S.onchange=e=>{LFILT.minSup=+e.target.value||0;renderListView();};
     const B=document.getElementById('lfBarrio');if(B)B.onchange=e=>{LFILT.barrio=e.target.value||'';renderListView();};
