@@ -529,9 +529,9 @@ body.poinames .poi-pin .t{display:block}
 
 <div class="modebar">
   <div class="seg">
-    <button id="mComprar" class="active" data-mode="comprar">Comprar Propiedad</button>
+    <button id="mComunidad" class="comu active" data-mode="comunidad">Comunidad</button>
     <button id="mAlojar" class="alq" data-mode="alojar">Alojarte</button>
-    <button id="mComunidad" class="comu" data-mode="comunidad">Comunidad</button>
+    <button id="mComprar" data-mode="comprar">Comprar Propiedad</button>
   </div>
 </div>
 
@@ -2107,6 +2107,7 @@ loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
 syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
+if(!esLinkEditor())setMode('comunidad');   // la app abre en Comunidad (los links de editor fijan su propio modo)
 
 /* Instalar como app */
 (function(){
