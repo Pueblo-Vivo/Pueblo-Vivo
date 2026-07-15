@@ -766,7 +766,7 @@ for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)delete ADMIN[k];} sav
 let compare=[]; // ids
 let FILT={maxPrice:null,minSize:0,orient:[]};
 let LISTON=true;   // Comprar/Alojar arrancan en vista de LISTA (el mapa se abre con un botón)
-let LFILT={maxPrice:null,minSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};   // filtros de la vista de lista
+let LFILT={maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};   // filtros de la vista de lista
 let miniMap=null;
 
 const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d2r,dLng=(b[1]-a[1])*d2r;
@@ -954,7 +954,7 @@ function lotThumb(inf,isCasa){ const f=lotFirstPhoto(inf); if(f)return '<div cla
 function casaField(inf,label){ const cs=(inf.casas||[])[0]; if(!cs)return ''; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(label)>=0); return row?String(row[2]).trim():''; }
 function casaHas(inf,mk){ const cs=(inf.casas||[])[0]; if(!cs)return false; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(mk)>=0); return !!row&&!/^no$/i.test(String(row[2]).trim()); }
 const LV_AMEN=[['estufa le','Estufa a leña'],['wifi','WiFi'],['cocina equipada','Cocina'],['parrilla','Parrilla'],['estacionamiento','Estacionam.'],['agua caliente','Agua caliente']];
-function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.minSup&&sup<LFILT.minSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; if(LFILT.conCasa&&!conCasa(inf))continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
+function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.maxSup&&sup>LFILT.maxSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; if(LFILT.conCasa&&!conCasa(inf))continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
   const s=LFILT.sort;
   if(s==='precio-desc')out.sort((a,b)=>(b.inf.total||0)-(a.inf.total||0));
   else if(s==='sup-desc')out.sort((a,b)=>b.sup-a.sup);
@@ -997,7 +997,7 @@ function renderListView(){
   list.querySelectorAll('.lot-card').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-map]'))return;openSheet(+el.dataset.id);});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
 }
-function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.minSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
+function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.maxSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
 function renderLvFilters(isAlojar){
   const el=document.getElementById('lvFilters');if(!el)return;
   const opt=(v,cur,lab)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+lab+'</option>';
@@ -1011,7 +1011,7 @@ function renderLvFilters(isAlojar){
     html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+'</select>';
   }else{
     html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
-    html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.minSup,'Desde '+money(v)+' m²')).join('')+'</select>';
+    html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.maxSup,'Hasta '+money(v)+' m²')).join('')+'</select>';
     html+='<select id="lfBarrio"><option value="">Barrio: todos</option>'+barriosVenta().map(b=>opt(b,LFILT.barrio,esc(b))).join('')+'</select>';
     html+='<button class="lvchip'+(LFILT.conCasa?' on':'')+'" id="lfCasa">Con casa</button>';
     html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+opt('sup-desc',LFILT.sort,'Ordenar: más grande')+opt('ppm',LFILT.sort,'Ordenar: menor USD/m²')+'</select>';
@@ -1025,11 +1025,11 @@ function renderLvFilters(isAlojar){
     const H=document.getElementById('lfHab');if(H)H.onchange=e=>{LFILT.minHab=+e.target.value||0;renderListView();};
     const D=document.getElementById('lfDates');if(D)D.onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'Fechas de tu estadía',onDone:(a,b)=>{stayIn=a;stayOut=b;renderListView();}});
   }else{
-    const S=document.getElementById('lfSup');if(S)S.onchange=e=>{LFILT.minSup=+e.target.value||0;renderListView();};
+    const S=document.getElementById('lfSup');if(S)S.onchange=e=>{LFILT.maxSup=+e.target.value||0;renderListView();};
     const B=document.getElementById('lfBarrio');if(B)B.onchange=e=>{LFILT.barrio=e.target.value||'';renderListView();};
     const K=document.getElementById('lfCasa');if(K)K.onclick=()=>{LFILT.conCasa=!LFILT.conCasa;renderListView();};
   }
-  const CL=document.getElementById('lfClear');if(CL)CL.onclick=()=>{LFILT={maxPrice:null,minSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};renderListView();};
+  const CL=document.getElementById('lfClear');if(CL)CL.onclick=()=>{LFILT={maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};renderListView();};
 }
 /* ===== Disponibilidad por fechas (Alojarte estilo Airbnb) ===== */
 let stayIn=null, stayOut=null;
