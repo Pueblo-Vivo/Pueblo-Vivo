@@ -1132,8 +1132,8 @@ async function syncRentSheet(){
     R.forEach((row,ri)=>{if(ri<3)return;const s0=(row[0]||'').trim();if(s0)sec=s0;const q=(row[1]||'').trim();if(!q)return;
       houses.forEach(h=>{const v=(row[h.col]||'').trim();
         if(q==='Lote')h.lote=v?parseInt(v):null;
-        else if(q==='Precio por noche (temporada baja)')h.pb=v||null;
-        else if(q==='Precio por noche (temporada alta)')h.pa=v||null;
+        else if(/precio.*noche.*baja/i.test(q))h.pb=v||null;   // "Precio por noche (baja)" o "(temporada baja)"
+        else if(/precio.*noche.*alta/i.test(q))h.pa=v||null;
         else if(SKIP.indexOf(q)<0&&!/link|clave|due[ñn]o/i.test(q)&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});  // ocultar link/clave del dueño
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
     // Así, si Santiago le saca el N° de lote a una casa en la planilla, esa casa DESAPARECE de la app.
