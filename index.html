@@ -76,11 +76,10 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- Mode toggle ---------- */
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
-.seg{display:flex;background:#ece5d8;border-radius:999px;padding:4px;gap:3px;width:100%;overflow-x:auto;scrollbar-width:none;
+.seg{display:flex;background:#ece5d8;border-radius:16px;padding:4px;gap:3px;width:100%;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.06)}
-.seg::-webkit-scrollbar{display:none}
-.seg button{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;white-space:nowrap;
-  padding:9px 13px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:5px;transition:.18s}
+.seg button{flex:1 1 0;min-width:0;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:11.5px;line-height:1.14;white-space:normal;text-align:center;
+  padding:8px 3px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:4px;transition:.18s}
 .seg button svg{width:15px;height:15px;flex:0 0 auto}
 .seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
 .seg button.active.alq{color:var(--terra)}
@@ -590,7 +589,7 @@ body.listmode .lv-tolist{display:none}
   <div class="seg">
     <button id="mComunidad" class="comu active" data-mode="comunidad">Comunidad</button>
     <button id="mAlojar" class="alq" data-mode="alojar">Alojarte</button>
-    <button id="mComprarCasa" data-mode="casa">Lotes con casa</button>
+    <button id="mComprarCasa" data-mode="casa">Comprar casa</button>
     <button id="mComprarTerreno" data-mode="terreno">Comprar terreno</button>
   </div>
 </div>
@@ -983,7 +982,7 @@ function renderListView(){
   ensureMiniMap(); if(miniMap)setTimeout(()=>{try{miniMap.invalidateSize();}catch(e){}},60);
   const isAlojar=MODE==='alojar';
   const items=isAlojar?alqList():ventaList();
-  const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'lote con casa':'lotes con casa');
+  const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'casa en venta':'casas en venta');
   document.getElementById('lvCount').textContent=items.length+' '+(isAlojar?(uno?'alojamiento':'alojamientos'):sustV);
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
@@ -1264,7 +1263,7 @@ function renderFilters(){
       {k:'fav',label:'Favoritos',n:c.fav,heart:true}];
   }else{
     const nTot=(ventaTipo==='terreno')?c.ventaLote:c.ventaCasa;
-    list=[{k:'todos',label:(ventaTipo==='terreno'?'Terrenos':'Con casa'),n:nTot,sw:(ventaTipo==='terreno'?'#e07d2b':'#9a4d9e')},
+    list=[{k:'todos',label:(ventaTipo==='terreno'?'Terrenos':'Casas'),n:nTot,sw:(ventaTipo==='terreno'?'#e07d2b':'#9a4d9e')},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
   list.forEach(ft=>{const b=document.createElement('button');b.className='chip'+(currentFilter===ft.k?' active':'');
