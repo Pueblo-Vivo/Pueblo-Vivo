@@ -590,7 +590,7 @@ body.listmode .lv-tolist{display:none}
   <div class="seg">
     <button id="mComunidad" class="comu active" data-mode="comunidad">Comunidad</button>
     <button id="mAlojar" class="alq" data-mode="alojar">Alojarte</button>
-    <button id="mComprarCasa" data-mode="casa">Comprar casa</button>
+    <button id="mComprarCasa" data-mode="casa">Lotes con casa</button>
     <button id="mComprarTerreno" data-mode="terreno">Comprar terreno</button>
   </div>
 </div>
@@ -983,7 +983,7 @@ function renderListView(){
   ensureMiniMap(); if(miniMap)setTimeout(()=>{try{miniMap.invalidateSize();}catch(e){}},60);
   const isAlojar=MODE==='alojar';
   const items=isAlojar?alqList():ventaList();
-  const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'casa en venta':'casas en venta');
+  const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'lote con casa':'lotes con casa');
   document.getElementById('lvCount').textContent=items.length+' '+(isAlojar?(uno?'alojamiento':'alojamientos'):sustV);
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
@@ -1264,7 +1264,7 @@ function renderFilters(){
       {k:'fav',label:'Favoritos',n:c.fav,heart:true}];
   }else{
     const nTot=(ventaTipo==='terreno')?c.ventaLote:c.ventaCasa;
-    list=[{k:'todos',label:(ventaTipo==='terreno'?'Terrenos':'Casas'),n:nTot,sw:(ventaTipo==='terreno'?'#e07d2b':'#9a4d9e')},
+    list=[{k:'todos',label:(ventaTipo==='terreno'?'Terrenos':'Con casa'),n:nTot,sw:(ventaTipo==='terreno'?'#e07d2b':'#9a4d9e')},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
   list.forEach(ft=>{const b=document.createElement('button');b.className='chip'+(currentFilter===ft.k?' active':'');
