@@ -197,8 +197,19 @@ body.listmode .lv-tolist{display:none}
 .comu-chip{white-space:nowrap;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px}
 .comu-chip .ic{width:15px;height:15px}
 .comu-chip.on{background:var(--forest);border-color:var(--forest);color:#fff}
+.comu-body{flex:1;min-height:0;display:flex;flex-direction:column}
+.comu-side{flex:0 0 auto;display:flex;flex-direction:column;min-height:0}
 .comu-list{flex:1;min-height:0;overflow-y:auto;padding:2px 14px 26px;display:flex;flex-direction:column;gap:13px}
 .comu-list>*{flex:0 0 auto}
+@media(min-width:820px){
+  .comu-head{max-width:1010px;width:100%;margin:0 auto}
+  .comu-body{flex-direction:row;max-width:1010px;width:100%;margin:0 auto;gap:16px;padding:0 4px}
+  .comu-side{flex:0 0 264px;overflow-y:auto;padding-bottom:20px}
+  .comu-search{margin:8px 0 0}
+  .comu-chips{flex-direction:column;overflow:visible;align-items:stretch;gap:6px;padding:11px 0 10px}
+  .comu-chip{width:100%;justify-content:flex-start}
+  .comu-list{flex:1;padding-top:2px}
+}
 .comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
 .comu-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
 .comu-thumb{flex:0 0 116px;align-self:stretch;min-height:112px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -624,9 +635,13 @@ body.listmode .lv-tolist{display:none}
 
 <div id="comuView">
   <div class="comu-head"><h2>Comunidad</h2><p>Emprendimientos, servicios y espacios de Umepay</p></div>
-  <div class="comu-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="comuQ" placeholder="Buscar emprendimiento o servicio…"></div>
-  <div class="comu-chips" id="comuChips"></div>
-  <div class="comu-list" id="comuList"></div>
+  <div class="comu-body">
+    <div class="comu-side">
+      <div class="comu-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="comuQ" placeholder="Buscar emprendimiento o servicio…"></div>
+      <div class="comu-chips" id="comuChips"></div>
+    </div>
+    <div class="comu-list" id="comuList"></div>
+  </div>
 </div>
 
 <div id="listView">
