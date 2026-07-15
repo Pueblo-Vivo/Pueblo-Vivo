@@ -205,8 +205,8 @@ body.listmode .lv-tolist{display:none}
   .comu-head{max-width:1010px;width:100%;margin:0 auto}
   .comu-body{flex-direction:row;max-width:1010px;width:100%;margin:0 auto;gap:16px;padding:0 4px}
   .comu-side{flex:0 0 264px;overflow-y:auto;padding-bottom:20px}
-  .comu-search{margin:8px 0 0}
-  .comu-chips{flex-direction:column;overflow:visible;align-items:stretch;gap:6px;padding:11px 0 10px}
+  .comu-search{max-width:1002px;width:100%;align-self:center;margin:10px 0 0}
+  .comu-chips{flex-direction:column;overflow:visible;align-items:stretch;gap:6px;padding:6px 0 10px}
   .comu-chip{width:100%;justify-content:flex-start}
   .comu-list{flex:1;padding-top:2px}
 }
@@ -582,9 +582,6 @@ body.listmode .lv-tolist{display:none}
     </svg>
     <span class="wm">pueblo vivo</span>
   </div>
-  <button class="tb-btn" id="btnInv" title="Inventario real (planilla)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a1 1 0 0 1 1-1z"/><path d="M9 5h6"/><path d="M8 11h8M8 15h5"/></svg>
-  </button>
   <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
   </button>
@@ -635,9 +632,9 @@ body.listmode .lv-tolist{display:none}
 
 <div id="comuView">
   <div class="comu-head"><h2>Comunidad</h2><p>Emprendimientos, servicios y espacios de Umepay</p></div>
+  <div class="comu-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="comuQ" placeholder="Buscar emprendimiento o servicio…"></div>
   <div class="comu-body">
     <div class="comu-side">
-      <div class="comu-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="comuQ" placeholder="Buscar emprendimiento o servicio…"></div>
       <div class="comu-chips" id="comuChips"></div>
     </div>
     <div class="comu-list" id="comuList"></div>
@@ -2023,7 +2020,6 @@ function syncSheets(){
     saveInv();refreshAllStyles();renderFilters();openInventory();toast('Planilla actualizada: '+list.length+' inmuebles ✓');
   }).catch(()=>{ if(btn){btn.innerHTML=ic('sync')+' Sheets';} toast('No se pudo conectar a Sheets (CORS). Lo editado local quedó guardado.'); });
 }
-document.getElementById('btnInv').onclick=openInventory;
 
 /* ============ Recorrido favoritos ============ */
 function updateRouteBadge(){} // (recorrido de favoritos removido)
