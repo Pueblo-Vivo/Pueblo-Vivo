@@ -76,10 +76,11 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- Mode toggle ---------- */
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
-.seg{display:flex;justify-content:space-between;background:#ece5d8;border-radius:999px;padding:4px;gap:3px;width:100%;max-width:420px;
+.seg{display:flex;background:#ece5d8;border-radius:999px;padding:4px;gap:3px;width:100%;overflow-x:auto;scrollbar-width:none;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.06)}
-.seg button{flex:0 1 auto;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13.5px;white-space:nowrap;
-  padding:9px 14px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:5px;transition:.18s}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font-weight:700;font-size:13px;white-space:nowrap;
+  padding:9px 13px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:5px;transition:.18s}
 .seg button svg{width:15px;height:15px;flex:0 0 auto}
 .seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
 .seg button.active.alq{color:var(--terra)}
@@ -589,7 +590,8 @@ body.listmode .lv-tolist{display:none}
   <div class="seg">
     <button id="mComunidad" class="comu active" data-mode="comunidad">Comunidad</button>
     <button id="mAlojar" class="alq" data-mode="alojar">Alojarte</button>
-    <button id="mComprar" data-mode="comprar">Comprar Propiedad</button>
+    <button id="mComprarCasa" data-mode="casa">Comprar casa</button>
+    <button id="mComprarTerreno" data-mode="terreno">Comprar terreno</button>
   </div>
 </div>
 
@@ -757,7 +759,7 @@ document.getElementById('btnSat').onclick=()=>{satOn=!satOn;document.body.classL
 
 const C_SALE={libre:'#3fa66a',reservado:'#e0a32e',vendido:'#9a9183'};
 let DATA={},layers={},labels={},centers={};
-let MODE='comprar', currentFilter='todos', adminMode=false, poiVisible=true, numbersOn=false;
+let MODE='comprar', ventaTipo='casa', currentFilter='todos', adminMode=false, poiVisible=true, numbersOn=false;   // ventaTipo: 'casa' | 'terreno' (dos pestañas de Comprar)
 let DISP={}, COV={}, MOD_CLAVE=null;   // disponibilidad + overrides del dueño (se declaran temprano por el orden de info())
 let COMU_OV={};   // overrides de cada emprendedor de Comunidad (por slug)
 const SHEET_ID='1Pw0L4looH6IhS5K4NrXLnwseDTBNpmzCt-dFLB-SLh0', SHEET_GID='1795702258', INVKEY='pv_inv_v1';
@@ -924,14 +926,14 @@ function passesFilter(id){
     if(currentFilter==='fav')return u.fav;
     return true; // todos: muestra todo (lo no-alquiler sale gris)
   }
-  // comprar
-  if(currentFilter==='venta_lote'&&!(isVenta(inf)&&!conCasa(inf)))return false;
-  if(currentFilter==='venta_casa'&&!(isVenta(inf)&&conCasa(inf)))return false;
+  // comprar: casa o terreno según la pestaña
+  if(!isVenta(inf))return false;
+  if(ventaTipo==='casa'&&!conCasa(inf))return false;
+  if(ventaTipo==='terreno'&&conCasa(inf))return false;
   if(currentFilter==='fav'&&!u.fav)return false;
   if(currentFilter==='seen'&&!u.seen)return false;
-  // filtros avanzados (solo lotes en venta)
+  // filtros avanzados
   if(FILT.maxPrice||FILT.minSize||FILT.orient.length){
-    if(!isVenta(inf))return false;
     const f=PARCELAS.features.find(x=>x.properties.id==id);
     if(FILT.maxPrice&&inf.total>FILT.maxPrice)return false;
     if(FILT.minSize&&f.properties.sup<FILT.minSize)return false;
@@ -955,7 +957,7 @@ function lotThumb(inf,isCasa){ const f=lotFirstPhoto(inf); if(f)return '<div cla
 function casaField(inf,label){ const cs=(inf.casas||[])[0]; if(!cs)return ''; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(label)>=0); return row?String(row[2]).trim():''; }
 function casaHas(inf,mk){ const cs=(inf.casas||[])[0]; if(!cs)return false; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(mk)>=0); return !!row&&!/^no$/i.test(String(row[2]).trim()); }
 const LV_AMEN=[['estufa le','Estufa a leña'],['wifi','WiFi'],['cocina equipada','Cocina'],['parrilla','Parrilla'],['estacionamiento','Estacionam.'],['agua caliente','Agua caliente']];
-function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.maxSup&&sup>LFILT.maxSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; if(LFILT.conCasa&&!conCasa(inf))continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
+function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.maxSup&&sup>LFILT.maxSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
   const s=LFILT.sort;
   if(s==='precio-desc')out.sort((a,b)=>(b.inf.total||0)-(a.inf.total||0));
   else if(s==='sup-desc')out.sort((a,b)=>b.sup-a.sup);
@@ -981,7 +983,8 @@ function renderListView(){
   ensureMiniMap(); if(miniMap)setTimeout(()=>{try{miniMap.invalidateSize();}catch(e){}},60);
   const isAlojar=MODE==='alojar';
   const items=isAlojar?alqList():ventaList();
-  document.getElementById('lvCount').textContent=items.length+' '+(isAlojar?(items.length===1?'alojamiento':'alojamientos'):(items.length===1?'lote en venta':'lotes en venta'));
+  const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'casa en venta':'casas en venta');
+  document.getElementById('lvCount').textContent=items.length+' '+(isAlojar?(uno?'alojamiento':'alojamientos'):sustV);
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No hay resultados con esos filtros. Probá aflojar los filtros.</div>';return;}
@@ -1014,7 +1017,6 @@ function renderLvFilters(isAlojar){
     html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
     html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.maxSup,'Hasta '+money(v)+' m²')).join('')+'</select>';
     html+='<select id="lfBarrio"><option value="">Barrio: todos</option>'+barriosVenta().map(b=>opt(b,LFILT.barrio,esc(b))).join('')+'</select>';
-    html+='<button class="lvchip'+(LFILT.conCasa?' on':'')+'" id="lfCasa">Con casa</button>';
     html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+opt('sup-desc',LFILT.sort,'Ordenar: más grande')+opt('ppm',LFILT.sort,'Ordenar: menor USD/m²')+'</select>';
   }
   if(anyLFilt(isAlojar))html+='<button class="lvchip" id="lfClear">Limpiar filtros ✕</button>';
@@ -1261,9 +1263,8 @@ function renderFilters(){
       {k:'alquiler',label:'En alquiler',n:c.alquiler,sw:'#2b9aa0'},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true}];
   }else{
-    list=[{k:'todos',label:'Todos',n:c.todos},
-      {k:'venta_lote',label:'Lotes en venta',n:c.ventaLote,sw:'#e07d2b'},
-      {k:'venta_casa',label:'Lote y casa en venta',n:c.ventaCasa,sw:'#9a4d9e'},
+    const nTot=(ventaTipo==='terreno')?c.ventaLote:c.ventaCasa;
+    list=[{k:'todos',label:(ventaTipo==='terreno'?'Terrenos':'Casas'),n:nTot,sw:(ventaTipo==='terreno'?'#e07d2b':'#9a4d9e')},
       {k:'fav',label:'Favoritos',n:c.fav,heart:true},{k:'seen',label:'Vistos',n:c.seen,eye:true}];
   }
   list.forEach(ft=>{const b=document.createElement('button');b.className='chip'+(currentFilter===ft.k?' active':'');
@@ -1282,7 +1283,8 @@ function renderLegend(){}
 /* ============ Cambio de modo ============ */
 function setMode(m){
   MODE=m;currentFilter='todos';clearCompare();
-  document.getElementById('mComprar').classList.toggle('active',m==='comprar');
+  document.getElementById('mComprarCasa').classList.toggle('active',m==='comprar'&&ventaTipo==='casa');
+  document.getElementById('mComprarTerreno').classList.toggle('active',m==='comprar'&&ventaTipo==='terreno');
   document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
   document.getElementById('mComunidad').classList.toggle('active',m==='comunidad');
   const isComu=m==='comunidad';
@@ -1297,7 +1299,8 @@ function setMode(m){
   else if(isList){ renderListView(); }
   else{ renderFilters();renderLegend();applyFilter(); try{map.invalidateSize();}catch(e){} }
 }
-document.getElementById('mComprar').onclick=()=>{LISTON=true;setMode('comprar');};
+document.getElementById('mComprarCasa').onclick=()=>{LISTON=true;ventaTipo='casa';setMode('comprar');};
+document.getElementById('mComprarTerreno').onclick=()=>{LISTON=true;ventaTipo='terreno';setMode('comprar');};
 document.getElementById('mAlojar').onclick=()=>{LISTON=true;setMode('alojar');};
 document.getElementById('mComunidad').onclick=()=>setMode('comunidad');
 document.getElementById('lvMapBtn').onclick=()=>{LISTON=false;setMode(MODE);};
