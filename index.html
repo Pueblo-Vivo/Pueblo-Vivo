@@ -1121,6 +1121,8 @@ function fichaBlock(inf){
 const RENT_SHEET_ID='17yWE-8ZddG2gUA3L8kWKvGNHoFQikSiHMoCarb_MmUo', RENT_GID='765860150';
 function parseCSVtext(t){const rows=[];let row=[],cur="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=c;}else{if(c==='"')q=true;else if(c===","){row.push(cur);cur="";}else if(c==="\n"){row.push(cur);rows.push(row);row=[];cur="";}else if(c==="\r"){}else cur+=c;}}if(cur!==""||row.length){row.push(cur);rows.push(row);}return rows;}
 let PHOTOS_BY_NAME={}; // cache acumulativo de fotos de casas por nombre (sobrevive a los resets de venta y alquiler)
+// Fotos bajadas del Drive para casas que no tenían foto (fallback por nombre; ver dlcasas.js)
+const CASA_FOTOS={"Bambú":["fotos/c216-0-1.jpg","fotos/c216-0-2.jpg","fotos/c216-0-3.jpg","fotos/c216-0-4.jpg","fotos/c216-0-5.jpg","fotos/c216-0-6.jpg","fotos/c216-0-7.jpg","fotos/c216-0-8.jpg","fotos/c216-0-9.jpg","fotos/c216-0-10.jpg","fotos/c216-0-11.jpg","fotos/c216-0-12.jpg","fotos/c216-0-13.jpg","fotos/c216-0-14.jpg","fotos/c216-0-15.jpg","fotos/c216-0-16.jpg"],"Brote":["fotos/c215-0-1.jpg","fotos/c215-0-2.jpg","fotos/c215-0-3.jpg"],"Mili":["fotos/c73-0-1.jpg","fotos/c73-0-2.jpg","fotos/c73-0-3.jpg","fotos/c73-0-4.jpg","fotos/c73-0-5.jpg","fotos/c73-0-6.jpg","fotos/c73-0-7.jpg","fotos/c73-0-8.jpg","fotos/c73-0-9.jpg","fotos/c73-0-10.jpg","fotos/c73-0-11.jpg","fotos/c73-0-12.jpg"]};
 function capturePhotos(){ REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});}); }
 async function syncRentSheet(){
   try{
@@ -1143,7 +1145,7 @@ async function syncRentSheet(){
     const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
       const price=hs[0].pb?parseInt(String(hs[0].pb).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:PHOTOS_BY_NAME[h.name]||[],f:h.f}));
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f}));
       if(r){r.casas=casas;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
