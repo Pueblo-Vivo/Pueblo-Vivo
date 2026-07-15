@@ -440,6 +440,12 @@ body.listmode .lv-tolist{display:none}
 .btn-primary svg{width:20px;height:20px}
 .share-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .share-row .act{font-size:13px}
+.wa-cta{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:#25a35a;color:#fff;border:0;border-radius:13px;padding:14px;font-size:15.5px;font-weight:700;cursor:pointer;margin:16px 0 6px;box-shadow:0 3px 11px rgba(37,163,90,.28)}
+.wa-cta svg{width:21px;height:21px}
+.wa-cta:active{transform:scale(.985)}
+.privhint{display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.4;color:#6b6152;background:#f3efe4;border-radius:10px;padding:8px 11px;margin:3px 0 2px}
+.privhint svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px;color:#8a7f6c}
+.privhint b{font-weight:700;color:#4b4438}
 
 /* admin edit box */
 .adminbox{background:#fff7e6;border:1.5px solid #f0d695;border-radius:14px;padding:13px;margin-top:18px}
@@ -1646,7 +1652,7 @@ function renderLote(id){
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
     </div>
-    ${linked?`<div class="share-row"><button class="act" id="btnWA">${ic('wa')}WhatsApp</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
+    ${linked?`<button class="act" id="btnPdf" style="width:100%;margin-top:10px">${ic('pdf')}Descargar ficha PDF</button>`:''}`;
   scroll.innerHTML=`
   <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
     <button class="sh-mapbtn" id="btnVerMapa">${ic('pin')} Ver en el mapa</button>
@@ -1654,11 +1660,13 @@ function renderLote(id){
   <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
   <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${galHtml}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
-  ${u.photos.length?'<div class="usertag">Tocá una foto para verla en grande. Las de borde verde las subiste vos.</div>':'<div class="usertag" style="opacity:.7">Tocá una foto para verla en grande.</div>'}
-  <input type="file" id="fileIn" accept="image/*" style="display:none">`+
+  <div class="privhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Las fotos que subís son <b>solo para vos</b> — nadie más las ve. Sirven para tus recuerdos del lote (las de borde verde son tuyas).</span></div>
+  <input type="file" id="fileIn" accept="image/*" style="display:none">
+  ${linked?`<button class="wa-cta" id="btnWA">${ic('wa')} Consultanos por WhatsApp</button>`:''}`+
   acciones+
   (adminMode&&linked?adminBox(id,inf,p):'')+`
-  <div class="sec-t">${ic('chat')} Mis notas y comentarios</div>
+  <div class="sec-t">${ic('chat')} Mis notas</div>
+  <div class="privhint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Estas notas son <b>privadas</b> — solo las ves vos, no se comparten con nadie.</span></div>
   <div class="comments">${comments}</div>
   <div class="cbox"><input id="cIn" placeholder="Escribí una nota…" maxlength="280"><button id="cSend">Enviar</button></div>
   <p class="disclaimer">Prototipo · cartografía y puntos de interés: Umepay.</p>`;
