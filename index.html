@@ -721,16 +721,15 @@ function info(id){
   const L=linkByNum[numById[id]];
   if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
   const A=ADMIN[id];
-  if(A){let f=(o.fotos||[]).slice();  // las planillas mandan: del override de admin SOLO aplico las fotos, no los campos viejos
-    if(A.hideFotos&&A.hideFotos.length)f=f.filter(x=>A.hideFotos.indexOf(x)<0);
-    if(A.addFotos&&A.addFotos.length)f=f.concat(A.addFotos);
-    o.fotos=f;}
+  const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos + ocultas)
+  // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
+  const hide=[].concat((A&&A.hideFotos)||[],(cov&&cov.hidden)||[]);
+  const add=[].concat((A&&A.addFotos)||[],(cov&&cov.fotos)||[]);
+  const applyF=arr=>{ let f=(arr||[]).slice(); if(hide.length)f=f.filter(x=>hide.indexOf(x)<0); if(add.length)f=f.concat(add); return f; };
+  if(o.casas&&o.casas.length){ o.casas=o.casas.map((c,i)=>i===0?Object.assign({},c,{fotos:applyF(c.fotos)}):c); }
+  else { o.fotos=applyF(o.fotos); }
   o.ocupado=DISP[numById[id]]||[];                 // disponibilidad compartida (Supabase)
-  const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos)
-  if(cov){
-    if(cov.precio!=null)o.alqPrice=cov.precio;
-    if(cov.fotos&&cov.fotos.length){ if(o.casas&&o.casas.length)o.casas=o.casas.map((c,i)=>i===0?Object.assign({},c,{fotos:(c.fotos||[]).concat(cov.fotos)}):c); else o.fotos=(o.fotos||[]).concat(cov.fotos); }
-  }
+  if(cov&&cov.precio!=null)o.alqPrice=cov.precio;
   return o;
 }
 // Fotos reales: ruta local del repo (fotos/..), URL completa, o ID de Drive (fallback)
@@ -1550,25 +1549,28 @@ function openCasaEditor(lote,clave){
   lote=Number(lote);
   const base=REALES.find(r=>r.loteNum===lote)||{};
   const nom=base.inmueble||('Casa '+lote);
-  const data=Object.assign({precio:null,fotos:[]}, JSON.parse(JSON.stringify(COV[lote]||{})));
-  if(!Array.isArray(data.fotos))data.fotos=[];
+  const baked=((base.casas&&base.casas[0]&&base.casas[0].fotos)||(base.fotos)||[]).slice();  // fotos del sheet/Drive
+  const _cov=JSON.parse(JSON.stringify(COV[lote]||{}));
+  const data={precio:_cov.precio!=null?_cov.precio:null, fotos:Array.isArray(_cov.fotos)?_cov.fotos:[], hidden:Array.isArray(_cov.hidden)?_cov.hidden:[]};
   function draw(){
     const precioVal=data.precio!=null?data.precio:(base.alqPrice||'');
+    const gal=baked.filter(u=>data.hidden.indexOf(u)<0).map(u=>({u,tipo:'baked'})).concat(data.fotos.map(u=>({u,tipo:'up'})));
     scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">Editar mi casa · Lote '+lote+'</span><h2>'+esc(nom)+'</h2></div></div>'+
       '<p class="comu-desc">Editá el precio, las fotos y las fechas ocupadas de tu casa. Los cambios se ven al instante en la app.</p>'+
       '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
       '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
-      '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
-      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+u+'"><button class="gdel" data-delf="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(tocá la ✕ para borrar)</small></div>'+
+      '<div class="gallery">'+gal.map((g,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3"><button class="gdel" data-del="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      (gal.length?'':'<p class="empty-c">Sin fotos. Agregá una con el +.</p>')+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">'+
       '<div class="sec-t">'+ic('cal')+' Disponibilidad</div>'+
       '<div class="actions"><button class="btn-primary" id="ceDisp" style="grid-column:1/-1;background:#7a4a16">'+ic('cal')+' Editar fechas ocupadas</button></div>';
     document.getElementById('ceSaveP').onclick=()=>{ data.precio=+document.getElementById('ceP').value||null; guardarCasa(lote,clave,data); };
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
     document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1100,async img=>{ toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); }); rd.readAsDataURL(f); };
-    scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ data.fotos.splice(+b.dataset.delf,1); guardarCasa(lote,clave,data,draw); });
+    scroll.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const g=gal[+b.dataset.del]; if(!g)return; if(g.tipo==='baked'){ if(data.hidden.indexOf(g.u)<0)data.hidden.push(g.u); } else { const j=data.fotos.indexOf(g.u); if(j>=0)data.fotos.splice(j,1); } guardarCasa(lote,clave,data,draw); });
     document.getElementById('ceDisp').onclick=()=>openDispEditor(lote,clave);
-    scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:u,raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
+    scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=gal.map(g=>({src:driveSrc(g.u),raw:g.u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
     openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
   }
   draw();
