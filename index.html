@@ -297,11 +297,14 @@ body.listmode .lv-tolist{display:none}
 .amen2 svg{width:22px;height:22px;color:var(--forest);flex:none}
 .amen2.off{color:#b8af9d;text-decoration:line-through}
 .amen2.off svg{color:#d3cbba;text-decoration:none}
-.fichadet{margin-top:12px;border-top:1px solid var(--line);padding-top:4px}
-.fichadet summary{cursor:pointer;font-weight:700;color:var(--forest);font-size:14px;padding:9px 0;list-style:none;display:flex;align-items:center;justify-content:space-between}
+.fichadet{margin-top:14px}
+.fichadet summary{cursor:pointer;font-weight:700;color:var(--forest);font-size:14px;padding:13px 15px;list-style:none;display:flex;align-items:center;justify-content:space-between;background:#edf3e9;border:1.5px solid #d3e1cb;border-radius:13px;transition:background .15s}
+.fichadet summary:active{background:#e3ecdd}
+.fichadet[open] summary{border-radius:13px 13px 0 0;border-bottom-color:transparent}
 .fichadet summary::-webkit-details-marker{display:none}
-.fichadet summary::after{content:'⌄';color:var(--terra);font-size:18px}
-.fichadet[open] summary::after{content:'⌃'}
+.fichadet summary::after{content:'';width:11px;height:11px;border-right:2.5px solid var(--forest);border-bottom:2.5px solid var(--forest);transform:rotate(45deg);margin-top:-4px;transition:transform .2s}
+.fichadet[open] summary::after{transform:rotate(225deg);margin-top:2px}
+.fichadet .ficha{border:1.5px solid #d3e1cb;border-top:0;border-radius:0 0 13px 13px;padding:2px 15px 14px;margin-top:0;background:#fff}
 .occrow{display:flex;justify-content:space-between;align-items:center;background:#f5efe4;border-radius:8px;padding:5px 10px;margin-bottom:5px;font-size:13px}
 .occrow button{background:#e7ded0;border:0;border-radius:6px;width:24px;height:24px;color:#b23a29;font-weight:700;cursor:pointer}
 .occadd{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
