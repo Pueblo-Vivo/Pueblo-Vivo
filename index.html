@@ -84,6 +84,10 @@ button{font-family:inherit;cursor:pointer}
 .seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
 .seg button.active.alq{color:var(--terra)}
 .seg button.active.comu{color:#a26b2a}
+@media(min-width:820px){
+  .seg{max-width:540px;border-radius:999px;justify-content:space-between}
+  .seg button{flex:0 1 auto;white-space:nowrap;font-size:13px;line-height:1.15;padding:9px 16px;border-radius:999px}
+}
 
 /* ---------- Filtros ---------- */
 .filters{position:relative;z-index:1100;background:var(--cream);border-bottom:1px solid var(--line);
