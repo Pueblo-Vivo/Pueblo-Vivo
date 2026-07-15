@@ -648,6 +648,7 @@ body.listmode .lv-tolist{display:none}
   <input id="lgEmail" type="email" placeholder="Tu email" autocomplete="username">
   <input id="lgPass" type="password" placeholder="Contraseña" autocomplete="current-password">
   <div class="lgbtns"><button id="lgCancel">Cancelar</button><button id="lgEntrar">Entrar</button></div>
+  <button id="lgLocal" style="width:100%;margin-top:8px;background:transparent;border:0;color:#8a7f6c;font-size:12px;text-decoration:underline;cursor:pointer">Editar solo en este dispositivo (sin publicar)</button>
 </div></div>
 <div id="lightbox">
   <button class="lbclose" id="lbClose">✕</button>
@@ -2056,8 +2057,9 @@ function openFilterSheet(){
 
 /* ============ Admin / POI / geo ============ */
 document.getElementById('btnAdmin').onclick=function(){
-  const on=!adminMode; enterAdmin(on);               // entra sin login (edicion local); el login solo para publicar
-  toast(on?'Modo inmobiliaria activado':'Modo inmobiliaria desactivado');
+  if(adminMode){ enterAdmin(false); toast('Modo inmobiliaria desactivado'); return; }
+  if(sb && !sbUser){ openLogin(); return; }           // no logueado -> pedir sesión (así los cambios se publican para todos)
+  enterAdmin(true); toast('Modo inmobiliaria activado');
 };
 
 let meMarker=null,meCircle=null,watchId=null;const btnLoc=document.getElementById('btnLoc');
@@ -2210,6 +2212,7 @@ async function doLogin(){
 async function doLogout(){ try{ if(sb)await sb.auth.signOut(); }catch(e){} sbUser=null; enterAdmin(false); toast('Sesión cerrada'); }
 document.getElementById('lgEntrar').onclick=doLogin;
 document.getElementById('lgCancel').onclick=()=>document.getElementById('loginModal').classList.remove('show');
+document.getElementById('lgLocal').onclick=()=>{ document.getElementById('loginModal').classList.remove('show'); enterAdmin(true); toast('Modo local: los cambios quedan solo en este dispositivo'); };
 document.getElementById('lgPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('btnLogout').onclick=doLogout;
 
