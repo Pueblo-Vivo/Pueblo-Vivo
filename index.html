@@ -797,7 +797,7 @@ function isAlq(inf){return !!inf.fromSheet&&(opOf(inf)==='alquiler'||inf.alsoAlq
 function isDual(inf){return isVenta(inf)&&isAlq(inf);}
 function estilo(id){
   const inf=info(id),u=uget(id),sel=compare.includes(id);
-  let active = MODE==='comprar'? isVenta(inf) : isAlq(inf);
+  let active = MODE==='comprar'? (isVenta(inf)&&(ventaTipo==='casa'?conCasa(inf):!conCasa(inf))) : isAlq(inf);
   if(MODE==='alojar'&&active){const d=stayDates(); if(d&&!isFreeFor(inf,d[0],d[1]))active=false;}
   if(!active){ // gris transparente (contexto)
     return {color:sel?'#b5532a':'#7d766a',weight:sel?3:1,fillColor:'#8c857a',fillOpacity:0.07,opacity:u.fav?0.85:0.45,dashArray:null};
@@ -956,9 +956,23 @@ function passesFilter(id){
   }
   return true;
 }
+// ¿la parcela va en el mapa? Con "todos" se muestra TODO (la categoría en color, el resto gris de contexto).
+// Solo los filtros explícitos (fav/vistos/avanzados) ocultan las que no matchean.
+function mapShows(id){
+  const inf=info(id),u=uget(id);
+  if(MODE==='alojar'){
+    if(currentFilter==='fav')return u.fav;
+    if(currentFilter==='alquiler')return isAlq(inf);
+    return true; // todos: activo color, resto gris
+  }
+  if(currentFilter==='fav')return u.fav;
+  if(currentFilter==='seen')return u.seen;
+  if(FILT.maxPrice||FILT.minSize||FILT.orient.length)return passesFilter(id); // filtros avanzados: solo los que matchean
+  return true; // todos: la venta del tipo en color, el resto gris
+}
 function applyFilter(){
   for(const id in layers){
-    const show=passesFilter(id),lyr=layers[id];
+    const show=mapShows(id),lyr=layers[id];
     if(show){if(!map.hasLayer(lyr))lyr.addTo(map);lyr.setStyle&&lyr.setStyle(estilo(id));}
     else if(map.hasLayer(lyr))map.removeLayer(lyr);
   }
