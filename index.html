@@ -746,7 +746,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;}
   const A=ADMIN[id];
   const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos + ocultas)
   // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
@@ -975,13 +975,15 @@ const LV_AMEN=[['estufa le','Estufa a leña'],['wifi','WiFi'],['cocina equipada'
 function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.maxSup&&sup>LFILT.maxSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
   const s=LFILT.sort;
   if(s==='precio-desc')out.sort((a,b)=>(b.inf.total||0)-(a.inf.total||0));
+  else if(s==='precio-asc')out.sort((a,b)=>(a.inf.total||1e12)-(b.inf.total||1e12));
   else if(s==='sup-desc')out.sort((a,b)=>b.sup-a.sup);
   else if(s==='ppm')out.sort((a,b)=>a.ppm-b.ppm);
-  else out.sort((a,b)=>(a.inf.total||1e12)-(b.inf.total||1e12));
+  else out.sort((a,b)=>(a.inf.orden==null?1e9:a.inf.orden)-(b.inf.orden==null?1e9:b.inf.orden)); // por defecto: orden de la planilla
   return out; }
 function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LFILT.maxPrice&&price&&price>LFILT.maxPrice)continue; if(LFILT.minCap&&cap&&cap<LFILT.minCap)continue; if(LFILT.minHab&&hab&&hab<LFILT.minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
   if(LFILT.sort==='precio-desc')out.sort((a,b)=>(b.price||0)-(a.price||0));
-  else out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
+  else if(LFILT.sort==='precio-asc')out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
+  else out.sort((a,b)=>{const oa=a.inf.ordAlq==null?(a.inf.orden==null?1e9:a.inf.orden):a.inf.ordAlq,ob=b.inf.ordAlq==null?(b.inf.orden==null?1e9:b.inf.orden):b.inf.ordAlq;return oa-ob;}); // por defecto: orden de la planilla
   return out; }
 function ensureMiniMap(){
   if(miniMap)return; const el=document.getElementById('lvMini'); if(!el)return;
@@ -1027,12 +1029,12 @@ function renderLvFilters(isAlojar){
     html+='<select id="lfCap"><option value="0">Personas: todas</option>'+[2,3,4,5,6].map(v=>opt(v,LFILT.minCap,v+'+ personas')).join('')+'</select>';
     html+='<select id="lfHab"><option value="0">Habitaciones: todas</option>'+[1,2,3].map(v=>opt(v,LFILT.minHab,v+'+ hab.')).join('')+'</select>';
     html+='<button class="lvchip'+(d?' on':'')+'" id="lfDates">'+ic('cal')+(d?(fmtShort(d[0])+' → '+fmtShort(d[1])):'Fechas')+'</button>';
-    html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+'</select>';
+    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LFILT.sort,'Ordenar: menor precio')+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+'</select>';
   }else{
     html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
     html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.maxSup,'Hasta '+money(v)+' m²')).join('')+'</select>';
     html+='<select id="lfBarrio"><option value="">Barrio: todos</option>'+barriosVenta().map(b=>opt(b,LFILT.barrio,esc(b))).join('')+'</select>';
-    html+='<select id="lfSort"><option value="">Ordenar: menor precio</option>'+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+opt('sup-desc',LFILT.sort,'Ordenar: más grande')+opt('ppm',LFILT.sort,'Ordenar: menor USD/m²')+'</select>';
+    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LFILT.sort,'Ordenar: menor precio')+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+opt('sup-desc',LFILT.sort,'Ordenar: más grande')+opt('ppm',LFILT.sort,'Ordenar: menor USD/m²')+'</select>';
   }
   if(anyLFilt(isAlojar))html+='<button class="lvchip" id="lfClear">Limpiar filtros ✕</button>';
   el.innerHTML=html;
@@ -1172,8 +1174,8 @@ async function syncRentSheet(){
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
       const price=hs[0].pb?parseInt(String(hs[0].pb).replace(/\D/g,'')):null;
       const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f}));
-      if(r){r.casas=casas;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
-      else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price});});
+      if(r){r.casas=casas;r.ordAlq=hs[0].col;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
+      else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price,ordAlq:hs[0].col});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncRentSheet',e);}
 }
@@ -1208,13 +1210,13 @@ async function syncVentaSheet(){
       REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
         mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
         formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
-        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta'});
+        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j});
     }
     Object.keys(localesByLote).forEach(k=>{const lote=+k,locs=localesByLote[k];
       const precios=locs.map(l=>l.valor).filter(v=>v!=null), min=precios.length?Math.min(...precios):null;
       let r=REALES.find(x=>x.loteNum===lote);
       if(r){ r.locales=locs; }
-      else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs});
+      else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs,orden:9000+lote});
     });
     buildLinks();renderFilters();applyFilter();if(openId!=null)render();
   }catch(e){console.warn('syncVentaSheet',e);}
