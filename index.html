@@ -1416,15 +1416,14 @@ async function syncComunidadSheet(){
     // desconocida (ej. "Link emprendedor") NUNCA se lee → no aparece en la app.
     const H=(R[0]||[]).map(h=>(h||'').trim().toLowerCase());
     const findCol=(...ns)=>{ for(const n of ns){const i=H.findIndex(h=>h===n);if(i>=0)return i;} for(const n of ns){const i=H.findIndex(h=>h.indexOf(n)>=0);if(i>=0)return i;} return -1; };
-    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive'),cP=findCol('prioridad','prioridades','orden','priori','prio');
+    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive');
     const G=(r,i)=>i>=0?((r[i]||'').trim()):'';
     let cat='', out=[];
     for(let i=1;i<R.length;i++){const r=R[i];
       const tipo=G(r,cT); if(tipo){let ct=tipo.toUpperCase();if(ct==='EMPENDIMIENTO')ct='EMPRENDIMIENTOS';cat=ct;}
       const nom=G(r,cN); if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=G(r,cF), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
-      const pr=G(r,cP).replace(',','.'), prio=(pr!==''&&!isNaN(parseFloat(pr)))?parseFloat(pr):null;
-      out.push({cat:cat||'LOCAL',nombre:nom,slug:comuSlug(nom),desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,prio:prio,ord:out.length});
+      out.push({cat:cat||'LOCAL',nombre:nom,slug:comuSlug(nom),desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
@@ -1433,17 +1432,15 @@ async function syncComunidadSheet(){
 function comuCatLabel(cat){ return (COMU_CATS[cat]||{}).label || (cat?cat.charAt(0)+cat.slice(1).toLowerCase():cat); }
 function renderComu(){
   if(!document.getElementById('comuView'))return;
-  // solo los tipos que realmente hay en el sheet, ordenados como COMU_CATS (los desconocidos al final)
-  const known=Object.keys(COMU_CATS);
-  const present=[...new Set(COMUNIDAD.map(x=>x.cat))].sort((a,b)=>{const ia=known.indexOf(a),ib=known.indexOf(b);return (ia<0?999:ia)-(ib<0?999:ib);});
+  // solo los tipos que hay en el sheet, en el orden en que aparecen en la planilla (como los acomode Santiago)
+  const present=[...new Set(COMUNIDAD.map(x=>x.cat))];
   if(comuCat!=='TODOS'&&present.indexOf(comuCat)<0)comuCat='TODOS';   // el filtro elegido ya no existe
   const cats=['TODOS'].concat(present);
   document.getElementById('comuChips').innerHTML=cats.map(k=>{const lab=k==='TODOS'?'Todos':comuCatLabel(k);const n=k==='TODOS'?COMUNIDAD.length:COMUNIDAD.filter(x=>x.cat===k).length;return '<div class="comu-chip'+(comuCat===k?' on':'')+'" data-k="'+esc(k)+'">'+(k==='TODOS'?'':comuIcSvg(k,'ic'))+esc(lab)+' · '+n+'</div>';}).join('');
   document.querySelectorAll('#comuChips .comu-chip').forEach(el=>el.onclick=()=>{comuCat=el.dataset.k;renderComu();});
   const items=COMUNIDAD.filter(x=>{if(comuCat!=='TODOS'&&x.cat!==comuCat)return false;if(comuQ&&!comuMatch(x,comuQ))return false;return true;});
-  items.sort((a,b)=>{ // secciones por tipo; dentro de c/tipo por Prioridad (menor primero), luego orden de planilla
+  items.sort((a,b)=>{ // orden de la planilla: primero por tipo (orden de aparición), luego por fila
     const c=present.indexOf(a.cat)-present.indexOf(b.cat); if(c)return c;
-    const pa=a.prio==null?Infinity:a.prio, pb=b.prio==null?Infinity:b.prio; if(pa!==pb)return pa-pb;
     return a.ord-b.ord;
   });
   const list=document.getElementById('comuList');
