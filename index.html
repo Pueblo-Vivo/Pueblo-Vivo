@@ -34,7 +34,7 @@ button{font-family:inherit;cursor:pointer}
 /* ---------- Topbar ---------- */
 .topbar{position:relative;z-index:1200;background:var(--cream);color:var(--ink);
   padding:9px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);box-shadow:0 1px 10px rgba(95,110,55,.07)}
-.brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0;overflow:hidden}   /* recorta en vez de solaparse con los botones */
 .brand .logo-svg{width:36px;height:38px;flex:0 0 auto}
 .brand .wm{font-family:'Fraunces',serif;font-weight:600;font-size:23px;color:var(--olive);letter-spacing:.2px;line-height:1;white-space:nowrap}
 .topbar .tb-btn{width:38px;height:38px;border-radius:11px;background:#fff;border:1px solid var(--line);
@@ -74,6 +74,19 @@ button{font-family:inherit;cursor:pointer}
   border:1px solid var(--line);color:var(--terra);padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
 .fav-pill svg{width:15px;height:15px}
 .fav-pill.notes{color:var(--forest)}
+.fav-pill.seen{color:var(--olive)}
+/* En celu son 4 botones arriba: achico logo y pastillas para que entren sin pisarse */
+@media(max-width:430px){
+  .topbar{gap:6px;padding:9px 10px}
+  .brand{gap:7px}
+  .brand .logo-svg{width:31px;height:33px}
+  .brand .wm{font-size:18px}
+  .topbar .tb-btn{width:34px;height:34px;border-radius:10px}
+  .topbar .tb-btn svg{width:17px;height:17px}
+  .fav-pill{padding:7px 8px;font-size:12px;gap:4px}
+  .fav-pill svg{width:14px;height:14px}
+}
+@media(max-width:352px){ .brand .wm{display:none} }
 
 /* ---------- Panel "Mis favoritos" / "Mis notas" ---------- */
 #misModal{display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
@@ -187,6 +200,14 @@ body.poinames .poi-pin .t{display:block}
   display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm)}
 .lot-fav svg{width:18px;height:18px}
 .lot-fav.on{color:var(--terra);border-color:var(--terra-soft);background:#fff}
+/* Tarjeta pintada segun el estado: me gusta = rojo claro, visto = verde claro */
+.lot-card.is-fav{background:#fdeeea;border-color:#eec4b5}
+.lot-card.is-fav .lot-fav{background:#fff}
+.lot-card.is-seen{background:#eef4e4;border-color:#cdddb5}
+.lot-card.is-seen .lot-fav{background:#fff}
+.lot-card .lot-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle}
+.lot-card .lot-tag svg{width:10px;height:10px}
+.lot-tag.t-seen{background:#dcebc8;color:#4a6b2a}
 .lot-thumb{flex:0 0 128px;align-self:stretch;min-height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#5f8256,#9caf6a)}
 .lot-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .lot-thumb .cic{width:38px;height:38px;color:rgba(255,255,255,.9)}
@@ -614,6 +635,10 @@ body.listmode .lv-tolist{display:none}
   </div>
   <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
+  </button>
+  <button class="fav-pill seen" id="seenPill" title="Mis vistos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+    <span id="seenCount">0</span>
   </button>
   <button class="fav-pill notes" id="notesPill" title="Mis notas">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H16l4 4v13.5A1.5 1.5 0 0 1 18.5 22h-13A1.5 1.5 0 0 1 4 20.5z"/><path d="M15.5 3v4.5H20M8 12h8M8 16h5"/></svg>
@@ -1059,20 +1084,23 @@ function renderListView(){
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No hay resultados con esos filtros. Probá aflojar los filtros.</div>';return;}
+  const cardCls=id=>{const u=uget(id);return 'lot-card'+(u.fav?' is-fav':(u.seen?' is-seen':''));};   // me gusta manda sobre visto
+  const seenTag=id=>uget(id).seen?'<span class="lot-tag t-seen">'+ICON.eye+'Visto</span>':'';
   const favBtn=id=>'<button class="lot-fav'+(uget(id).fav?' on':'')+'" data-fav="'+id+'" title="Me gusta"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg></button>';
   list.innerHTML=items.map(it=>{ const {inf,p}=it;
     if(isAlojar){
       const hab=casaField(inf,'cantidad de habitaciones'),ban=casaField(inf,'cantidad de ba');
       const facts=[it.cap&&(it.cap+' huésp.'),hab&&(hab+' hab.'),ban&&(ban+' baño'+(ban==='1'?'':'s'))].filter(Boolean).join(' · ')||'Casa en alquiler';
-      return '<div class="lot-card" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(it.price?money(it.price):'—')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
+      return '<div class="'+cardCls(it.id)+'" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler'+seenTag(it.id)+'</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(it.price?money(it.price):'—')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
     }
     const ppm=inf.total&&it.sup?Math.round(inf.total/it.sup):null;
     const facts=[money(it.sup)+' m²',conCasa(inf)?'Con casa':'Terreno',(inf.tipo&&!/terreno/i.test(inf.tipo))?esc(inf.tipo):null].filter(Boolean).join(' · ');
-    return '<div class="lot-card" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,false)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'')+' · En venta</span><h3>'+esc(inf.inmueble||('Lote en '+(p.barrio||'Umepay')))+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(inf.total?money(inf.total):'—')+(ppm?' <small>· USD '+ppm+'/m²</small>':'')+'</div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
+    return '<div class="'+cardCls(it.id)+'" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,false)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'')+' · En venta'+seenTag(it.id)+'</span><h3>'+esc(inf.inmueble||('Lote en '+(p.barrio||'Umepay')))+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(inf.total?money(inf.total):'—')+(ppm?' <small>· USD '+ppm+'/m²</small>':'')+'</div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
   }).join('');
   list.querySelectorAll('.lot-card').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-map]')||e.target.closest('[data-fav]'))return;openSheet(+el.dataset.id);});
   list.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();
     const id=+b.dataset.fav,u=uget(id);u.fav=!u.fav;save();b.classList.toggle('on',u.fav);
+    const card=b.closest('.lot-card'); if(card)card.className=cardCls(id);   // repinta la tarjeta
     estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
 }
@@ -2404,29 +2432,37 @@ function loteLabel(id){
   return {barrio:p.barrio||'Umepay',nombre:nombre,precio:precio};
 }
 function misFavs(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(STATE[id]&&STATE[id].fav)o.push(+id);}return o;}
+function misVistos(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(STATE[id]&&STATE[id].seen)o.push(+id);}return o;}
 function misNotas(){const o=[];for(const id in STATE){if(!DATA[id])continue;const c=STATE[id]&&STATE[id].comments;if(c&&c.length)o.push(+id);}return o;}
 function contarNotas(){return misNotas().reduce((s,id)=>s+STATE[id].comments.length,0);}
 function updateTopCounts(){
-  const f=document.getElementById('favCount'),n=document.getElementById('notesCount');
+  const f=document.getElementById('favCount'),n=document.getElementById('notesCount'),s=document.getElementById('seenCount');
   if(f)f.textContent=misFavs().length;
   if(n)n.textContent=contarNotas();
+  if(s)s.textContent=misVistos().length;
 }
 function openMis(kind){
   const m=document.getElementById('misModal'); if(!m)return;
-  const esFav=kind==='fav', ids=esFav?misFavs():misNotas(), nN=contarNotas();
-  document.getElementById('misTit').textContent=esFav?'Mis favoritos':'Mis notas';
+  const esFav=kind==='fav', esVisto=kind==='vistos', esNota=kind==='notas';
+  const ids=esFav?misFavs():esVisto?misVistos():misNotas(), nN=contarNotas();
+  const plural=(n,s,p)=>n+(n===1?' '+s:' '+p);
+  document.getElementById('misTit').textContent=esFav?'Mis favoritos':esVisto?'Mis vistos':'Mis notas';
   document.getElementById('misSub').textContent=esFav
-    ?(ids.length?ids.length+(ids.length===1?' propiedad guardada':' propiedades guardadas'):'')
+    ?(ids.length?plural(ids.length,'propiedad guardada','propiedades guardadas'):'')
+    :esVisto
+    ?(ids.length?plural(ids.length,'propiedad marcada como vista','propiedades marcadas como vistas'):'')
     :(nN?nN+(nN===1?' nota privada — solo la ves vos':' notas privadas — solo las ves vos'):'');
   const list=document.getElementById('misList');
   if(!ids.length){
     list.innerHTML='<div class="mempty">'+(esFav
       ?'Todavía no guardaste ninguna con ❤.<br>Abrí una propiedad y tocá el corazón.'
+      :esVisto
+      ?'Todavía no marcaste ninguna como vista.<br>Abrí una propiedad y tocá “Visto”.'
       :'Todavía no escribiste ninguna nota.<br>Abrí una propiedad y escribila en “Mis notas”.')+'</div>';
   }else{
     list.innerHTML=ids.map(id=>{
       const L=loteLabel(id);
-      const notas=esFav?'':(STATE[id].comments||[]).map((c,ci)=>'<div class="mnote">'+esc(c.txt)+'<small>'+esc(c.when||'')+'</small><button class="cdel mdel" data-mdel="'+id+':'+ci+'" title="Eliminar nota">✕</button></div>').join('');
+      const notas=esNota?(STATE[id].comments||[]).map((c,ci)=>'<div class="mnote">'+esc(c.txt)+'<small>'+esc(c.when||'')+'</small><button class="cdel mdel" data-mdel="'+id+':'+ci+'" title="Eliminar nota">✕</button></div>').join(''):'';
       return '<div class="mitem" data-id="'+id+'"><div class="mb">'+esc(L.barrio)+'</div><div class="mn">'+esc(L.nombre)+'</div><div class="mp">'+esc(L.precio)+'</div>'+notas+'</div>';
     }).join('');
     list.querySelectorAll('.mitem').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-mdel]'))return;m.classList.remove('show');openSheet(+el.dataset.id);});
@@ -2439,6 +2475,7 @@ function openMis(kind){
 }
 document.getElementById('favPill').onclick=()=>openMis('fav');
 document.getElementById('notesPill').onclick=()=>openMis('notas');
+document.getElementById('seenPill').onclick=()=>openMis('vistos');
 document.getElementById('misClose').onclick=()=>document.getElementById('misModal').classList.remove('show');
 document.getElementById('misModal').onclick=e=>{if(e.target.id==='misModal')e.currentTarget.classList.remove('show');};
 
