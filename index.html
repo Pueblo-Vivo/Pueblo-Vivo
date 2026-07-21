@@ -73,6 +73,23 @@ button{font-family:inherit;cursor:pointer}
 .fav-pill{display:flex;align-items:center;gap:5px;background:#fff;
   border:1px solid var(--line);color:var(--terra);padding:8px 10px;border-radius:999px;font-weight:600;font-size:13px}
 .fav-pill svg{width:15px;height:15px}
+.fav-pill.notes{color:var(--forest)}
+
+/* ---------- Panel "Mis favoritos" / "Mis notas" ---------- */
+#misModal{display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
+#misModal.show{display:flex}
+#misModal .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+#misModal h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
+#misModal .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+#misModal .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
+#misModal .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+#misModal .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+#misModal .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
+#misModal .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
+#misModal .mnote{background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
+#misModal .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
+#misModal .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
+#misModal .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
 
 /* ---------- Mode toggle ---------- */
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
@@ -585,7 +602,11 @@ body.listmode .lv-tolist{display:none}
   <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
   </button>
-  <button class="fav-pill" id="favPill">
+  <button class="fav-pill notes" id="notesPill" title="Mis notas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H16l4 4v13.5A1.5 1.5 0 0 1 18.5 22h-13A1.5 1.5 0 0 1 4 20.5z"/><path d="M15.5 3v4.5H20M8 12h8M8 16h5"/></svg>
+    <span id="notesCount">0</span>
+  </button>
+  <button class="fav-pill" id="favPill" title="Mis favoritos">
     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg>
     <span id="favCount">0</span>
   </button>
@@ -667,6 +688,12 @@ body.listmode .lv-tolist{display:none}
   <div class="lgbtns"><button id="lgCancel">Cancelar</button><button id="lgEntrar">Entrar</button></div>
   <button id="lgLocal" style="width:100%;margin-top:8px;background:transparent;border:0;color:#8a7f6c;font-size:12px;text-decoration:underline;cursor:pointer">Editar solo en este dispositivo (sin publicar)</button>
 </div></div>
+<div id="misModal"><div class="card">
+  <h3 id="misTit">Mis favoritos</h3>
+  <p class="msub" id="misSub"></p>
+  <div class="mlist" id="misList"></div>
+  <button class="mclose" id="misClose">Cerrar</button>
+</div></div>
 <div id="lightbox">
   <button class="lbclose" id="lbClose">✕</button>
   <button class="lbnav lbprev" id="lbPrev">‹</button>
@@ -740,7 +767,7 @@ const SKEY="pv_lotes_v1", AKEY="pv_admin_v1";
 let STATE=JSON.parse(localStorage.getItem(SKEY)||"{}");
 let ADMIN=JSON.parse(localStorage.getItem(AKEY)||"{}");
 function uget(id){if(!STATE[id])STATE[id]={fav:false,seen:false,photos:[],comments:[]};return STATE[id];}
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(STATE));}catch(e){toast("Almacenamiento lleno");}}
+function save(){try{localStorage.setItem(SKEY,JSON.stringify(STATE));}catch(e){toast("Almacenamiento lleno");}try{updateTopCounts();}catch(e){}}
 function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch(e){toast('Sin espacio para más fotos en este teléfono');}}
 // info efectiva = sintética + override admin
 function info(id){
@@ -1307,7 +1334,7 @@ function renderFilters(){
     fb.className='chip fbtn'+(dirty?' dirty':'');fb.innerHTML=`${ICON.funnel} Filtros`;
     fb.onclick=openFilterSheet;el.appendChild(fb);
   }
-  document.getElementById('favCount').textContent=c.fav;
+  updateTopCounts();
 }
 function renderLegend(){}
 
@@ -2323,7 +2350,55 @@ document.getElementById('lightbox').addEventListener('click',e=>{ if(e.target.id
 })();
 
 /* ============ init ============ */
-buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();
+/* ===== Panel "Mis favoritos" / "Mis notas" (botones del topbar) ===== */
+// Cada propiedad se identifica por NOMBRE y VALOR (nunca por número de lote).
+function loteLabel(id){
+  const inf=info(id), f=PARCELAS.features.find(x=>x.properties.id==id), p=f?f.properties:{};
+  const nombre=inf.inmueble||('Lote en '+(p.barrio||'Umepay'));
+  let precio='Sin publicación';                  // la planilla manda: sin listing no hay precio
+  if(inf.fromSheet){
+    if(isVenta(inf)&&inf.total)precio='USD '+money(inf.total);
+    else if(inf.alqPrice)precio='USD '+money(inf.alqPrice)+' por noche';
+    else precio='Consultar precio';
+  }
+  return {barrio:p.barrio||'Umepay',nombre:nombre,precio:precio};
+}
+function misFavs(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(STATE[id]&&STATE[id].fav)o.push(+id);}return o;}
+function misNotas(){const o=[];for(const id in STATE){if(!DATA[id])continue;const c=STATE[id]&&STATE[id].comments;if(c&&c.length)o.push(+id);}return o;}
+function contarNotas(){return misNotas().reduce((s,id)=>s+STATE[id].comments.length,0);}
+function updateTopCounts(){
+  const f=document.getElementById('favCount'),n=document.getElementById('notesCount');
+  if(f)f.textContent=misFavs().length;
+  if(n)n.textContent=contarNotas();
+}
+function openMis(kind){
+  const m=document.getElementById('misModal'); if(!m)return;
+  const esFav=kind==='fav', ids=esFav?misFavs():misNotas(), nN=contarNotas();
+  document.getElementById('misTit').textContent=esFav?'Mis favoritos':'Mis notas';
+  document.getElementById('misSub').textContent=esFav
+    ?(ids.length?ids.length+(ids.length===1?' propiedad guardada':' propiedades guardadas'):'')
+    :(nN?nN+(nN===1?' nota privada — solo la ves vos':' notas privadas — solo las ves vos'):'');
+  const list=document.getElementById('misList');
+  if(!ids.length){
+    list.innerHTML='<div class="mempty">'+(esFav
+      ?'Todavía no guardaste ninguna con ❤.<br>Abrí una propiedad y tocá el corazón.'
+      :'Todavía no escribiste ninguna nota.<br>Abrí una propiedad y escribila en “Mis notas”.')+'</div>';
+  }else{
+    list.innerHTML=ids.map(id=>{
+      const L=loteLabel(id);
+      const notas=esFav?'':(STATE[id].comments||[]).map(c=>'<div class="mnote">'+esc(c.txt)+'<small>'+esc(c.when||'')+'</small></div>').join('');
+      return '<div class="mitem" data-id="'+id+'"><div class="mb">'+esc(L.barrio)+'</div><div class="mn">'+esc(L.nombre)+'</div><div class="mp">'+esc(L.precio)+'</div>'+notas+'</div>';
+    }).join('');
+    list.querySelectorAll('.mitem').forEach(el=>el.onclick=()=>{m.classList.remove('show');openSheet(+el.dataset.id);});
+  }
+  m.classList.add('show');
+}
+document.getElementById('favPill').onclick=()=>openMis('fav');
+document.getElementById('notesPill').onclick=()=>openMis('notas');
+document.getElementById('misClose').onclick=()=>document.getElementById('misModal').classList.remove('show');
+document.getElementById('misModal').onclick=e=>{if(e.target.id==='misModal')e.currentTarget.classList.remove('show');};
+
+buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();updateTopCounts();
 if(sb){ sbInitAuth(); loadShared(); }
 loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
