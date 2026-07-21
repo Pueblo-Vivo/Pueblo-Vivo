@@ -2226,7 +2226,9 @@ async function loadShared(){
     const {data,error}=await sb.from('overrides').select('id,data');
     if(error)throw error;
     (data||[]).forEach(r=>{ if(r&&r.data) ADMIN[r.id]=r.data; });
-    saveAdmin(); refreshAllStyles(); renderFilters(); if(openId!=null)render();
+    // applyFilter() repinta también la vista de LISTA: sin esto, las fotos publicadas que llegan
+    // después de dibujar las tarjetas no aparecen hasta cambiar de solapa (se veía en el celu, no en la PC).
+    saveAdmin(); refreshAllStyles(); renderFilters(); applyFilter(); if(openId!=null)render();
   }catch(e){ console.warn('loadShared',e); }
 }
 async function pushOverride(id,ov){
