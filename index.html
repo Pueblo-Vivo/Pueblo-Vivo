@@ -1209,7 +1209,12 @@ function parseCSVtext(t){const rows=[];let row=[],cur="",q=false;for(let i=0;i<t
 let PHOTOS_BY_NAME={}; // cache acumulativo de fotos de casas por nombre (sobrevive a los resets de venta y alquiler)
 // Fotos bajadas del Drive para casas que no tenían foto (fallback por nombre; ver dlcasas.js)
 const CASA_FOTOS={"Bambú":["fotos/c216-0-1.jpg","fotos/c216-0-2.jpg","fotos/c216-0-3.jpg","fotos/c216-0-4.jpg","fotos/c216-0-5.jpg","fotos/c216-0-6.jpg","fotos/c216-0-7.jpg","fotos/c216-0-8.jpg","fotos/c216-0-9.jpg","fotos/c216-0-10.jpg","fotos/c216-0-11.jpg","fotos/c216-0-12.jpg","fotos/c216-0-13.jpg","fotos/c216-0-14.jpg","fotos/c216-0-15.jpg","fotos/c216-0-16.jpg"],"Brote":["fotos/c215-0-1.jpg","fotos/c215-0-2.jpg","fotos/c215-0-3.jpg"],"Mili":["fotos/c73-0-1.jpg","fotos/c73-0-2.jpg","fotos/c73-0-3.jpg","fotos/c73-0-4.jpg","fotos/c73-0-5.jpg","fotos/c73-0-6.jpg","fotos/c73-0-7.jpg","fotos/c73-0-8.jpg","fotos/c73-0-9.jpg","fotos/c73-0-10.jpg","fotos/c73-0-11.jpg","fotos/c73-0-12.jpg"]};
-function capturePhotos(){ REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});}); }
+function capturePhotos(){
+  // El archivo del repo (lotes-reales.js) es la BASE y siempre baja fresco. Sembrarlo primero evita que
+  // un inventario viejo guardado en el localStorage de ESE dispositivo deje casas sin fotos para siempre.
+  (window.LOTES_REALES||[]).forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length&&!PHOTOS_BY_NAME[c.n])PHOTOS_BY_NAME[c.n]=c.fotos;});});
+  REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});});
+}
 async function syncRentSheet(){
   try{
     const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+RENT_GID;
