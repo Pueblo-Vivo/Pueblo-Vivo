@@ -180,7 +180,12 @@ body.poinames .poi-pin .t{display:block}
 .lvamen .lvchip{width:auto}
 .lv-list{flex:1;min-height:0;overflow-y:auto;padding:10px 14px 26px;display:flex;flex-direction:column;gap:12px}
 .lv-list>*{flex:0 0 auto}
-.lot-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
+.lot-card{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
+.lot-fav{position:absolute;top:8px;right:8px;z-index:2;width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.94);border:1px solid var(--line);color:#c3bbac;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-sm)}
+.lot-fav svg{width:18px;height:18px}
+.lot-fav.on{color:var(--terra);border-color:var(--terra-soft);background:#fff}
 .lot-thumb{flex:0 0 128px;align-self:stretch;min-height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(135deg,#5f8256,#9caf6a)}
 .lot-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .lot-thumb .cic{width:38px;height:38px;color:rgba(255,255,255,.9)}
@@ -1046,17 +1051,21 @@ function renderListView(){
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No hay resultados con esos filtros. Probá aflojar los filtros.</div>';return;}
+  const favBtn=id=>'<button class="lot-fav'+(uget(id).fav?' on':'')+'" data-fav="'+id+'" title="Me gusta"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg></button>';
   list.innerHTML=items.map(it=>{ const {inf,p}=it;
     if(isAlojar){
       const hab=casaField(inf,'cantidad de habitaciones'),ban=casaField(inf,'cantidad de ba');
       const facts=[it.cap&&(it.cap+' huésp.'),hab&&(hab+' hab.'),ban&&(ban+' baño'+(ban==='1'?'':'s'))].filter(Boolean).join(' · ')||'Casa en alquiler';
-      return '<div class="lot-card" data-id="'+it.id+'">'+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(it.price?money(it.price):'—')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
+      return '<div class="lot-card" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(it.price?money(it.price):'—')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
     }
     const ppm=inf.total&&it.sup?Math.round(inf.total/it.sup):null;
     const facts=[money(it.sup)+' m²',conCasa(inf)?'Con casa':'Terreno',(inf.tipo&&!/terreno/i.test(inf.tipo))?esc(inf.tipo):null].filter(Boolean).join(' · ');
-    return '<div class="lot-card" data-id="'+it.id+'">'+lotThumb(inf,false)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'')+' · En venta</span><h3>'+esc(inf.inmueble||('Lote en '+(p.barrio||'Umepay')))+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(inf.total?money(inf.total):'—')+(ppm?' <small>· USD '+ppm+'/m²</small>':'')+'</div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
+    return '<div class="lot-card" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,false)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'')+' · En venta</span><h3>'+esc(inf.inmueble||('Lote en '+(p.barrio||'Umepay')))+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(inf.total?money(inf.total):'—')+(ppm?' <small>· USD '+ppm+'/m²</small>':'')+'</div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
   }).join('');
-  list.querySelectorAll('.lot-card').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-map]'))return;openSheet(+el.dataset.id);});
+  list.querySelectorAll('.lot-card').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-map]')||e.target.closest('[data-fav]'))return;openSheet(+el.dataset.id);});
+  list.querySelectorAll('[data-fav]').forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const id=+b.dataset.fav,u=uget(id);u.fav=!u.fav;save();b.classList.toggle('on',u.fav);
+    estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
 }
 function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.maxSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
