@@ -259,6 +259,10 @@ body.listmode .lv-tolist{display:none}
 .comu-strip img{width:72px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto}
 .gwrap{position:relative}
 .gwrap .gdel{position:absolute;top:4px;right:4px;background:rgba(214,74,54,.95);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1;padding:0}
+.gwrap .gcover{position:absolute;top:4px;left:4px;background:var(--gold);color:#3a2806;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px}
+.gwrap .gmove{position:absolute;left:4px;bottom:4px;display:flex;gap:4px}
+.gwrap .gmove button{background:rgba(28,26,21,.74);color:#fff;border:0;border-radius:6px;width:26px;height:23px;font-size:12px;line-height:1;padding:0;font-weight:800;cursor:pointer}
+.gwrap .gmove button:disabled{opacity:.28;cursor:default}
 .gotobtn{display:block;margin-top:7px;background:none;border:0;color:var(--terra);font-weight:800;font-size:13px;cursor:pointer;padding:2px 0}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
 #regGate.show{display:flex}
@@ -1625,12 +1629,23 @@ function openComuEditor(slug,clave){
       '<div class="sec-t">Mail</div><input id="ceMail" value="'+esc(data.mail||'')+'" placeholder="tucorreo@mail.com" style="'+inp+'">'+
       '<div class="actions" style="margin:12px 0"><button class="btn-primary" id="ceSave" style="grid-column:1/-1">Guardar cambios</button></div>'+
       '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
-      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3"><button class="gdel" data-delf="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      (data.fotos.length>1?'<p class="privhint" style="margin-bottom:8px"><span>Usá ◀ ▶ para cambiar el orden. La primera es la <b>portada</b>: es la que se ve en tu tarjeta.</span></p>':'')+
+      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+
+        (i===0?'<span class="gcover">Portada</span>':'')+
+        '<button class="gdel" data-delf="'+i+'">✕</button>'+
+        (data.fotos.length>1?'<div class="gmove"><button data-mv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button data-mv="'+i+':1"'+(i===data.fotos.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+
+        '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">';
     document.getElementById('ceSave').onclick=()=>{ readForm(); guardarComu(slug,clave,data); };
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
     document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1200,async img=>{ readForm(); toast('Subiendo foto…'); const url=await uploadComuFoto(slug,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarComu(slug,clave,data,draw); }); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ readForm(); data.fotos.splice(+b.dataset.delf,1); guardarComu(slug,clave,data,draw); });
+    scroll.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+      const p=b.dataset.mv.split(':'), i=+p[0], j=i+(+p[1]);
+      if(j<0||j>=data.fotos.length)return;
+      readForm();
+      const t=data.fotos[i]; data.fotos[i]=data.fotos[j]; data.fotos[j]=t;
+      guardarComu(slug,clave,data,draw); });
     scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:driveSrc(u),raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
     openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
   }
