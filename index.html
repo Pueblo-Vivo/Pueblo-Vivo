@@ -1645,12 +1645,15 @@ function openComuEditor(slug,clave){
   const item=COMUNIDAD.find(x=>x.slug===slug);
   const nom=item?item.nombre:slug;
   const ov=COMU_OV[slug], seedC=item?comuContacts(item.ig):{};
+  // Un valor guardado VACÍO cuenta como "no cargado" y cae a la planilla — igual que en comuEff (la
+  // tarjeta pública). Antes el editor mostraba el vacío y tapaba la descripción que venía del sheet.
+  const pick=(a,b)=>(a!=null&&String(a).trim()!=='')?a:(b||'');
   const data={
-    desc:(ov&&ov.desc!=null)?ov.desc:(item?item.desc:''),
-    tel:(ov&&ov.tel!=null)?ov.tel:(item?item.tel:''),
-    ig:(ov&&ov.ig!=null)?ov.ig:((seedC.ig||'').replace('https://instagram.com/','')),
-    web:(ov&&ov.web!=null)?ov.web:(seedC.web||''),
-    mail:(ov&&ov.mail!=null)?ov.mail:((item&&item.mail)||seedC.email||''),
+    desc:pick(ov&&ov.desc, item&&item.desc),
+    tel:pick(ov&&ov.tel, item&&item.tel),
+    ig:pick(ov&&ov.ig, (seedC.ig||'').replace('https://instagram.com/','')),
+    web:pick(ov&&ov.web, seedC.web),
+    mail:pick(ov&&ov.mail, (item&&item.mail)||seedC.email),
     fotos:(ov&&ov.fotos&&ov.fotos.length)?ov.fotos.slice():((item&&item.imgs)?item.imgs.slice():[])
   };
   const inp='width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:15px';
