@@ -1510,13 +1510,17 @@ async function syncComunidadSheet(){
     const H=(R[0]||[]).map(h=>(h||'').trim().toLowerCase());
     const findCol=(...ns)=>{ for(const n of ns){const i=H.findIndex(h=>h===n);if(i>=0)return i;} for(const n of ns){const i=H.findIndex(h=>h.indexOf(n)>=0);if(i>=0)return i;} return -1; };
     const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive');
+    // Columna ID (match EXACTO, para no confundirla con "Ciudad"/"Medida"/etc). Es la identidad fija
+    // del emprendimiento: el link ?emp= y su clave cuelgan de acá, así renombrar la tarjeta NO rompe el link.
+    const cId=H.findIndex(h=>h==='id'||h==='id emprendedor'||h==='codigo'||h==='código');
     const G=(r,i)=>i>=0?((r[i]||'').trim()):'';
     let cat='', out=[];
     for(let i=1;i<R.length;i++){const r=R[i];
       const tipo=G(r,cT); if(tipo){let ct=tipo.toUpperCase();if(ct==='EMPENDIMIENTO')ct='EMPRENDIMIENTOS';cat=ct;}
       const nom=G(r,cN); if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=G(r,cF), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
-      out.push({cat:cat||'LOCAL',nombre:nom,slug:comuSlug(nom),desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
+      const idCol=G(r,cId), slug=comuSlug(idCol||nom);   // si no hay ID, cae al nombre (como antes)
+      out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
