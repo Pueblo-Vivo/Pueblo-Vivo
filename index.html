@@ -1733,7 +1733,22 @@ function closeSheet(){sheet.classList.remove('open');document.getElementById('fs
   scrim.classList.remove('show');openId=null;renderFilters();applyFilter();}
 scrim.onclick=closeSheet;
 document.getElementById('sheetBack').onclick=closeSheet;
-function highlight(id){const lyr=layers[id];if(!lyr)return;try{map.fitBounds(lyr.getBounds(),{maxZoom:18,paddingTopLeft:[40,40],paddingBottomRight:[40,window.innerHeight*0.55]});}catch(e){}}
+function highlight(id){
+  const lyr=layers[id];if(!lyr)return;
+  try{
+    if(!map.hasLayer(lyr))lyr.addTo(map);
+    try{map.invalidateSize(false);}catch(e){}   // el mapa venía oculto: recalcula tamaño o el zoom queda corto
+    // zoom cerrado sobre la parcela (padding chico y parejo, sin el hueco gigante de antes)
+    map.fitBounds(lyr.getBounds(),{maxZoom:19,padding:[55,55]});
+    // resaltar la parcela un momento para que se distinga bien cuál es
+    if(lyr.setStyle){
+      if(lyr.bringToFront)lyr.bringToFront();
+      lyr.setStyle({color:'#1c1a15',weight:5,fillColor:'#ffd24a',fillOpacity:.5,opacity:1,dashArray:null});
+      clearTimeout(highlight._t);
+      highlight._t=setTimeout(()=>{try{lyr.setStyle(estilo(id));}catch(e){}},2800);
+    }
+  }catch(e){}
+}
 
 function render(){
   const id=openId;if(id==null)return;
