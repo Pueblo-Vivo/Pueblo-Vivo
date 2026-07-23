@@ -747,6 +747,8 @@ body.listmode .lv-tolist{display:none}
   <input id="rgNom" type="text" placeholder="Nombre y apellido" autocomplete="name">
   <label>Tu WhatsApp</label>
   <input id="rgWA" type="tel" placeholder="Ej: 3546 51-0397" autocomplete="tel" inputmode="tel">
+  <label>Tu mail</label>
+  <input id="rgMail" type="email" placeholder="tucorreo@mail.com" autocomplete="email" inputmode="email">
   <button class="rgbtn" id="rgBtn">Ingresar</button>
   <div class="rgerr" id="rgErr"></div>
   <div class="rgnote">Tus datos son solo para contactarte sobre Umepay.</div>
@@ -2313,11 +2315,14 @@ const DUENOS=['santiago','fran silveyra','candelaria','santiago moretto','candel
 function esDueno(nombre){ const n=(nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); return DUENOS.indexOf(n)>=0; }
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
   if(esDueno(v.nombre))return;   // los dueños no se loguean
-  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,tipo:v.tipo||'registro'})}); }catch(e){} }
+  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||'',tipo:v.tipo||'registro'})}); }catch(e){} }
 async function sendVisitor(v){ if(esDueno(v.nombre))return true;   // los dueños no se loguean
   if(!sb)return false;   // respaldo en Supabase (confirmable)
-  try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(error)throw error; return true; }
-  catch(e){ console.warn('visitante',e); return false; } }
+  try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||null}); if(error)throw error; return true; }
+  catch(e){
+    // si la tabla todavía no tiene la columna 'mail', reintento sin ella para no perder el registro
+    if(/mail/i.test(e.message||'')){ try{ const {error:e2}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(!e2)return true; }catch(_){} }
+    console.warn('visitante',e); return false; } }
 function initVisitorGate(){
   const g=document.getElementById('regGate'); if(!g)return;
   if(esLinkEditor())return;   // dueños/moderadores que entran por su link no pasan por el registro
@@ -2325,17 +2330,20 @@ function initVisitorGate(){
   if(cur){
     if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); }
     // avisar cada vez que este celu vuelve a entrar (1 sola vez por sesión, así el auto-refresh no duplica)
-    try{ if(!sessionStorage.getItem('pv_entry_logged')){ sessionStorage.setItem('pv_entry_logged','1'); sendToSheet({nombre:cur.nombre,whatsapp:cur.whatsapp,tipo:'reingreso'}); sendVisitor(cur); } }catch(e){}
+    try{ if(!sessionStorage.getItem('pv_entry_logged')){ sessionStorage.setItem('pv_entry_logged','1'); sendToSheet({nombre:cur.nombre,whatsapp:cur.whatsapp,mail:cur.mail,tipo:'reingreso'}); sendVisitor(cur); } }catch(e){}
     return;
   }
   g.classList.add('show');
-  const nom=document.getElementById('rgNom'),wa=document.getElementById('rgWA'),btn=document.getElementById('rgBtn'),err=document.getElementById('rgErr');
+  const nom=document.getElementById('rgNom'),wa=document.getElementById('rgWA'),mailEl=document.getElementById('rgMail'),btn=document.getElementById('rgBtn'),err=document.getElementById('rgErr');
+  // Mail "real" por formato (sin mandar verificación): local@dominio.tld, TLD de 2+ letras, un solo @, sin puntos dobles/al borde
+  const mailValido=m=>/^[a-z0-9]+([._%+\-][a-z0-9]+)*@[a-z0-9]+([.\-][a-z0-9]+)*\.[a-z]{2,}$/.test(m);
   btn.onclick=async()=>{
-    const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,'');
+    const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,''), mail=(mailEl.value||'').trim().toLowerCase();
     if(n.length<2){err.textContent='Escribí tu nombre.';nom.focus();return;}
     if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
+    if(!mailValido(mail)){err.textContent='Escribí un mail válido (ej: nombre@mail.com).';mailEl.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
-    const v={nombre:n,whatsapp:w,when:Date.now()};
+    const v={nombre:n,whatsapp:w,mail:mail,when:Date.now()};
     try{sessionStorage.setItem('pv_entry_logged','1');}catch(e){}  // ya queda avisado en esta sesión
     sendToSheet(v);                       // a la hoja Ingresos (registro nuevo)
     const ok=await sendVisitor(v); v.pending=!ok;   // respaldo Supabase (con reintento)

@@ -14,11 +14,11 @@ function doPost(e){
   try{
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sh = ss.getSheetByName('Ingresos') || ss.insertSheet('Ingresos');
-    if(sh.getLastRow() === 0) sh.appendRow(['Fecha','Nombre','WhatsApp','Tipo']);
+    if(sh.getLastRow() === 0) sh.appendRow(['Fecha','Nombre','WhatsApp','Mail','Tipo']);
     var d = JSON.parse(e.postData.contents);
     // Fecha/hora SIEMPRE en hora de Argentina (no depende de la zona horaria de la planilla)
     var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm:ss');
-    sh.appendRow([fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro']);
+    sh.appendRow([fecha, d.nombre || '', d.whatsapp || '', d.mail || '', d.tipo || 'registro']);
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
       .setMimeType(ContentService.MimeType.JSON);
   }catch(err){
