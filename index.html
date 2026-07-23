@@ -2335,13 +2335,22 @@ function initVisitorGate(){
   }
   g.classList.add('show');
   const nom=document.getElementById('rgNom'),wa=document.getElementById('rgWA'),mailEl=document.getElementById('rgMail'),btn=document.getElementById('rgBtn'),err=document.getElementById('rgErr');
-  // Mail "real" por formato (sin mandar verificación): local@dominio.tld, TLD de 2+ letras, un solo @, sin puntos dobles/al borde
-  const mailValido=m=>/^[a-z0-9]+([._%+\-][a-z0-9]+)*@[a-z0-9]+([.\-][a-z0-9]+)*\.[a-z]{2,}$/.test(m);
+  // Mail con forma real Y de un proveedor conocido (así no pasa "asd@asd.com" ni basura tipo "1231231").
+  // No verifica que la casilla exista (eso necesita mandar un código), solo que el dominio sea de verdad.
+  const PROVEEDORES=['gmail.com','googlemail.com','hotmail.com','hotmail.com.ar','hotmail.es',
+    'outlook.com','outlook.es','outlook.com.ar','live.com','live.com.ar','msn.com',
+    'yahoo.com','yahoo.com.ar','yahoo.es','yahoo.com.mx','ymail.com','rocketmail.com',
+    'icloud.com','me.com','mac.com','proton.me','protonmail.com','pm.me',
+    'gmx.com','aol.com','zoho.com','mail.com','yandex.com',
+    'fibertel.com.ar','speedy.com.ar','arnet.com.ar','ciudad.com.ar','gigared.com'];
+  const formaOk=m=>/^[a-z0-9]+([._%+\-][a-z0-9]+)*@[a-z0-9]+([.\-][a-z0-9]+)*\.[a-z]{2,}$/.test(m);
+  const mailValido=m=>formaOk(m) && PROVEEDORES.indexOf(m.split('@')[1])>=0;
   btn.onclick=async()=>{
     const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,''), mail=(mailEl.value||'').trim().toLowerCase();
     if(n.length<2){err.textContent='Escribí tu nombre.';nom.focus();return;}
     if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
-    if(!mailValido(mail)){err.textContent='Escribí un mail válido (ej: nombre@mail.com).';mailEl.focus();return;}
+    if(!formaOk(mail)){err.textContent='Escribí un mail válido (ej: nombre@gmail.com).';mailEl.focus();return;}
+    if(!mailValido(mail)){err.textContent='Usá un mail real: Gmail, Hotmail, Outlook, Yahoo, iCloud…';mailEl.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
     const v={nombre:n,whatsapp:w,mail:mail,when:Date.now()};
     try{sessionStorage.setItem('pv_entry_logged','1');}catch(e){}  // ya queda avisado en esta sesión
