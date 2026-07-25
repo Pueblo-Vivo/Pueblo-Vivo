@@ -285,6 +285,17 @@ body.listmode .lv-tolist{display:none}
 .gwrap .gmove button{background:rgba(28,26,21,.74);color:#fff;border:0;border-radius:6px;width:26px;height:23px;font-size:12px;line-height:1;padding:0;font-weight:800;cursor:pointer}
 .gwrap .gmove button:disabled{opacity:.28;cursor:default}
 .gotobtn{display:block;margin-top:7px;background:none;border:0;color:var(--terra);font-weight:800;font-size:13px;cursor:pointer;padding:2px 0}
+/* ---------- Portada (Ingresar / Instalar) ---------- */
+#landing{position:fixed;inset:0;z-index:6000;background:linear-gradient(160deg,#faf6ee,#e8dcc4);display:flex;align-items:center;justify-content:center;padding:26px}
+#landing.hide{display:none}
+#landing .lgd{max-width:360px;width:100%;text-align:center}
+#landing .lgd-logo{width:96px;height:96px;margin:0 auto 6px;display:block}
+#landing h1{font-family:'Fraunces',serif;font-weight:700;color:#7a4a1e;font-size:34px;line-height:1.05;margin-bottom:8px}
+#landing .lgd-sub{color:#8a7f6c;font-size:15px;line-height:1.4;margin-bottom:30px}
+#landing .lgd-enter{width:100%;padding:16px;border:0;border-radius:14px;background:linear-gradient(135deg,#bf6f27,#ddae4c);color:#fff;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(150,90,20,.28)}
+#landing .lgd-install{width:100%;margin-top:12px;padding:14px;border:1.5px solid #d9c8a8;border-radius:14px;background:#fff;color:#5f6e37;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+#landing .lgd-install svg{width:18px;height:18px}
+#landing .lgd-foot{color:#a89e8d;font-size:12px;margin-top:20px}
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
 #regGate.show{display:flex}
 #regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
@@ -739,6 +750,14 @@ body.listmode .lv-tolist{display:none}
   <button class="lbnav lbnext" id="lbNext">›</button>
   <div class="lbbar"><span class="lbcount" id="lbCount"></span><button class="lbdel" id="lbDel">🗑 Eliminar</button></div>
 </div>
+<div id="landing"><div class="lgd">
+  <svg class="lgd-logo" viewBox="0 0 100 100" aria-label="Pueblo Vivo"><defs><linearGradient id="pvgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs><g transform="translate(50,80)" fill="none" stroke="url(#pvgL)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="3.3" fill="url(#pvgL)"/></svg>
+  <h1>Pueblo Vivo</h1>
+  <p class="lgd-sub">Terrenos, casas y comunidad en la ecoaldea Umepay.</p>
+  <button class="lgd-enter" id="lgdEnter">Ingresar a la app</button>
+  <button class="lgd-install" id="lgdInstall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Instalar app</button>
+  <div class="lgd-foot">Umepay · Valle de Calamuchita</div>
+</div></div>
 <div id="regGate"><div class="rgcard">
   <svg class="rglogo" viewBox="0 0 100 100" aria-label="Pueblo Vivo"><defs><linearGradient id="pvg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs><g transform="translate(50,80)" fill="none" stroke="url(#pvg2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="3.3" fill="url(#pvg2)"/></svg>
   <h2>Bienvenid@ a la app de pueblo vivo</h2>
@@ -2562,21 +2581,33 @@ syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 if(!esLinkEditor()&&_verId==null)setMode('comunidad');   // la app abre en Comunidad (los links de editor / ?ver= fijan su propio modo)
 
-/* Instalar como app */
-(function(){
-  let deferred=null;
-  const btn=document.getElementById('btnInstall');
-  const standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+/* Instalar como app (lo usan el botón flotante y la portada) */
+let deferredInstall=null;
+const standaloneApp=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+async function triggerInstall(){
   const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  if(!standalone) btn.style.display=''; // mostrar (Android lo refina con beforeinstallprompt; iOS muestra pasos)
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;btn.style.display='';});
+  if(deferredInstall){ deferredInstall.prompt(); const r=await deferredInstall.userChoice; deferredInstall=null; if(r.outcome==='accepted'){const b=document.getElementById('btnInstall');if(b)b.style.display='none';} }
+  else if(isIOS){ document.getElementById('iosHelp').classList.add('show'); }
+  else{ toast('Abrí el menú del navegador (⋮) y elegí "Instalar app" / "Agregar a pantalla de inicio"'); }
+}
+(function(){
+  const btn=document.getElementById('btnInstall');
+  if(!standaloneApp) btn.style.display=''; // mostrar (Android lo refina con beforeinstallprompt; iOS muestra pasos)
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;btn.style.display='';});
   window.addEventListener('appinstalled',()=>{btn.style.display='none';toast('¡App instalada! 🎉');});
-  btn.onclick=async()=>{
-    if(deferred){deferred.prompt();const r=await deferred.userChoice;deferred=null;if(r.outcome==='accepted')btn.style.display='none';}
-    else if(isIOS){document.getElementById('iosHelp').classList.add('show');}
-    else{toast('Abrí el menú del navegador (⋮) y elegí "Instalar app" / "Agregar a pantalla de inicio"');}
-  };
+  btn.onclick=triggerInstall;
   document.getElementById('iosOk').onclick=()=>document.getElementById('iosHelp').classList.remove('show');
+})();
+
+/* Portada: "Ingresar a la app" + "Instalar app" (solo en la web, no si ya está instalada ni en links directos) */
+(function(){
+  const land=document.getElementById('landing'); if(!land)return;
+  const esDeepLink=(()=>{ try{ return esLinkEditor()||new URLSearchParams(location.search).get('ver')!=null; }catch(e){ return false; } })();
+  let yaEntro=false; try{ yaEntro=sessionStorage.getItem('pv_entered')==='1'; }catch(e){}
+  if(standaloneApp||esDeepLink||yaEntro){ land.classList.add('hide'); return; }   // se saltea la portada
+  land.classList.remove('hide');
+  document.getElementById('lgdEnter').onclick=()=>{ try{sessionStorage.setItem('pv_entered','1');}catch(e){} land.classList.add('hide'); };
+  document.getElementById('lgdInstall').onclick=triggerInstall;
 })();
 
 /* PWA + auto-actualización (se refresca solo cuando hay versión nueva) */
