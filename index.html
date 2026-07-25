@@ -2167,28 +2167,35 @@ function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).prop
     txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
   else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
-// Link para compartir una propiedad puntual (abre la app directo en su ficha)
-function propLink(id){ return location.origin+location.pathname+'?ver='+id; }
+// Link para compartir una propiedad puntual (abre la app directo en su ficha, en el mismo contexto)
+function propLink(id,modo){ return location.origin+location.pathname+'?ver='+id+(modo?('&modo='+modo):''); }
 function shareLink(id){
   const p=PARCELAS.features.find(x=>x.properties.id==id).properties, inf=info(id);
+  // contexto desde donde se comparte: si es venta+alquiler manda el modo actual; si no, su propio tipo
+  const esAlq = isDual(inf) ? (MODE==='alojar') : (opOf(inf)==='alquiler');
+  const modo = esAlq?'alquiler':'venta';
   const nom=inf.inmueble||('Parcela '+p.mapNum);
-  const precio=isAlq(inf)?(inf.alqPrice?('USD '+money(inf.alqPrice)+'/noche'):''):(inf.total?('USD '+money(inf.total)):'');
-  const url=propLink(id);
+  const precio=esAlq?(inf.alqPrice?('USD '+money(inf.alqPrice)+'/noche'):''):(inf.total?('USD '+money(inf.total)):'');
+  const etiqueta=esAlq?'En alquiler':'En venta';
+  const url=propLink(id,modo);
   const titulo='Pueblo Vivo · '+nom;
-  const texto=titulo+(precio?(' — '+precio):'')+' ('+(p.barrio||'Umepay')+')';
+  const texto=titulo+' — '+etiqueta+(precio?(' · '+precio):'')+' ('+(p.barrio||'Umepay')+')';
   if(navigator.share){ navigator.share({title:titulo, text:texto, url:url}).catch(()=>{}); return; }
   // fallback (compu): copio al portapapeles
   const copiar=navigator.clipboard&&navigator.clipboard.writeText(url);
   if(copiar){ copiar.then(()=>toast('Link copiado ✓')).catch(()=>window.open('https://wa.me/?text='+encodeURIComponent(texto+'\n'+url),'_blank')); }
   else window.open('https://wa.me/?text='+encodeURIComponent(texto+'\n'+url),'_blank');
 }
-// Abre la ficha de la propiedad de un link ?ver=<id> (después de que cargó la planilla)
-function openShared(raw){
+// Abre la ficha de la propiedad de un link ?ver=<id>&modo=... (después de que cargó la planilla)
+function openShared(raw,modo){
   const id=+raw; if(!DATA[id]){toast('No encontramos esa propiedad');return;}
   const inf=info(id);
   LISTON=true;
-  if(isAlq(inf)) setMode('alojar');
-  else { ventaTipo=conCasa(inf)?'casa':'terreno'; setMode('comprar'); }
+  const quiereAlq = (modo==='alquiler') || (!modo && isAlq(inf) && !isVenta(inf));
+  if(quiereAlq && isAlq(inf)) setMode('alojar');
+  else if(isVenta(inf)){ ventaTipo=conCasa(inf)?'casa':'terreno'; setMode('comprar'); }
+  else if(isAlq(inf)) setMode('alojar');   // solo-alquiler
+  else setMode('comprar');
   openSheet(id);
 }
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
@@ -2548,8 +2555,9 @@ buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();update
 if(sb){ sbInitAuth(); loadShared(); }
 loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
-const _verId=(()=>{try{return new URLSearchParams(location.search).get('ver');}catch(e){return null;}})();
-syncVentaSheet().then(syncRentSheet).then(()=>{ if(_verId!=null)try{openShared(_verId);}catch(e){} });
+const _verParams=(()=>{try{const p=new URLSearchParams(location.search);return {id:p.get('ver'),modo:p.get('modo')};}catch(e){return {id:null,modo:null};}})();
+const _verId=_verParams.id;
+syncVentaSheet().then(syncRentSheet).then(()=>{ if(_verId!=null)try{openShared(_verId,_verParams.modo);}catch(e){} });
 syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 if(!esLinkEditor()&&_verId==null)setMode('comunidad');   // la app abre en Comunidad (los links de editor / ?ver= fijan su propio modo)
