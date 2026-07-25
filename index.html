@@ -1809,7 +1809,7 @@ function renderLote(id){
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
     </div>
-    ${linked?`<button class="act" id="btnPdf" style="width:100%;margin-top:10px">${ic('pdf')}Descargar ficha PDF</button>`:''}`;
+    ${linked?`<div class="actions" style="margin-top:10px"><button class="act" id="btnShare">${ic('share')}Compartir</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
   scroll.innerHTML=`
   <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
     <button class="sh-mapbtn" id="btnVerMapa">${ic('pin')} Ver en el mapa</button>
@@ -1837,6 +1837,7 @@ function renderLote(id){
     document.getElementById('btnCmp').onclick=()=>{toggleCompare(id);render();};
     document.getElementById('btnWA').onclick=()=>shareWA(id);
     document.getElementById('btnPdf').onclick=()=>sharePDF(id);
+    { const bs=document.getElementById('btnShare'); if(bs)bs.onclick=()=>shareLink(id); }
     const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openCasaEditor(numById[id],MOD_CLAVE);
     scroll.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{ setMode(b.dataset.goto); openSheet(id); });
   }else{
@@ -2166,6 +2167,30 @@ function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).prop
     txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
   else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
+// Link para compartir una propiedad puntual (abre la app directo en su ficha)
+function propLink(id){ return location.origin+location.pathname+'?ver='+id; }
+function shareLink(id){
+  const p=PARCELAS.features.find(x=>x.properties.id==id).properties, inf=info(id);
+  const nom=inf.inmueble||('Parcela '+p.mapNum);
+  const precio=isAlq(inf)?(inf.alqPrice?('USD '+money(inf.alqPrice)+'/noche'):''):(inf.total?('USD '+money(inf.total)):'');
+  const url=propLink(id);
+  const titulo='Pueblo Vivo · '+nom;
+  const texto=titulo+(precio?(' — '+precio):'')+' ('+(p.barrio||'Umepay')+')';
+  if(navigator.share){ navigator.share({title:titulo, text:texto, url:url}).catch(()=>{}); return; }
+  // fallback (compu): copio al portapapeles
+  const copiar=navigator.clipboard&&navigator.clipboard.writeText(url);
+  if(copiar){ copiar.then(()=>toast('Link copiado ✓')).catch(()=>window.open('https://wa.me/?text='+encodeURIComponent(texto+'\n'+url),'_blank')); }
+  else window.open('https://wa.me/?text='+encodeURIComponent(texto+'\n'+url),'_blank');
+}
+// Abre la ficha de la propiedad de un link ?ver=<id> (después de que cargó la planilla)
+function openShared(raw){
+  const id=+raw; if(!DATA[id]){toast('No encontramos esa propiedad');return;}
+  const inf=info(id);
+  LISTON=true;
+  if(isAlq(inf)) setMode('alojar');
+  else { ventaTipo=conCasa(inf)?'casa':'terreno'; setMode('comprar'); }
+  openSheet(id);
+}
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
@@ -2251,7 +2276,8 @@ function ic(n){const I={
  clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h4"/></svg>',
  sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7-3.3M3 12a9 9 0 0 1 16-5.7"/><path d="M21 3v4h-4M3 21v-4h4"/></svg>',
  pencil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
- trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>'};
+ trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>',
+ share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>'};
  return I[n]||'';}
 function featIcon(k){const m={
  mountain:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l6-11 4 6 2-3 6 8z"/></svg>',
@@ -2522,9 +2548,11 @@ buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();update
 if(sb){ sbInitAuth(); loadShared(); }
 loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
-syncVentaSheet().then(syncRentSheet);syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
+const _verId=(()=>{try{return new URLSearchParams(location.search).get('ver');}catch(e){return null;}})();
+syncVentaSheet().then(syncRentSheet).then(()=>{ if(_verId!=null)try{openShared(_verId);}catch(e){} });
+syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
-if(!esLinkEditor())setMode('comunidad');   // la app abre en Comunidad (los links de editor fijan su propio modo)
+if(!esLinkEditor()&&_verId==null)setMode('comunidad');   // la app abre en Comunidad (los links de editor / ?ver= fijan su propio modo)
 
 /* Instalar como app */
 (function(){
