@@ -414,7 +414,7 @@ body.listmode .lv-tolist{display:none}
 .scrim.show{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:1500;background:var(--cream);
   border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.30);
-  transform:translateY(105%);transition:transform .34s cubic-bezier(.22,1,.36,1);max-height:92vh;display:flex;flex-direction:column}
+  transform:translateY(105%);transition:transform .34s cubic-bezier(.22,1,.36,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column}
 .sheet.open{transform:translateY(0)}
 .grip{width:42px;height:5px;border-radius:99px;background:#d9cfbd;margin:10px auto 4px;flex:0 0 auto}
 .sheet-scroll{overflow-y:auto;padding:46px 18px 30px;overscroll-behavior:contain}
@@ -1747,13 +1747,18 @@ function openCasaEditor(lote,clave){
 const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),scroll=document.getElementById('sheetScroll');
 let openId=null;
 const money=n=>n.toLocaleString('es-AR');
+let _pushedSheet=false;   // para que el botón "atrás" del teléfono cierre la ficha en vez de salir de la app
 function openSheet(id){openId=id;casaSel=0;render();
-  scrim.classList.add('show');sheet.classList.add('open');highlight(id);}
+  scrim.classList.add('show');sheet.classList.add('open');highlight(id);
+  if(!_pushedSheet){ try{history.pushState({pvSheet:1},'');_pushedSheet=true;}catch(e){} }}
 function closeSheet(){sheet.classList.remove('open');document.getElementById('fsheet').classList.remove('open');
   document.getElementById('cmpsheet').classList.remove('open');document.getElementById('invsheet').classList.remove('open');
-  scrim.classList.remove('show');openId=null;renderFilters();applyFilter();}
+  scrim.classList.remove('show');openId=null;renderFilters();applyFilter();
+  if(_pushedSheet){ _pushedSheet=false; try{ if(history.state&&history.state.pvSheet) history.back(); }catch(e){} }}
 scrim.onclick=closeSheet;
 document.getElementById('sheetBack').onclick=closeSheet;
+// botón/gesto "atrás" del teléfono: si hay una ficha abierta, la cierra (no sale de la página)
+window.addEventListener('popstate',()=>{ if(scrim.classList.contains('show')){ _pushedSheet=false; closeSheet(); } });
 function highlight(id){
   const lyr=layers[id];if(!lyr)return;
   try{
