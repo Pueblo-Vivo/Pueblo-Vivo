@@ -1540,7 +1540,7 @@ async function syncComunidadSheet(){
       const tipo=G(r,cT); if(tipo){let ct=tipo.toUpperCase();if(ct==='EMPENDIMIENTO')ct='EMPRENDIMIENTOS';cat=ct;}
       const nom=G(r,cN); if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=G(r,cF), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
-      const idCol=G(r,cId), slug=comuSlug(idCol||nom);   // si no hay ID, cae al nombre (como antes)
+      const slug=comuSlug(nom);   // identidad por NOMBRE (links auto con =EMPLINK(B2); renombrar cambia el link)
       out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
     }
     COMUNIDAD=out;
