@@ -16,11 +16,11 @@ function doPost(e){
     var sh = ss.getSheetByName('Ingresos') || ss.insertSheet('Ingresos');
 
     // Encabezado FIJO en orden fijo. Lo (re)escribo en cada envío: así nadie lo puede desalinear.
-    sh.getRange(1, 1, 1, 5).setValues([['Fecha','Nombre','WhatsApp','Tipo','Mail']]);
+    sh.getRange(1, 1, 1, 6).setValues([['Fecha','Nombre','WhatsApp','Tipo','Mail','Origen']]);
 
     var d = JSON.parse(e.postData.contents);
     var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm:ss');
-    sh.appendRow([fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro', d.mail || '']);
+    sh.appendRow([fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro', d.mail || '', d.origen || '']);
 
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
       .setMimeType(ContentService.MimeType.JSON);

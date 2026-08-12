@@ -307,6 +307,9 @@ body.listmode .lv-tolist{display:none}
 #regGate input:focus{outline:none;border-color:#bf6f27}
 #regGate .rgbtn{width:100%;margin-top:20px;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#bf6f27,#ddae4c);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
 #regGate .rgbtn:disabled{opacity:.55}
+#regGate .rgseg{display:flex;gap:8px}
+#regGate .rgseg button{flex:1;padding:12px 8px;border:1.5px solid #e2d7c2;border-radius:11px;background:#fdfbf6;color:#6b6152;font-size:14px;font-weight:700;cursor:pointer}
+#regGate .rgseg button.on{border-color:#bf6f27;background:linear-gradient(135deg,#bf6f27,#ddae4c);color:#fff}
 #regGate .rgerr{color:#c0392b;font-size:12.5px;margin-top:9px;min-height:15px}
 #regGate .rgnote{color:#a89e8d;font-size:11px;margin-top:10px}
 
@@ -768,6 +771,8 @@ body.listmode .lv-tolist{display:none}
   <input id="rgWA" type="tel" placeholder="Ej: 3546 51-0397" autocomplete="tel" inputmode="tel">
   <label>Tu mail</label>
   <input id="rgMail" type="email" placeholder="tucorreo@mail.com" autocomplete="email" inputmode="email">
+  <label>¿Sos de Umepay?</label>
+  <div class="rgseg" id="rgOrigen"><button type="button" data-o="umepayense">Sí, de Umepay</button><button type="button" data-o="afuera">No, de afuera</button></div>
   <button class="rgbtn" id="rgBtn">Ingresar</button>
   <div class="rgerr" id="rgErr"></div>
   <div class="rgnote">Tus datos son solo para contactarte sobre Umepay.</div>
@@ -2372,14 +2377,15 @@ const DUENOS=['santiago','fran silveyra','candelaria','santiago moretto','candel
 function esDueno(nombre){ const n=(nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); return DUENOS.indexOf(n)>=0; }
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
   if(esDueno(v.nombre))return;   // los dueños no se loguean
-  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||'',tipo:v.tipo||'registro'})}); }catch(e){} }
+  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||'',origen:v.origen||'',tipo:v.tipo||'registro'})}); }catch(e){} }
 async function sendVisitor(v){ if(esDueno(v.nombre))return true;   // los dueños no se loguean
   if(!sb)return false;   // respaldo en Supabase (confirmable)
-  try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||null}); if(error)throw error; return true; }
-  catch(e){
-    // si la tabla todavía no tiene la columna 'mail', reintento sin ella para no perder el registro
-    if(/mail/i.test(e.message||'')){ try{ const {error:e2}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp}); if(!e2)return true; }catch(_){} }
-    console.warn('visitante',e); return false; } }
+  // intento con todas las columnas; si alguna no existe todavía, voy sacándola para no perder el registro
+  const intentos=[{nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||null,origen:v.origen||null},
+                  {nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||null},
+                  {nombre:v.nombre,whatsapp:v.whatsapp}];
+  for(const row of intentos){ try{ const {error}=await sb.from('visitantes').insert(row); if(!error)return true; if(!/column|schema/i.test(error.message||''))throw error; }catch(e){ if(row===intentos[intentos.length-1]){console.warn('visitante',e);return false;} } }
+  return false; }
 function initVisitorGate(){
   const g=document.getElementById('regGate'); if(!g)return;
   if(esLinkEditor())return;   // dueños/moderadores que entran por su link no pasan por el registro
@@ -2387,7 +2393,7 @@ function initVisitorGate(){
   if(cur){
     if(cur.pending){ sendVisitor(cur).then(ok=>{ if(ok){cur.pending=false;try{localStorage.setItem(VKEY,JSON.stringify(cur));}catch(e){}} }); }
     // avisar cada vez que este celu vuelve a entrar (1 sola vez por sesión, así el auto-refresh no duplica)
-    try{ if(!sessionStorage.getItem('pv_entry_logged')){ sessionStorage.setItem('pv_entry_logged','1'); sendToSheet({nombre:cur.nombre,whatsapp:cur.whatsapp,mail:cur.mail,tipo:'reingreso'}); sendVisitor(cur); } }catch(e){}
+    try{ if(!sessionStorage.getItem('pv_entry_logged')){ sessionStorage.setItem('pv_entry_logged','1'); sendToSheet({nombre:cur.nombre,whatsapp:cur.whatsapp,mail:cur.mail,origen:cur.origen,tipo:'reingreso'}); sendVisitor(cur); } }catch(e){}
     return;
   }
   g.classList.add('show');
@@ -2402,14 +2408,17 @@ function initVisitorGate(){
     'fibertel.com.ar','speedy.com.ar','arnet.com.ar','ciudad.com.ar','gigared.com'];
   const formaOk=m=>/^[a-z0-9]+([._%+\-][a-z0-9]+)*@[a-z0-9]+([.\-][a-z0-9]+)*\.[a-z]{2,}$/.test(m);
   const mailValido=m=>formaOk(m) && PROVEEDORES.indexOf(m.split('@')[1])>=0;
+  let origen=null;   // 'umepayense' | 'afuera'
+  document.querySelectorAll('#rgOrigen button').forEach(b=>b.onclick=()=>{ origen=b.dataset.o; document.querySelectorAll('#rgOrigen button').forEach(x=>x.classList.toggle('on',x===b)); });
   btn.onclick=async()=>{
     const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,''), mail=(mailEl.value||'').trim().toLowerCase();
     if(n.length<2){err.textContent='Escribí tu nombre.';nom.focus();return;}
     if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
     if(!formaOk(mail)){err.textContent='Escribí un mail válido (ej: nombre@gmail.com).';mailEl.focus();return;}
     if(!mailValido(mail)){err.textContent='Usá un mail real: Gmail, Hotmail, Outlook, Yahoo, iCloud…';mailEl.focus();return;}
+    if(!origen){err.textContent='Contanos si sos de Umepay o de afuera.';return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
-    const v={nombre:n,whatsapp:w,mail:mail,when:Date.now()};
+    const v={nombre:n,whatsapp:w,mail:mail,origen:origen,when:Date.now()};
     try{sessionStorage.setItem('pv_entry_logged','1');}catch(e){}  // ya queda avisado en esta sesión
     sendToSheet(v);                       // a la hoja Ingresos (registro nuevo)
     const ok=await sendVisitor(v); v.pending=!ok;   // respaldo Supabase (con reintento)
