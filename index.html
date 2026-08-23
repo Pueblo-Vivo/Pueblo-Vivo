@@ -333,9 +333,8 @@ body.listmode .lv-tolist{display:none}
 #locBanner b{color:#8fd0ff}
 #locBanner small{display:block;font-size:11.5px;opacity:.8;margin-top:1px}
 /* Barra de marcado (puntos/líneas, guardado local) */
-#markBar{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;z-index:1100;display:none;align-items:center;gap:7px;
-  background:#fff;border-radius:14px;padding:7px 9px;box-shadow:0 6px 22px rgba(0,0,0,.22);max-width:94%;flex-wrap:wrap;justify-content:center}
-#markBar.show{display:flex}
+#markBar{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:1100;display:flex;align-items:center;gap:6px;
+  background:#fff;border-radius:14px;padding:6px 8px;box-shadow:0 6px 22px rgba(0,0,0,.22);width:min(372px,94vw);box-sizing:border-box;flex-wrap:wrap;justify-content:center}
 #markBar button{border:0;background:#f0ece3;color:var(--ink);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;cursor:pointer}
 #markBar button.on{background:var(--terra);color:#fff}
 #markBar .mk-hint{font-size:11.5px;color:var(--muted);max-width:150px;line-height:1.15}
@@ -715,15 +714,13 @@ body.listmode .lv-tolist{display:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></button>
     <button class="fab" id="btnPoi" title="Puntos de interés">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
-    <button class="fab" id="btnMark" title="Marcar puntos y líneas">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
   </div>
   <div id="markBar">
-    <button data-mk="punto" class="on">📍 Punto</button>
+    <button id="mkAqui">📍 Marcar acá</button>
+    <button id="mkMapa">📌 En el mapa</button>
     <button data-mk="linea">〰️ Línea</button>
     <button id="btnRuta">⏺ Grabar ruta</button>
     <button id="mkFinish" style="display:none">✓ Terminar</button>
-    <button id="mkExit" class="mk-x">✕</button>
   </div>
   <input id="mkFile" type="file" accept="image/*" capture="environment" style="display:none">
   <div class="tray" id="tray">
@@ -932,11 +929,11 @@ PARCELAS.features.forEach(f=>{
   const layer=L.geoJSON(f,{style:()=>estilo(id)});
   if(!layer.getBounds().isValid()){delete DATA[id];return;}
   layer.addTo(map);
-  layer.on('click',e=>{ if(typeof mkMode!=='undefined'&&mkMode){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });
+  layer.on('click',e=>{ if(typeof mkSub!=='undefined'&&mkSub){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });
   layers[id]=layer;
   const c=layer.getBounds().getCenter();centers[id]=[c.lat,c.lng];
   const m=L.marker(c,{icon:L.divIcon({className:'parc-label',html:'',iconSize:[40,18]})});
-  m.on('click',e=>{ if(typeof mkMode!=='undefined'&&mkMode){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });m.addTo(map);labels[id]=m;
+  m.on('click',e=>{ if(typeof mkSub!=='undefined'&&mkSub){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });m.addTo(map);labels[id]=m;
 });
 // distancias a POIs de referencia
 const REF_POIS=(window.POIS||[]).filter(p=>p.ref);
@@ -2323,7 +2320,7 @@ document.getElementById('btnFit').onclick=()=>{const all=L.featureGroup(Object.v
 /* ===== Marcar: puntos (coord + foto), líneas y rutas grabadas — SOLO en este teléfono (privado) ===== */
 const MARCAS_KEY='pv_marcas_v1';
 let marcas=[]; try{marcas=JSON.parse(localStorage.getItem(MARCAS_KEY)||'[]');}catch(e){marcas=[];}
-let mkMode=false, mkSub='punto', lineaTmp=null, lineaPts=[];
+let mkSub=null, lineaTmp=null, lineaPts=[];
 let rutaOn=false, rutaWatch=null, rutaPts=[], rutaTmp=null, fotoIdx=null;
 const marcasLayer=L.layerGroup().addTo(map);
 function saveMarcas(){try{localStorage.setItem(MARCAS_KEY,JSON.stringify(marcas));}catch(e){toast('Sin espacio: borrá alguna foto o marca');}}
@@ -2357,23 +2354,28 @@ map.on('popupopen',e=>{ const node=e.popup.getElement&&e.popup.getElement(); if(
 document.getElementById('mkFile').onchange=e=>{const f=e.target.files&&e.target.files[0];const i=fotoIdx;fotoIdx=null;e.target.value='';if(!f||i==null||!marcas[i])return;
   const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1000,img=>{if(marcas[i]){marcas[i].foto=img;saveMarcas();drawMarcas();setTimeout(()=>{const l=marcasLayer.getLayers()[i];if(l)l.openPopup();},60);toast('Foto agregada');}});rd.readAsDataURL(f);};
 drawMarcas();
-const markBar=document.getElementById('markBar'), btnMark=document.getElementById('btnMark');
-function setMkMode(on){ mkMode=on; markBar.classList.toggle('show',on); btnMark.classList.toggle('on',on);
-  try{map.getContainer().style.cursor=on?'crosshair':'';}catch(e){} if(!on)cancelLinea(); }
-btnMark.onclick=()=>setMkMode(!mkMode);
-document.getElementById('mkExit').onclick=()=>setMkMode(false);
-document.querySelectorAll('#markBar [data-mk]').forEach(b=>b.onclick=()=>{ mkSub=b.dataset.mk;
-  document.querySelectorAll('#markBar [data-mk]').forEach(x=>x.classList.toggle('on',x===b));
-  const h=document.getElementById('mkHint'); if(h)h.textContent = mkSub==='punto'?'Tocá el mapa para poner un punto':'Tocá para ir marcando la línea';
-  cancelLinea(); });
+// La barra está SIEMPRE visible. Cada botón activa/desactiva su modo.
+function setSub(sub){ mkSub=(mkSub===sub)?null:sub;
+  document.getElementById('mkMapa').classList.toggle('on',mkSub==='punto');
+  document.querySelectorAll('#markBar [data-mk]').forEach(x=>x.classList.toggle('on',x.dataset.mk===mkSub));
+  try{map.getContainer().style.cursor=mkSub?'crosshair':'';}catch(e){}
+  if(mkSub!=='linea')cancelLinea();
+  if(mkSub==='punto')toast('Tocá el mapa donde va el punto'); else if(mkSub==='linea')toast('Tocá para ir marcando la línea'); }
+document.getElementById('mkMapa').onclick=()=>setSub('punto');
+document.querySelectorAll('#markBar [data-mk]').forEach(b=>b.onclick=()=>setSub(b.dataset.mk));
 function cancelLinea(){ if(lineaTmp){map.removeLayer(lineaTmp);lineaTmp=null;} lineaPts=[]; const f=document.getElementById('mkFinish'); if(f)f.style.display='none'; }
-document.getElementById('mkFinish').onclick=()=>{ if(lineaPts.length>=2){ marcas.push({t:'l',c:lineaPts.slice(),n:(prompt('Nombre de la línea (opcional):')||'').trim()||null}); saveMarcas(); drawMarcas(); toast('Línea guardada'); } cancelLinea(); };
-function agregarMarca(latlng){ const yo=[latlng.lat,latlng.lng];
-  if(mkSub==='punto'){ marcas.push({t:'p',c:[yo],n:null}); saveMarcas(); drawMarcas(); setTimeout(()=>{const l=marcasLayer.getLayers()[marcas.length-1];if(l)l.openPopup();},60); }
-  else{ lineaPts.push(yo);
+document.getElementById('mkFinish').onclick=()=>{ if(lineaPts.length>=2){ marcas.push({t:'l',c:lineaPts.slice(),n:(prompt('Nombre de la línea:')||'').trim()||null}); saveMarcas(); drawMarcas(); toast('Línea guardada'); } cancelLinea(); setSub(null); };
+function nuevoPunto(lat,lng){ const n=(prompt('Nombre del punto:')||'').trim()||null; marcas.push({t:'p',c:[[lat,lng]],n:n}); saveMarcas(); drawMarcas(); setTimeout(()=>{const l=marcasLayer.getLayers()[marcas.length-1];if(l)l.openPopup();},60); }
+function agregarMarca(latlng){
+  if(mkSub==='punto'){ nuevoPunto(latlng.lat,latlng.lng); }
+  else if(mkSub==='linea'){ lineaPts.push([latlng.lat,latlng.lng]);
     if(!lineaTmp)lineaTmp=L.polyline(lineaPts,{color:'#b5532a',weight:4,dashArray:'6 5',opacity:.9}).addTo(map); else lineaTmp.setLatLngs(lineaPts);
     document.getElementById('mkFinish').style.display = lineaPts.length>=2?'inline-block':'none'; } }
-map.on('click',e=>{ if(mkMode)agregarMarca(e.latlng); });
+map.on('click',e=>{ if(mkSub)agregarMarca(e.latlng); });
+// "Marcar acá" = guarda un punto en TU ubicación actual (GPS)
+document.getElementById('mkAqui').onclick=()=>{ if(!navigator.geolocation){toast('Tu teléfono no comparte ubicación');return;} toast('Ubicando…');
+  navigator.geolocation.getCurrentPosition(pos=>{ const la=pos.coords.latitude,lo=pos.coords.longitude; map.setView([la,lo],Math.max(map.getZoom(),17)); nuevoPunto(la,lo); },
+    ()=>toast('No se pudo (dale permiso de ubicación)'),{enableHighAccuracy:true,timeout:15000,maximumAge:2000}); };
 /* Grabar ruta: va guardando una línea mientras te movés (GPS) */
 function distM(a,b){const R=6371000,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180,la1=a[0]*Math.PI/180,la2=b[0]*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 const btnRuta=document.getElementById('btnRuta');
