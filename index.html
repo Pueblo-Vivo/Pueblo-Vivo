@@ -2326,6 +2326,7 @@ const marcasLayer=L.layerGroup().addTo(map);
 function saveMarcas(){try{localStorage.setItem(MARCAS_KEY,JSON.stringify(marcas));}catch(e){toast('Sin espacio: borrá alguna foto o marca');}}
 function mkPin(){return L.divIcon({className:'',html:'<div class="mk-pin"></div>',iconSize:[22,22],iconAnchor:[11,22]});}
 function coordTxt(c){return c[0].toFixed(6)+', '+c[1].toFixed(6);}
+function distTotal(cs){let d=0;for(let i=1;i<cs.length;i++)d+=distM(cs[i-1],cs[i]);return d;}
 function popupHtml(m,i){
   if(m.t==='p'){const c=m.c[0];
     return '<div class="mk-pop"><b>'+esc(m.n||'Punto')+'</b>'+(m.foto?'<img class="mk-foto" src="'+m.foto+'">':'')+
@@ -2333,7 +2334,7 @@ function popupHtml(m,i){
       '<button data-ren="'+i+'">Nombre</button><button data-copiar="'+i+'">Copiar</button>'+
       '<button data-maps="'+i+'">Ir con Maps</button><button data-foto="'+i+'">'+(m.foto?'Cambiar foto':'Foto')+'</button>'+
       '<button data-del="'+i+'" class="del">Borrar</button></div></div>';}
-  return '<div class="mk-pop"><b>'+esc(m.n||(m.t==='ruta'?'Ruta':'Línea'))+'</b><div class="mk-coord">'+m.c.length+' puntos</div>'+
+  return '<div class="mk-pop"><b>'+esc(m.n||(m.t==='ruta'?'Ruta':'Línea'))+'</b><div class="mk-coord">'+fmtDist(distTotal(m.c))+' · '+m.c.length+' puntos</div>'+
     '<div class="mk-acts"><button data-ren="'+i+'">Nombre</button><button data-del="'+i+'" class="del">Borrar</button></div></div>';
 }
 function drawMarcas(){ marcasLayer.clearLayers();
@@ -2354,6 +2355,9 @@ map.on('popupopen',e=>{ const node=e.popup.getElement&&e.popup.getElement(); if(
 document.getElementById('mkFile').onchange=e=>{const f=e.target.files&&e.target.files[0];const i=fotoIdx;fotoIdx=null;e.target.value='';if(!f||i==null||!marcas[i])return;
   const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1000,img=>{if(marcas[i]){marcas[i].foto=img;saveMarcas();drawMarcas();setTimeout(()=>{const l=marcasLayer.getLayers()[i];if(l)l.openPopup();},60);toast('Foto agregada');}});rd.readAsDataURL(f);};
 drawMarcas();
+// Evito que tocar la barra/controles agregue un punto en el mapa por debajo (el bug del "primer punto")
+try{ L.DomEvent.disableClickPropagation(document.getElementById('markBar'));
+  document.querySelectorAll('#map .fab-col, #map .lv-tolist, #map .tray').forEach(el=>L.DomEvent.disableClickPropagation(el)); }catch(e){}
 // La barra está SIEMPRE visible. Cada botón activa/desactiva su modo.
 function setSub(sub){ mkSub=(mkSub===sub)?null:sub;
   document.getElementById('mkMapa').classList.toggle('on',mkSub==='punto');
@@ -2363,14 +2367,15 @@ function setSub(sub){ mkSub=(mkSub===sub)?null:sub;
   if(mkSub==='punto')toast('Tocá el mapa donde va el punto'); else if(mkSub==='linea')toast('Tocá para ir marcando la línea'); }
 document.getElementById('mkMapa').onclick=()=>setSub('punto');
 document.querySelectorAll('#markBar [data-mk]').forEach(b=>b.onclick=()=>setSub(b.dataset.mk));
-function cancelLinea(){ if(lineaTmp){map.removeLayer(lineaTmp);lineaTmp=null;} lineaPts=[]; const f=document.getElementById('mkFinish'); if(f)f.style.display='none'; }
+function cancelLinea(){ if(lineaTmp){map.removeLayer(lineaTmp);lineaTmp=null;} lineaPts=[]; const f=document.getElementById('mkFinish'); if(f){f.style.display='none';f.textContent='✓ Terminar';} }
 document.getElementById('mkFinish').onclick=()=>{ if(lineaPts.length>=2){ marcas.push({t:'l',c:lineaPts.slice(),n:(prompt('Nombre de la línea:')||'').trim()||null}); saveMarcas(); drawMarcas(); toast('Línea guardada'); } cancelLinea(); setSub(null); };
 function nuevoPunto(lat,lng){ const n=(prompt('Nombre del punto:')||'').trim()||null; marcas.push({t:'p',c:[[lat,lng]],n:n}); saveMarcas(); drawMarcas(); setTimeout(()=>{const l=marcasLayer.getLayers()[marcas.length-1];if(l)l.openPopup();},60); }
 function agregarMarca(latlng){
   if(mkSub==='punto'){ nuevoPunto(latlng.lat,latlng.lng); }
   else if(mkSub==='linea'){ lineaPts.push([latlng.lat,latlng.lng]);
     if(!lineaTmp)lineaTmp=L.polyline(lineaPts,{color:'#b5532a',weight:4,dashArray:'6 5',opacity:.9}).addTo(map); else lineaTmp.setLatLngs(lineaPts);
-    document.getElementById('mkFinish').style.display = lineaPts.length>=2?'inline-block':'none'; } }
+    const f=document.getElementById('mkFinish'); f.style.display = lineaPts.length>=2?'inline-block':'none';
+    if(lineaPts.length>=2)f.textContent='✓ Terminar ('+fmtDist(distTotal(lineaPts))+')'; } }
 map.on('click',e=>{ if(mkSub)agregarMarca(e.latlng); });
 // "Marcar acá" = guarda un punto en TU ubicación actual (GPS)
 document.getElementById('mkAqui').onclick=()=>{ if(!navigator.geolocation){toast('Tu teléfono no comparte ubicación');return;} toast('Ubicando…');
@@ -2388,7 +2393,7 @@ function toggleRuta(){
   if(!navigator.geolocation){toast('Sin GPS');return;}
   rutaOn=true; rutaPts=[]; btnRuta.textContent='⏹ Detener'; btnRuta.classList.add('rec'); toast('Grabando ruta… movete');
   rutaWatch=navigator.geolocation.watchPosition(pos=>{const yo=[pos.coords.latitude,pos.coords.longitude];const last=rutaPts[rutaPts.length-1];
-    if(!last||distM(last,yo)>3){ rutaPts.push(yo); if(!rutaTmp)rutaTmp=L.polyline(rutaPts,{color:'#2f7be6',weight:5,opacity:.9}).addTo(map); else rutaTmp.setLatLngs(rutaPts); map.setView(yo,Math.max(map.getZoom(),17)); }},
+    if(!last||distM(last,yo)>3){ rutaPts.push(yo); if(!rutaTmp)rutaTmp=L.polyline(rutaPts,{color:'#2f7be6',weight:5,opacity:.9}).addTo(map); else rutaTmp.setLatLngs(rutaPts); map.setView(yo,Math.max(map.getZoom(),17)); if(rutaPts.length>=2)btnRuta.textContent='⏹ Detener ('+fmtDist(distTotal(rutaPts))+')'; }},
     ()=>toast('No se pudo grabar (permitir ubicación)'),{enableHighAccuracy:true,maximumAge:1500,timeout:15000});
 }
 btnRuta.onclick=toggleRuta;
