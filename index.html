@@ -12,7 +12,7 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Pueblo Vivo"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="lib/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -781,11 +781,11 @@ body.listmode .lv-tolist{display:none}
 </div></div>
 <div class="toast" id="toast"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lib/leaflet.js"></script>
 <script src="parcelas-data.js"></script>
 <script src="poi-data.js"></script>
 <script src="lotes-reales.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="lib/supabase.js"></script>
 <script>
 /* ============ Datos sintéticos (prototipo) ============ */
 const CENTRO=[-32.199,-64.743];
@@ -2614,6 +2614,8 @@ async function triggerInstall(){
   document.getElementById('lgdInstall').onclick=triggerInstall;
 })();
 
+/* Pido almacenamiento persistente: reduce que el teléfono borre el caché y la app deje de abrir offline */
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 /* PWA + auto-actualización (se refresca solo cuando hay versión nueva) */
 if('serviceWorker' in navigator && location.protocol!=='file:'){
   let swRefreshing=false;
