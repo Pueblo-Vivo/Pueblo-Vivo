@@ -326,6 +326,24 @@ body.listmode .lv-tolist{display:none}
 .legend .row{display:flex;align-items:center;gap:7px;margin:4px 0;color:#4a4639;font-weight:500}
 .legend .sw{width:13px;height:13px;border-radius:4px;border:1.5px solid rgba(0,0,0,.18)}
 .me-dot{width:16px;height:16px;border-radius:50%;background:#2f7be6;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,230,.4),0 1px 4px rgba(0,0,0,.4)}
+#locBanner{position:absolute;left:50%;transform:translateX(-50%);top:14px;z-index:1100;display:none;max-width:88%;
+  background:rgba(30,40,60,.92);color:#fff;border-radius:13px;padding:9px 15px;box-shadow:0 4px 16px rgba(0,0,0,.3);
+  font-size:14px;line-height:1.25;text-align:center;backdrop-filter:blur(3px)}
+#locBanner.show{display:block}
+#locBanner b{color:#8fd0ff}
+#locBanner small{display:block;font-size:11.5px;opacity:.8;margin-top:1px}
+/* Barra de marcado (puntos/líneas, guardado local) */
+#markBar{position:absolute;left:50%;transform:translateX(-50%);bottom:18px;z-index:1100;display:none;align-items:center;gap:7px;
+  background:#fff;border-radius:14px;padding:7px 9px;box-shadow:0 6px 22px rgba(0,0,0,.22);max-width:94%;flex-wrap:wrap;justify-content:center}
+#markBar.show{display:flex}
+#markBar button{border:0;background:#f0ece3;color:var(--ink);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;cursor:pointer}
+#markBar button.on{background:var(--terra);color:#fff}
+#markBar .mk-hint{font-size:11.5px;color:var(--muted);max-width:150px;line-height:1.15}
+#markBar .mk-x{background:transparent;color:var(--muted);font-weight:800;padding:6px 8px}
+.mk-pin{width:22px;height:22px;border-radius:50% 50% 50% 0;background:var(--terra);border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.mk-pop{font-size:13px;text-align:center;min-width:120px}
+.mk-pop b{display:block;margin-bottom:6px;color:var(--ink)}
+.mk-pop button{border:0;background:#f2dccf;color:var(--terra);border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer}
 
 /* compare tray */
 .tray{position:absolute;left:50%;transform:translateX(-50%) translateY(120%);bottom:16px;z-index:950;
@@ -680,6 +698,7 @@ body.listmode .lv-tolist{display:none}
 <div id="stayBar"></div>
 
 <div id="map">
+  <div id="locBanner"></div>
   <button class="lv-tolist" id="btnList" title="Ver lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Lista</button>
   <div class="fab-col" style="top:14px">
     <button class="fab install" id="btnInstall" title="Instalar como app" style="display:none">
@@ -692,6 +711,15 @@ body.listmode .lv-tolist{display:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></button>
     <button class="fab" id="btnPoi" title="Puntos de interés">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
+    <button class="fab" id="btnMark" title="Marcar puntos y líneas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+  </div>
+  <div id="markBar">
+    <button data-mk="punto" class="on">📍 Punto</button>
+    <button data-mk="linea">〰️ Línea</button>
+    <button id="mkFinish" style="display:none">✓ Terminar</button>
+    <span class="mk-hint" id="mkHint">Tocá el mapa para poner un punto</span>
+    <button id="mkExit" class="mk-x">✕</button>
   </div>
   <div class="tray" id="tray">
     <div class="info"><span id="trayN">0</span> seleccionados<small>para comparar (máx 3)</small></div>
@@ -899,11 +927,11 @@ PARCELAS.features.forEach(f=>{
   const layer=L.geoJSON(f,{style:()=>estilo(id)});
   if(!layer.getBounds().isValid()){delete DATA[id];return;}
   layer.addTo(map);
-  layer.on('click',()=>onLoteClick(id));
+  layer.on('click',e=>{ if(typeof mkMode!=='undefined'&&mkMode){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });
   layers[id]=layer;
   const c=layer.getBounds().getCenter();centers[id]=[c.lat,c.lng];
   const m=L.marker(c,{icon:L.divIcon({className:'parc-label',html:'',iconSize:[40,18]})});
-  m.on('click',()=>onLoteClick(id));m.addTo(map);labels[id]=m;
+  m.on('click',e=>{ if(typeof mkMode!=='undefined'&&mkMode){agregarMarca(e.latlng);L.DomEvent.stopPropagation(e);return;} onLoteClick(id); });m.addTo(map);labels[id]=m;
 });
 // distancias a POIs de referencia
 const REF_POIS=(window.POIS||[]).filter(p=>p.ref);
@@ -2275,17 +2303,62 @@ document.getElementById('btnAdmin').onclick=function(){
   enterAdmin(true); toast('Modo inmobiliaria activado');
 };
 
+// ¿en qué parcela cae un punto? (ray casting, 100% offline)
+function pointInRing(lng,lat,ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];if(((yi>lat)!==(yj>lat))&&(lng<(xj-xi)*(lat-yi)/((yj-yi)||1e-12)+xi))inside=!inside;}return inside;}
+function parcelAt(lat,lng){for(const f of PARCELAS.features){const g=f.geometry;if(!g)continue;const polys=g.type==='MultiPolygon'?g.coordinates:[g.coordinates];for(const poly of polys){if(poly[0]&&pointInRing(lng,lat,poly[0]))return f;}}return null;}
+function updateLocBanner(lat,lng){const b=document.getElementById('locBanner');if(!b)return;const f=parcelAt(lat,lng);
+  if(f){const p=f.properties,inf=info(p.id),nom=inf.inmueble||('Parcela '+p.mapNum);
+    b.innerHTML='📍 Estás en <b>'+esc(nom)+'</b><small>'+(p.barrio?esc(p.barrio)+' · ':'')+'Parcela '+p.mapNum+'</small>';}
+  else{b.innerHTML='📍 Estás <b>fuera del loteo</b><small>no caés dentro de ninguna parcela</small>';}
+  b.classList.add('show');}
 let meMarker=null,meCircle=null,watchId=null;const btnLoc=document.getElementById('btnLoc');
 btnLoc.onclick=()=>{
   if(!navigator.geolocation){toast('Tu dispositivo no comparte ubicación');return;}
-  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;btnLoc.classList.remove('tracking');if(meMarker)map.removeLayer(meMarker);if(meCircle)map.removeLayer(meCircle);return;}
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;btnLoc.classList.remove('tracking');if(meMarker)map.removeLayer(meMarker);if(meCircle)map.removeLayer(meCircle);document.getElementById('locBanner').classList.remove('show');return;}
   btnLoc.classList.add('tracking');toast('Buscando tu ubicación…');
   watchId=navigator.geolocation.watchPosition(pos=>{const yo=[pos.coords.latitude,pos.coords.longitude],acc=pos.coords.accuracy;
     if(!meMarker){meMarker=L.marker(yo,{icon:L.divIcon({className:'',html:'<div class="me-dot"></div>',iconSize:[16,16]})}).addTo(map);
       meCircle=L.circle(yo,{radius:acc,color:'#2f7be6',weight:1,fillColor:'#2f7be6',fillOpacity:.12}).addTo(map);map.setView(yo,Math.max(map.getZoom(),17));}
-    else{meMarker.setLatLng(yo);meCircle.setLatLng(yo).setRadius(acc);}},
+    else{meMarker.setLatLng(yo);meCircle.setLatLng(yo).setRadius(acc);}
+    updateLocBanner(yo[0],yo[1]);},
     ()=>{btnLoc.classList.remove('tracking');toast('No se pudo obtener ubicación');},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});};
 document.getElementById('btnFit').onclick=()=>{const all=L.featureGroup(Object.values(layers).filter(l=>map.hasLayer(l)));try{map.fitBounds(all.getBounds(),{padding:[40,40]});}catch(e){}};
+
+/* ===== Marcar puntos y líneas (guardado SOLO en este teléfono, privado) ===== */
+const MARCAS_KEY='pv_marcas_v1';
+let marcas=[]; try{marcas=JSON.parse(localStorage.getItem(MARCAS_KEY)||'[]');}catch(e){marcas=[];}
+let mkMode=false, mkSub='punto', lineaTmp=null, lineaPts=[];
+const marcasLayer=L.layerGroup().addTo(map);
+function saveMarcas(){try{localStorage.setItem(MARCAS_KEY,JSON.stringify(marcas));}catch(e){toast('Sin espacio en el teléfono');}}
+function mkPin(){return L.divIcon({className:'',html:'<div class="mk-pin"></div>',iconSize:[22,22],iconAnchor:[11,22]});}
+function drawMarcas(){ marcasLayer.clearLayers();
+  marcas.forEach((m,i)=>{ let capa;
+    if(m.t==='p') capa=L.marker(m.c[0],{icon:mkPin()});
+    else capa=L.polyline(m.c,{color:'#b5532a',weight:4,opacity:.9});
+    capa.bindPopup('<div class="mk-pop"><b>'+esc(m.n||(m.t==='p'?'Punto':'Línea'))+'</b><button data-del="'+i+'">Borrar</button></div>');
+    capa.addTo(marcasLayer);
+  });
+}
+map.on('popupopen',e=>{ const node=e.popup.getElement&&e.popup.getElement(); const b=node&&node.querySelector('[data-del]');
+  if(b)b.onclick=()=>{ const i=+b.dataset.del; if(marcas[i]){marcas.splice(i,1);saveMarcas();drawMarcas();} map.closePopup(); toast('Marca borrada'); }; });
+drawMarcas();
+const markBar=document.getElementById('markBar'), btnMark=document.getElementById('btnMark');
+function setMkMode(on){ mkMode=on; markBar.classList.toggle('show',on); btnMark.classList.toggle('on',on);
+  try{map.getContainer().style.cursor=on?'crosshair':'';}catch(e){} if(!on)cancelLinea(); }
+btnMark.onclick=()=>setMkMode(!mkMode);
+document.getElementById('mkExit').onclick=()=>setMkMode(false);
+document.querySelectorAll('#markBar [data-mk]').forEach(b=>b.onclick=()=>{ mkSub=b.dataset.mk;
+  document.querySelectorAll('#markBar [data-mk]').forEach(x=>x.classList.toggle('on',x===b));
+  document.getElementById('mkHint').textContent = mkSub==='punto'?'Tocá el mapa para poner un punto':'Tocá para ir marcando la línea';
+  cancelLinea(); });
+function cancelLinea(){ if(lineaTmp){map.removeLayer(lineaTmp);lineaTmp=null;} lineaPts=[]; const f=document.getElementById('mkFinish'); if(f)f.style.display='none'; }
+document.getElementById('mkFinish').onclick=()=>{ if(lineaPts.length>=2){ marcas.push({t:'l',c:lineaPts.slice(),n:(prompt('Nombre de la línea (opcional):')||'').trim()||null}); saveMarcas(); drawMarcas(); toast('Línea guardada'); } cancelLinea(); };
+function agregarMarca(latlng){ const yo=[latlng.lat,latlng.lng];
+  if(mkSub==='punto'){ marcas.push({t:'p',c:[yo],n:(prompt('Nombre del punto (opcional):')||'').trim()||null}); saveMarcas(); drawMarcas(); }
+  else{ lineaPts.push(yo);
+    if(!lineaTmp)lineaTmp=L.polyline(lineaPts,{color:'#b5532a',weight:4,dashArray:'6 5',opacity:.9}).addTo(map); else lineaTmp.setLatLngs(lineaPts);
+    document.getElementById('mkFinish').style.display = lineaPts.length>=2?'inline-block':'none'; } }
+map.on('click',e=>{ if(mkMode)agregarMarca(e.latlng); });
 
 /* ============ helpers iconos ============ */
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
