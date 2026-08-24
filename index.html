@@ -720,9 +720,11 @@ body.listmode .lv-tolist{display:none}
     <button id="mkMapa">📌 En el mapa</button>
     <button data-mk="linea">〰️ Línea</button>
     <button id="btnRuta">⏺ Grabar ruta</button>
+    <button id="btnKml">📂 Abrir KML</button>
     <button id="mkFinish" style="display:none">✓ Terminar</button>
   </div>
   <input id="mkFile" type="file" accept="image/*" capture="environment" style="display:none">
+  <input id="kmlFile" type="file" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" style="display:none">
   <div class="tray" id="tray">
     <div class="info"><span id="trayN">0</span> seleccionados<small>para comparar (máx 3)</small></div>
     <button id="trayCmp">Comparar</button>
@@ -2334,12 +2336,15 @@ function popupHtml(m,i){
       '<button data-ren="'+i+'">Nombre</button><button data-copiar="'+i+'">Copiar</button>'+
       '<button data-maps="'+i+'">Ir con Maps</button><button data-foto="'+i+'">'+(m.foto?'Cambiar foto':'Foto')+'</button>'+
       '<button data-del="'+i+'" class="del">Borrar</button></div></div>';}
-  return '<div class="mk-pop"><b>'+esc(m.n||(m.t==='ruta'?'Ruta':'Línea'))+'</b><div class="mk-coord">'+fmtDist(distTotal(m.c))+' · '+m.c.length+' puntos</div>'+
+  const et=m.t==='ruta'?'Ruta':m.t==='poly'?'Polígono':'Línea';
+  const info=m.t==='poly'?(m.c.length+' vértices'):(fmtDist(distTotal(m.c))+' · '+m.c.length+' puntos');
+  return '<div class="mk-pop"><b>'+esc(m.n||et)+'</b><div class="mk-coord">'+info+'</div>'+
     '<div class="mk-acts"><button data-ren="'+i+'">Nombre</button><button data-del="'+i+'" class="del">Borrar</button></div></div>';
 }
 function drawMarcas(){ marcasLayer.clearLayers();
   marcas.forEach((m,i)=>{ let capa;
     if(m.t==='p') capa=L.marker(m.c[0],{icon:mkPin()});
+    else if(m.t==='poly') capa=L.polygon(m.c,{color:'#7a4a1e',weight:2,fillColor:'#cf9a3f',fillOpacity:.22});
     else capa=L.polyline(m.c,{color:m.t==='ruta'?'#2f7be6':'#b5532a',weight:4,opacity:.9});
     capa.bindPopup(popupHtml(m,i),{minWidth:190,maxWidth:230}); capa.addTo(marcasLayer);
   });
@@ -2381,6 +2386,33 @@ map.on('click',e=>{ if(mkSub)agregarMarca(e.latlng); });
 document.getElementById('mkAqui').onclick=()=>{ if(!navigator.geolocation){toast('Tu teléfono no comparte ubicación');return;} toast('Ubicando…');
   navigator.geolocation.getCurrentPosition(pos=>{ const la=pos.coords.latitude,lo=pos.coords.longitude; map.setView([la,lo],Math.max(map.getZoom(),17)); nuevoPunto(la,lo); },
     ()=>toast('No se pudo (dale permiso de ubicación)'),{enableHighAccuracy:true,timeout:15000,maximumAge:2000}); };
+/* Importar KML/KMZ: dibuja puntos, líneas y polígonos (quedan como tus marcas, privado) */
+function kmlCoords(el){ if(!el)return []; return el.textContent.trim().split(/\s+/).map(t=>{const p=t.split(',');return [parseFloat(p[1]),parseFloat(p[0])];}).filter(c=>!isNaN(c[0])&&!isNaN(c[1])); }
+function parseKML(text){ const out=[]; let xml; try{xml=new DOMParser().parseFromString(text,'text/xml');}catch(e){return out;}
+  const pms=xml.getElementsByTagName('Placemark');
+  for(let k=0;k<pms.length;k++){ const pm=pms[k]; const nmEl=pm.getElementsByTagName('name')[0]; const name=((nmEl&&nmEl.textContent)||'').trim()||null;
+    const pt=pm.getElementsByTagName('Point'); for(let j=0;j<pt.length;j++){const c=kmlCoords(pt[j].getElementsByTagName('coordinates')[0]); if(c.length)out.push({t:'p',c:[c[0]],n:name,kml:1});}
+    const ls=pm.getElementsByTagName('LineString'); for(let j=0;j<ls.length;j++){const c=kmlCoords(ls[j].getElementsByTagName('coordinates')[0]); if(c.length>=2)out.push({t:'l',c:c,n:name,kml:1});}
+    const pg=pm.getElementsByTagName('Polygon'); for(let j=0;j<pg.length;j++){const ob=pg[j].getElementsByTagName('outerBoundaryIs')[0]; const co=(ob||pg[j]).getElementsByTagName('coordinates')[0]; const c=kmlCoords(co); if(c.length>=3)out.push({t:'poly',c:c,n:name,kml:1});}
+  }
+  return out; }
+async function kmzToKml(file){ try{ const bytes=new Uint8Array(await file.arrayBuffer()); const dv=new DataView(bytes.buffer); let i=0;
+  while(i+30<=bytes.length){ if(dv.getUint32(i,true)!==0x04034b50)break;
+    const method=dv.getUint16(i+8,true), comp=dv.getUint32(i+18,true), nlen=dv.getUint16(i+26,true), elen=dv.getUint16(i+28,true);
+    const fname=new TextDecoder().decode(bytes.slice(i+30,i+30+nlen)); const ds=i+30+nlen+elen; const data=bytes.slice(ds,ds+comp);
+    if(/\.kml$/i.test(fname)){ if(method===0)return new TextDecoder().decode(data);
+      if(method===8&&('DecompressionStream'in window)){ const st=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return new TextDecoder().decode(await new Response(st).arrayBuffer()); } return null; }
+    i=ds+comp; } }catch(e){} return null; }
+async function importarKML(file){ if(!file)return; let text; const nm=(file.name||'').toLowerCase();
+  try{ text = nm.endsWith('.kmz') ? await kmzToKml(file) : await file.text(); }catch(e){text=null;}
+  if(!text){ toast('No pude leer el archivo (probá con .kml)'); return; }
+  const nuevos=parseKML(text);
+  if(!nuevos.length){ toast('No encontré puntos, líneas ni polígonos en el archivo'); return; }
+  marcas=marcas.concat(nuevos); saveMarcas(); drawMarcas();
+  try{ LISTON=false; if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar'); const pts=[]; nuevos.forEach(m=>m.c.forEach(c=>pts.push(c))); if(pts.length)setTimeout(()=>{try{map.fitBounds(L.latLngBounds(pts),{padding:[40,40]});}catch(e){}},120); }catch(e){}
+  toast(nuevos.length+' elemento(s) importados ✓'); }
+document.getElementById('btnKml').onclick=()=>document.getElementById('kmlFile').click();
+document.getElementById('kmlFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';importarKML(f);};
 /* Grabar ruta: va guardando una línea mientras te movés (GPS) */
 function distM(a,b){const R=6371000,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180,la1=a[0]*Math.PI/180,la2=b[0]*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 const btnRuta=document.getElementById('btnRuta');
