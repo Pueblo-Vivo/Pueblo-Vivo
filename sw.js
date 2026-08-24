@@ -1,5 +1,5 @@
 /* Pueblo Vivo · service worker (prototipo) */
-const CACHE='pueblovivo-v149';
+const CACHE='pueblovivo-v150';
 const SHELL=['./','index.html','parcelas-data.js','poi-data.js','lotes-reales.js','manifest.json','icon-512.png',
   'lib/leaflet.css','lib/leaflet.js','lib/supabase.js'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>Promise.all(SHELL.map(a=>c.add(a).catch(()=>{})))));});
@@ -12,10 +12,14 @@ self.addEventListener('fetch',e=>{
   // Antes caían en network-first y se re-bajaban enteras en cada apertura → en el celu con datos fallaban.
   const esImagen=e.request.destination==='image'||/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?|$)/i.test(u);
   const isAsset=u.includes('arcgisonline')||u.includes('tile.openstreetmap')||u.includes('picsum')||u.includes('fonts.g')||u.includes('unpkg.com')||u.includes('jsdelivr')||u.includes('drive.google')||u.includes('googleusercontent')||u.includes('/fotos/')||esImagen;
-  if(isAsset){ // cache-first (mapas, fotos, librerías): se bajan una sola vez
+  if(isAsset){ // cache-first (mapas, fotos, librerías, fuentes): se bajan una sola vez
     e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(res=>{
       if(res&&res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(e.request,c));}
       return res;
+    }).catch(()=>{
+      // sin internet y sin cache: NUNCA rechaces (colgaría la carga). Devuelvo algo inofensivo.
+      if(/\.css(\?|$)/i.test(u)||u.includes('fonts.googleapis')) return new Response('',{headers:{'Content-Type':'text/css'}});
+      return new Response('',{status:504});
     })));
     return;
   }

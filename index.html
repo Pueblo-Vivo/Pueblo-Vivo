@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="lib/leaflet.css"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{
   --forest:#5f6e37; --forest-2:#76884a; --olive:#8a9a5a; --leaf:#4ca36a; --leaf-soft:#e7eed8;
@@ -325,7 +325,12 @@ body.listmode .lv-tolist{display:none}
 .legend h4{font-family:'Fraunces',serif;font-size:12px;font-weight:600;color:var(--forest);margin-bottom:5px}
 .legend .row{display:flex;align-items:center;gap:7px;margin:4px 0;color:#4a4639;font-weight:500}
 .legend .sw{width:13px;height:13px;border-radius:4px;border:1.5px solid rgba(0,0,0,.18)}
-.me-dot{width:16px;height:16px;border-radius:50%;background:#2f7be6;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,230,.4),0 1px 4px rgba(0,0,0,.4)}
+.me-wrap{position:relative;width:40px;height:40px}
+.me-dot{position:absolute;left:12px;top:12px;width:16px;height:16px;border-radius:50%;background:#2f7be6;border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,230,.4),0 1px 4px rgba(0,0,0,.4)}
+.me-beam{position:absolute;left:9px;top:-6px;width:0;height:0;display:none;
+  border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:26px solid rgba(47,123,230,.45);
+  transform-origin:50% 100%;pointer-events:none}
+.me-beam.on{display:block}
 #locBanner{position:absolute;left:50%;transform:translateX(-50%);top:14px;z-index:1100;display:none;max-width:88%;
   background:rgba(30,40,60,.92);color:#fff;border-radius:13px;padding:9px 15px;box-shadow:0 4px 16px rgba(0,0,0,.3);
   font-size:14px;line-height:1.25;text-align:center;backdrop-filter:blur(3px)}
@@ -2307,13 +2312,24 @@ document.getElementById('btnAdmin').onclick=function(){
   enterAdmin(true); toast('Modo inmobiliaria activado');
 };
 
-let meMarker=null,meCircle=null,watchId=null;const btnLoc=document.getElementById('btnLoc');
+let meMarker=null,meCircle=null,watchId=null,orientOn=false;const btnLoc=document.getElementById('btnLoc');
+// brújula: hacia dónde mira el celular (como Google Maps)
+function meHeading(hd){ if(!meMarker)return; const el=meMarker.getElement(); if(!el)return; const beam=el.querySelector('.me-beam'); if(beam){beam.classList.add('on'); beam.style.transform='rotate('+hd+'deg)';} }
+function onOrient(e){ let hd=null;
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)) hd=e.webkitCompassHeading;
+  else if(e.absolute===true&&typeof e.alpha==='number') hd=(360-e.alpha)%360;
+  if(hd!=null)meHeading(hd); }
+function startOrient(){ if(orientOn||typeof DeviceOrientationEvent==='undefined')return;
+  if(typeof DeviceOrientationEvent.requestPermission==='function'){ // iOS pide permiso (en un toque del usuario)
+    DeviceOrientationEvent.requestPermission().then(s=>{ if(s==='granted'){ window.addEventListener('deviceorientation',onOrient,true); orientOn=true; } }).catch(()=>{});
+  } else { window.addEventListener('deviceorientationabsolute',onOrient,true); window.addEventListener('deviceorientation',onOrient,true); orientOn=true; } }
+function stopOrient(){ window.removeEventListener('deviceorientation',onOrient,true); window.removeEventListener('deviceorientationabsolute',onOrient,true); orientOn=false; }
 btnLoc.onclick=()=>{
   if(!navigator.geolocation){toast('Tu dispositivo no comparte ubicación');return;}
-  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;btnLoc.classList.remove('tracking');if(meMarker)map.removeLayer(meMarker);if(meCircle)map.removeLayer(meCircle);return;}
-  btnLoc.classList.add('tracking');toast('Buscando tu ubicación…');
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;btnLoc.classList.remove('tracking');if(meMarker)map.removeLayer(meMarker);if(meCircle)map.removeLayer(meCircle);meMarker=null;stopOrient();return;}
+  btnLoc.classList.add('tracking');toast('Buscando tu ubicación…');startOrient();
   watchId=navigator.geolocation.watchPosition(pos=>{const yo=[pos.coords.latitude,pos.coords.longitude],acc=pos.coords.accuracy;
-    if(!meMarker){meMarker=L.marker(yo,{icon:L.divIcon({className:'',html:'<div class="me-dot"></div>',iconSize:[16,16]})}).addTo(map);
+    if(!meMarker){meMarker=L.marker(yo,{icon:L.divIcon({className:'',html:'<div class="me-wrap"><div class="me-beam"></div><div class="me-dot"></div></div>',iconSize:[40,40],iconAnchor:[20,20]})}).addTo(map);
       meCircle=L.circle(yo,{radius:acc,color:'#2f7be6',weight:1,fillColor:'#2f7be6',fillOpacity:.12}).addTo(map);map.setView(yo,Math.max(map.getZoom(),17));}
     else{meMarker.setLatLng(yo);meCircle.setLatLng(yo).setRadius(acc);}},
     ()=>{btnLoc.classList.remove('tracking');toast('No se pudo obtener ubicación');},{enableHighAccuracy:true,maximumAge:5000,timeout:15000});};
