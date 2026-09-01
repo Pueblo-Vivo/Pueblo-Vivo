@@ -726,6 +726,7 @@ body.listmode .lv-tolist{display:none}
     <button data-mk="linea">〰️ Línea</button>
     <button id="btnRuta">⏺ Grabar ruta</button>
     <button id="btnKml">📂 Abrir KML</button>
+    <button id="btnKmz">⬇️ Bajar KMZ</button>
     <button id="mkFinish" style="display:none">✓ Terminar</button>
   </div>
   <input id="mkFile" type="file" accept="image/*" capture="environment" style="display:none">
@@ -2429,6 +2430,76 @@ async function importarKML(file){ if(!file)return; let text; const nm=(file.name
   toast(nuevos.length+' elemento(s) importados ✓'); }
 document.getElementById('btnKml').onclick=()=>document.getElementById('kmlFile').click();
 document.getElementById('kmlFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';importarKML(f);};
+/* Bajar mis marcas como KMZ (puntos, líneas, rutas y polígonos; las fotos van adentro del archivo) */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+/* ZIP sin comprimir (método store): alcanza para KMZ y no depende de ninguna librería */
+function zipStore(files){ const enc=new TextEncoder(),parts=[],cen=[]; let off=0,n=0;
+  files.forEach(f=>{ const nb=enc.encode(f.name),data=f.data,crc=crc32(data),sz=data.length;
+    const lh=new Uint8Array(30+nb.length),dl=new DataView(lh.buffer);
+    dl.setUint32(0,0x04034b50,true);dl.setUint16(4,20,true);dl.setUint16(6,0x0800,true);dl.setUint16(8,0,true);
+    dl.setUint16(10,0,true);dl.setUint16(12,0x21,true);dl.setUint32(14,crc,true);dl.setUint32(18,sz,true);dl.setUint32(22,sz,true);
+    dl.setUint16(26,nb.length,true);dl.setUint16(28,0,true);lh.set(nb,30);
+    parts.push(lh,data);
+    const ch=new Uint8Array(46+nb.length),dc=new DataView(ch.buffer);
+    dc.setUint32(0,0x02014b50,true);dc.setUint16(4,20,true);dc.setUint16(6,20,true);dc.setUint16(8,0x0800,true);dc.setUint16(10,0,true);
+    dc.setUint16(12,0,true);dc.setUint16(14,0x21,true);dc.setUint32(16,crc,true);dc.setUint32(20,sz,true);dc.setUint32(24,sz,true);
+    dc.setUint16(28,nb.length,true);dc.setUint32(42,off,true);ch.set(nb,46);
+    cen.push(ch); off+=lh.length+sz; n++; });
+  let cs=0; cen.forEach(c=>cs+=c.length);
+  const eo=new Uint8Array(22),de=new DataView(eo.buffer);
+  de.setUint32(0,0x06054b50,true);de.setUint16(8,n,true);de.setUint16(10,n,true);de.setUint32(12,cs,true);de.setUint32(16,off,true);
+  return new Blob(parts.concat(cen,[eo]),{type:'application/vnd.google-earth.kmz'}); }
+function dataUrlBytes(u){ const i=u.indexOf(','); const b=atob(u.slice(i+1)); const a=new Uint8Array(b.length); for(let j=0;j<b.length;j++)a[j]=b.charCodeAt(j); return a; }
+function kmlEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function kmlCo(cs){ return cs.map(c=>c[1].toFixed(7)+','+c[0].toFixed(7)+',0').join(' '); }
+function marcasKmz(){
+  if(!marcas.length){ toast('Todavía no marcaste nada'); return null; }
+  const files=[], g={p:[],l:[],ruta:[],poly:[]}; let nf=0;
+  marcas.forEach((m,i)=>{
+    const et=m.t==='p'?'Punto':m.t==='l'?'Línea':m.t==='ruta'?'Ruta':'Polígono';
+    const nom=kmlEsc(m.n||(et+' '+(i+1)));
+    let geo='',desc='',st='#pvLinea';
+    if(m.t==='p'){ st='#pvPunto';
+      geo='<Point><coordinates>'+kmlCo(m.c)+'</coordinates></Point>';
+      if(m.foto&&/^data:image/.test(m.foto)){ try{ nf++; const fn='files/foto-'+nf+'.jpg';
+        files.push({name:fn,data:dataUrlBytes(m.foto)});
+        desc='<description><![CDATA[<img src="'+fn+'" width="500"/>]]></description>'; }catch(e){} }
+    } else if(m.t==='poly'){ st='#pvPoly';
+      const c=m.c.slice(), a=c[0], b=c[c.length-1];
+      if(a[0]!==b[0]||a[1]!==b[1]) c.push(a);
+      geo='<Polygon><tessellate>1</tessellate><outerBoundaryIs><LinearRing><coordinates>'+kmlCo(c)+'</coordinates></LinearRing></outerBoundaryIs></Polygon>';
+    } else { st=m.t==='ruta'?'#pvRuta':'#pvLinea';
+      geo='<LineString><tessellate>1</tessellate><coordinates>'+kmlCo(m.c)+'</coordinates></LineString>'; }
+    g[m.t==='p'?'p':m.t==='poly'?'poly':m.t==='ruta'?'ruta':'l'].push('<Placemark><name>'+nom+'</name>'+desc+'<styleUrl>'+st+'</styleUrl>'+geo+'</Placemark>');
+  });
+  const carp=(t,arr)=>arr.length?'<Folder><name>'+t+' ('+arr.length+')</name><open>1</open>'+arr.join('')+'</Folder>':'';
+  const kml='<?xml version="1.0" encoding="UTF-8"?>\n'+
+    '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Mis marcas · Pueblo Vivo</name><open>1</open>'+
+    '<Style id="pvPunto"><IconStyle><color>ff2a53b5</color><scale>1.1</scale></IconStyle><LabelStyle><scale>.9</scale></LabelStyle></Style>'+
+    '<Style id="pvLinea"><LineStyle><color>ff2a53b5</color><width>4</width></LineStyle></Style>'+
+    '<Style id="pvRuta"><LineStyle><color>ffe67b2f</color><width>4</width></LineStyle></Style>'+
+    '<Style id="pvPoly"><LineStyle><color>ff1e4a7a</color><width>2</width></LineStyle><PolyStyle><color>593f9acf</color></PolyStyle></Style>'+
+    carp('Puntos',g.p)+carp('Líneas',g.l)+carp('Rutas',g.ruta)+carp('Polígonos',g.poly)+
+    '</Document></kml>';
+  files.unshift({name:'doc.kml',data:new TextEncoder().encode(kml)});
+  return zipStore(files);
+}
+function bajarKmz(){
+  const blob=marcasKmz(); if(!blob)return;
+  const d=new Date(), p=n=>(n<10?'0':'')+n;
+  const nombre='marcas-pueblo-vivo-'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'.kmz';
+  // En iPhone conviene la hoja de compartir: deja mandarlo a Archivos, Google Earth, mail o WhatsApp
+  try{ const f=new File([blob],nombre,{type:'application/vnd.google-earth.kmz'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
+      navigator.share({files:[f],title:'Mis marcas · Pueblo Vivo'}).catch(()=>{}); return; }
+  }catch(e){}
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=nombre; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); },1500);
+  toast('Bajando '+nombre);
+}
+document.getElementById('btnKmz').onclick=bajarKmz;
 /* Grabar ruta: va guardando una línea mientras te movés (GPS) */
 function distM(a,b){const R=6371000,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180,la1=a[0]*Math.PI/180,la2=b[0]*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 const btnRuta=document.getElementById('btnRuta');
