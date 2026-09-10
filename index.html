@@ -1310,7 +1310,10 @@ function capturePhotos(){
    Si esa fila no está, se usa este valor. Cambiarla en la planilla re-precia todo
    sin tocar la app. */
 let DOLAR_ALQ=1550;
-function enPesos(usd){ return '$'+money(Math.round((+usd||0)*DOLAR_ALQ)); }
+/* Redondeo SIEMPRE para arriba, al mil siguiente: el precio que se publica nunca
+   queda por debajo del valor real y además se lee redondo (109.000, no 108.500). */
+function pesosNum(usd){ return Math.ceil((+usd||0)*DOLAR_ALQ/1000)*1000; }
+function enPesos(usd){ return '$'+money(pesosNum(usd)); }
 function precioNoche(usd){ return usd ? enPesos(usd)+'/noche' : 'Consultar'; }
 async function syncRentSheet(){
   try{
@@ -1870,7 +1873,7 @@ function renderLote(id){
     const shownP=showAlq?inf.alqPrice:inf.total;
     /* En alquiler el precio va en pesos; en venta sigue en dólares */
     const curLbl=showAlq?'$':'USD';
-    const valLbl=shownP?(showAlq?money(Math.round(shownP*DOLAR_ALQ)):money(shownP)):'—';
+    const valLbl=shownP?(showAlq?money(pesosNum(shownP)):money(shownP)):'—';
     body=`<div class="priceblock"><span class="price"><span class="cur">${curLbl}</span>${valLbl}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
     ${showAlq?'':planillaBox(inf)}
     ${(!showAlq&&inf.locales&&inf.locales.length)?localesBlock(inf):''}
@@ -1949,7 +1952,7 @@ function renderCasa(id){
   scroll.innerHTML=`
   <div class="sh-head"><div class="sh-title"><span class="barrio">${p.barrio} · Alojamiento</span><h2>Casa ${p.num!=null?p.num:('#'+id)}</h2></div>
     <span class="statusbadge st-${avail?'disp':'ocup'}"><span class="sw"></span>${avail?'Disponible':'Ocupada hoy'}</span></div>
-  <div class="priceblock"><span class="price"><span class="cur">$</span>${money(Math.round(rt.nightly*DOLAR_ALQ))}<span class="per"> /noche</span></span><span class="permeter">hasta ${rt.cap} personas</span></div>
+  <div class="priceblock"><span class="price"><span class="cur">$</span>${money(pesosNum(rt.nightly))}<span class="per"> /noche</span></span><span class="permeter">hasta ${rt.cap} personas</span></div>
   <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
   <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
