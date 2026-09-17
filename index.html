@@ -86,24 +86,45 @@ button{font-family:inherit;cursor:pointer}
   .fav-pill{padding:7px 8px;font-size:12px;gap:4px}
   .fav-pill svg{width:14px;height:14px}
 }
-@media(max-width:352px){ .brand .wm{display:none} }
+@media(max-width:370px){ .brand .wm{display:none} }   /* con la campanita no entra el texto del logo */
 
 /* ---------- Panel "Mis favoritos" / "Mis notas" ---------- */
-#misModal{display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
-#misModal.show{display:flex}
-#misModal .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
-#misModal h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
-#misModal .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
-#misModal .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
-#misModal .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
-#misModal .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
-#misModal .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
-#misModal .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
-#misModal .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
-#misModal .mdel{position:absolute;top:5px;right:3px}
-#misModal .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
-#misModal .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
-#misModal .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
+:is(#misModal,#novModal){display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
+:is(#misModal,#novModal).show{display:flex}
+:is(#misModal,#novModal) .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+:is(#misModal,#novModal) h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
+:is(#misModal,#novModal) .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+:is(#misModal,#novModal) .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
+:is(#misModal,#novModal) .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+:is(#misModal,#novModal) .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+:is(#misModal,#novModal) .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
+:is(#misModal,#novModal) .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
+:is(#misModal,#novModal) .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
+:is(#misModal,#novModal) .mdel{position:absolute;top:5px;right:3px}
+:is(#misModal,#novModal) .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
+:is(#misModal,#novModal) .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
+:is(#misModal,#novModal) .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
+/* ---------- Novedades: campanita y panel ---------- */
+.topbar .nov-btn{position:relative;color:var(--forest)}
+.nov-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+  background:var(--terra);color:#fff;font-size:10.5px;font-weight:800;line-height:1;
+  display:flex;align-items:center;justify-content:center;border:2px solid var(--cream)}
+.nov-badge[hidden]{display:none}
+#novModal .nov-grp{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:2px 2px 8px}
+#novModal .nov-grp:not(:first-child){margin-top:16px}
+#novModal .nov-tag{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:999px}
+#novModal .nt-nueva{background:var(--leaf-soft);color:var(--forest)}
+#novModal .nt-bajo{background:#dcefe2;color:#2e7a4b}
+#novModal .nt-subio{background:var(--terra-soft);color:var(--terra)}
+#novModal .nt-res{background:#f6e7c6;color:#86560f}
+#novModal .nt-baja{background:#ece6da;color:#7d7566}
+#novModal .nov-item .mn{margin-top:5px}
+#novModal .nov-meta{font-size:12.5px;color:var(--muted);margin-top:1px}
+#novModal .nov-precio{font-size:14px;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums}
+#novModal .nov-precio s{color:var(--muted);margin-right:4px}
+#novModal .nov-precio b{color:var(--forest)}
+#novModal .nov-unread{border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
+#novModal .nov-off{cursor:default}
 
 /* ---------- Mode toggle ---------- */
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
@@ -671,6 +692,10 @@ body.listmode .lv-tolist{display:none}
     </svg>
     <span class="wm">pueblo vivo</span>
   </div>
+  <button class="tb-btn nov-btn" id="novBtn" title="Novedades" aria-label="Novedades">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <span class="nov-badge" id="novBadge" hidden>0</span>
+  </button>
   <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
   </button>
@@ -780,6 +805,12 @@ body.listmode .lv-tolist{display:none}
   <p class="msub" id="misSub"></p>
   <div class="mlist" id="misList"></div>
   <button class="mclose" id="misClose">Cerrar</button>
+</div></div>
+<div id="novModal"><div class="card">
+  <h3>Novedades</h3>
+  <p class="msub" id="novSub"></p>
+  <div class="mlist" id="novList"></div>
+  <button class="mclose" id="novClose">Cerrar</button>
 </div></div>
 <div id="lightbox">
   <button class="lbclose" id="lbClose">✕</button>
@@ -1348,7 +1379,7 @@ async function syncRentSheet(){
       const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f}));
       if(r){r.casas=casas;r.ordAlq=hs[0].col;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price,ordAlq:hs[0].col});});
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render();
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); RENT_OK=true;
   }catch(e){console.warn('syncRentSheet',e);}
 }
 /* ===== VENTA: la hoja "En venta" (transpuesta) es la fuente de verdad de la solapa Comprar ===== */
@@ -1390,7 +1421,7 @@ async function syncVentaSheet(){
       if(r){ r.locales=locs; }
       else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs,orden:9000+lote});
     });
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render();
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true;
   }catch(e){console.warn('syncVentaSheet',e);}
 }
 /* ===== Info de los Puntos de interés (hoja "Puntos de Interes", transpuesta) ===== */
@@ -1691,7 +1722,7 @@ function initDispLink(){
 }
 
 /* ===== Editor del dueño: precio + fotos + disponibilidad (con su clave) ===== */
-async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
+async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; COV_OK=true; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
 function guardarCasa(lote,clave,data,cb){
   if(!sb){toast('Sin conexión');return;}
   sb.rpc('set_casa',{p_lote:Number(lote),p_clave:String(clave),p_data:data}).then(function(res){
@@ -2786,6 +2817,114 @@ function misFavs(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(ST
 function misVistos(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(STATE[id]&&STATE[id].seen)o.push(+id);}return o;}
 function misNotas(){const o=[];for(const id in STATE){if(!DATA[id])continue;const c=STATE[id]&&STATE[id].comments;if(c&&c.length)o.push(+id);}return o;}
 function contarNotas(){return misNotas().reduce((s,id)=>s+STATE[id].comments.length,0);}
+/* ===== Novedades: avisar lo que cambió desde la última visita =====
+   Todo pasa en ESTE teléfono, sin servidor: guardo una foto de lo publicado (qué
+   propiedades hay, a qué precio y en qué estado) y la próxima vez que se abre la app
+   la comparo con lo que trae la planilla. Los precios se comparan en DÓLARES, así que
+   si cambia la cotización no se avisa nada: solo cuando cambia el precio de verdad. */
+var NOV_SNAP='pv_nov_snap_v1', NOV_FEED='pv_nov_feed_v1';
+var VENTA_OK=false, RENT_OK=false, COV_OK=false;   // se prenden cuando cada carga terminó bien
+function novLeer(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+function novGuardar(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+/* Foto de lo publicado: una entrada por propiedad y por operación (venta / alquiler) */
+function novFoto(){
+  const barrioDe={}; (PARCELAS.features||[]).forEach(f=>{ barrioDe[f.properties.id]=f.properties.barrio||''; });
+  const out={};
+  for(const id in DATA){
+    const inf=info(+id); if(!inf.fromSheet) continue;
+    const base={n:inf.inmueble||('Lote en '+(barrioDe[id]||'Umepay')), b:barrioDe[id]||'', e:inf.estado||'libre'};
+    if(isVenta(inf)) out[id+':v']=Object.assign({p:inf.total||null},base);
+    if(isAlq(inf))   out[id+':a']=Object.assign({p:inf.alqPrice||null},base);
+  }
+  return out;
+}
+var NOV_ORDEN={nueva:0,disponible:1,bajo:2,conprecio:3,subio:4,reservada:5,baja:6};
+function novDetectar(){
+  // Si alguna carga falló (sin señal, planilla caída), no comparo: mejor no avisar que avisar mal
+  if(!(VENTA_OK&&RENT_OK&&COV_OK)) return;
+  const ahora=Date.now(), actual=novFoto(), prev=novLeer(NOV_SNAP,null), nuevos=[];
+  if(prev&&prev.items){
+    const antes=prev.items;
+    const vivosAntes=Object.keys(antes).filter(k=>!antes[k].gone);
+    const desaparecen=vivosAntes.filter(k=>!actual[k]);
+    // Freno de seguridad: si de golpe "desaparece" mucho, es la planilla a medio cargar o a
+    // medio editar. No aviso ni guardo nada; la próxima vez que se abra se vuelve a comparar.
+    if(desaparecen.length>3 && desaparecen.length>vivosAntes.length*0.4) return;
+    const ev=(k,tipo,c,extra)=>nuevos.push(Object.assign(
+      {k,id:+k.split(':')[0],op:k.split(':')[1],tipo,n:c.n,b:c.b,p:c.p,t:ahora,desde:prev.t,leida:false},extra||{}));
+    for(const k in actual){
+      const c=actual[k], a=antes[k];
+      if(!a){ ev(k,'nueva',c); continue; }
+      if(a.gone){ ev(k,'disponible',c); continue; }                 // la habían sacado y volvió
+      if(a.e!=='reservado'&&c.e==='reservado') ev(k,'reservada',c);
+      else if(a.e==='reservado'&&c.e!=='reservado') ev(k,'disponible',c);
+      if(a.p&&c.p&&a.p!==c.p) ev(k,c.p<a.p?'bajo':'subio',c,{antes:a.p});
+      else if(!a.p&&c.p) ev(k,'conprecio',c);                        // estaba en "Consultar"
+    }
+    desaparecen.forEach(k=>ev(k,'baja',antes[k]));
+  }
+  // Foto nueva = lo publicado hoy + lo que se sacó (180 días), para poder avisar si vuelve
+  const items=Object.assign({},actual);
+  if(prev&&prev.items){
+    for(const k in prev.items){
+      if(items[k]) continue;
+      const a=prev.items[k], gt=a.gone?a.gt:ahora;
+      if(ahora-gt<180*864e5) items[k]=Object.assign({},a,{gone:true,gt});
+    }
+  }
+  novGuardar(NOV_SNAP,{t:ahora,items});
+  nuevos.sort((x,y)=>(NOV_ORDEN[x.tipo]||0)-(NOV_ORDEN[y.tipo]||0));
+  const feed=nuevos.concat(novLeer(NOV_FEED,[])).filter(x=>ahora-x.t<60*864e5).slice(0,40);
+  novGuardar(NOV_FEED,feed);
+  novBadge();
+  if(nuevos.length) toast(nuevos.length===1?'Hay 1 novedad desde tu última visita':'Hay '+nuevos.length+' novedades desde tu última visita');
+}
+function novBadge(){
+  const b=document.getElementById('novBadge'); if(!b) return;
+  const n=novLeer(NOV_FEED,[]).filter(x=>!x.leida).length;
+  b.textContent=n>9?'9+':String(n); b.hidden=!n;
+}
+function novFecha(ts){ const d=new Date(ts), M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return d.getDate()+' '+M[d.getMonth()]; }
+function novPrecio(op,p){ if(!p) return 'Consultar'; return op==='a' ? enPesos(p)+'/noche' : 'USD '+money(p); }
+var NOV_TIPO={
+  nueva:['Nueva','nt-nueva'], disponible:['Otra vez disponible','nt-nueva'],
+  bajo:['Bajó de precio','nt-bajo'], conprecio:['Ya tiene precio','nt-bajo'], subio:['Subió de precio','nt-subio'],
+  reservada:['Reservada','nt-res'], baja:['Ya no está disponible','nt-baja']
+};
+function openNovedades(){
+  const m=document.getElementById('novModal'); if(!m) return;
+  const feed=novLeer(NOV_FEED,[]), list=document.getElementById('novList');
+  document.getElementById('novSub').textContent=feed.length?'Lo que cambió en las propiedades publicadas':'';
+  if(!feed.length){
+    list.innerHTML='<div class="mempty">Todavía no hay novedades.<br>Cuando se publique una propiedad nueva o cambie un precio, te lo contamos acá.</div>';
+  }else{
+    // Agrupo por visita: cada grupo son los cambios que encontramos al abrir la app ese día
+    const grupos=[];
+    feed.forEach(x=>{ let g=grupos.find(g=>g.t===x.t); if(!g){ g={t:x.t,desde:x.desde,items:[]}; grupos.push(g); } g.items.push(x); });
+    list.innerHTML=grupos.map(g=>
+      '<div class="nov-grp">Desde tu visita del '+novFecha(g.desde)+'</div>'+
+      g.items.map(x=>{
+        const T=NOV_TIPO[x.tipo]||['Cambio','nt-nueva'], clic=x.tipo!=='baja';
+        const precio=(x.tipo==='bajo'||x.tipo==='subio')
+          ? '<s>'+novPrecio(x.op,x.antes)+'</s> <b>'+novPrecio(x.op,x.p)+'</b>'
+          : (x.tipo==='baja' ? '' : '<b>'+novPrecio(x.op,x.p)+'</b>');
+        return '<div class="mitem nov-item'+(x.leida?'':' nov-unread')+(clic?'':' nov-off')+'"'+(clic?' data-nov="'+x.id+':'+x.op+'"':'')+'>'+
+          '<span class="nov-tag '+T[1]+'">'+T[0]+'</span>'+
+          '<div class="mn">'+esc(x.n)+'</div>'+
+          '<div class="nov-meta">'+(x.op==='a'?'En alquiler':'En venta')+(x.b?' · '+esc(x.b):'')+'</div>'+
+          (precio?'<div class="nov-precio">'+precio+'</div>':'')+
+        '</div>';
+      }).join('')
+    ).join('');
+    list.querySelectorAll('[data-nov]').forEach(el=>el.onclick=()=>{
+      const pr=el.dataset.nov.split(':'); m.classList.remove('show');
+      openShared(+pr[0], pr[1]==='a'?'alquiler':'venta');
+    });
+  }
+  m.classList.add('show');
+  // Al abrir el panel, todo queda leído (el resaltado se ve igual esta vez)
+  if(feed.some(x=>!x.leida)){ feed.forEach(x=>x.leida=true); novGuardar(NOV_FEED,feed); novBadge(); }
+}
 function updateTopCounts(){
   const f=document.getElementById('favCount'),n=document.getElementById('notesCount'),s=document.getElementById('seenCount');
   if(f)f.textContent=misFavs().length;
@@ -2832,11 +2971,17 @@ document.getElementById('misModal').onclick=e=>{if(e.target.id==='misModal')e.cu
 
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();updateTopCounts();
 if(sb){ sbInitAuth(); loadShared(); }
-loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
+loadDisp(); var _pCov=loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
 const _verParams=(()=>{try{const p=new URLSearchParams(location.search);return {id:p.get('ver'),modo:p.get('modo')};}catch(e){return {id:null,modo:null};}})();
 const _verId=_verParams.id;
-syncVentaSheet().then(syncRentSheet).then(()=>{ if(_verId!=null)try{openShared(_verId,_verParams.modo);}catch(e){} });
+var _pPlanillas=syncVentaSheet().then(syncRentSheet);
+_pPlanillas.then(()=>{ if(_verId!=null)try{openShared(_verId,_verParams.modo);}catch(e){} });
+Promise.all([_pPlanillas,_pCov]).then(()=>{ try{ novDetectar(); }catch(e){ console.warn('novedades',e); } });
+document.getElementById('novBtn').onclick=openNovedades;
+document.getElementById('novClose').onclick=()=>document.getElementById('novModal').classList.remove('show');
+document.getElementById('novModal').onclick=e=>{ if(e.target.id==='novModal') e.target.classList.remove('show'); };
+novBadge();
 syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 if(!esLinkEditor()&&_verId==null)setMode('comunidad');   // la app abre en Comunidad (los links de editor / ?ver= fijan su propio modo)
