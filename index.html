@@ -420,6 +420,10 @@ body.listmode .lv-tolist{display:none}
 .amen2.off{color:#b8af9d;text-decoration:line-through}
 .amen2.off svg{color:#d3cbba;text-decoration:none}
 .fichadet{margin-top:14px}
+.vidwrap{position:relative;width:100%;max-width:420px;margin:0 auto;border-radius:14px;overflow:hidden;background:#f0e8da;aspect-ratio:16/9}
+.vidwrap.ig{aspect-ratio:auto;height:min(640px,calc(100vw * 1.45 + 60px))}
+.vidwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vidlink{display:block;text-align:center;margin:8px 0 2px;font-size:13px;font-weight:700;color:var(--forest);text-decoration:none}
 .fichadet summary{cursor:pointer;font-weight:700;color:var(--forest);font-size:14px;padding:13px 15px;list-style:none;display:flex;align-items:center;justify-content:space-between;background:#edf3e9;border:1.5px solid #d3e1cb;border-radius:13px;transition:background .15s}
 .fichadet summary:active{background:#e3ecdd}
 .fichadet[open] summary{border-radius:13px 13px 0 0;border-bottom-color:transparent}
@@ -901,7 +905,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;o.video=L.video;}
   const A=ADMIN[id];
   const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos + ocultas)
   // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
@@ -1304,6 +1308,24 @@ function amIcon(k){const M={
  tv:'<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>'
 };return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(M[k]||'')+'</svg>';}
 const AMEN2=[['wifi','wifi','WiFi'],['cocina equipada','cocina','Cocina'],['agua caliente','agua','Agua caliente'],['calefacci','calef','Calefacción'],['estufa le','estufa','Estufa a leña'],['heladera','heladera','Heladera'],['parrilla','parrilla','Parrilla / quincho'],['galer','deck','Galería / deck'],['estacionamiento','parking','Estacionamiento'],['lavarropas','lava','Lavarropas'],['tv','tv','TV']];
+/* ===== Video de la propiedad (fila "Video Instagram" de la planilla) =====
+   Se ve adentro de la ficha, sin salir de la app. Acepta links de Instagram
+   (reel / post) y, por las dudas, de YouTube. Si el link no es de ninguno de
+   los dos, queda solo el botón para abrirlo. */
+function videoEmbed(url){
+  const u=String(url||'').trim(); let m;
+  if((m=u.match(/instagram\.com\/(?:[\w.]+\/)?(reels?|p|tv)\/([\w-]+)/i))) return 'https://www.instagram.com/'+(m[1].toLowerCase()==='p'?'p':'reel')+'/'+m[2]+'/embed/';
+  if((m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{6,})/i))) return 'https://www.youtube-nocookie.com/embed/'+m[1];
+  return null;
+}
+function videoBlock(url){
+  if(!url||!/^https?:\/\//i.test(String(url).trim()))return '';
+  const src=videoEmbed(url), ig=/instagram/i.test(url), yt=/youtu/i.test(url);
+  const donde=ig?'Instagram':(yt?'YouTube':'el navegador');
+  return `<div class="sec-t">${ic('camera')} Video</div>
+    ${src?`<div class="vidwrap${ig?' ig':''}"><iframe src="${esc(src)}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen scrolling="no" title="Video de la propiedad"></iframe></div>`:''}
+    <a class="vidlink" href="${esc(String(url).trim())}" target="_blank" rel="noopener">Abrir en ${donde} ›</a>`;
+}
 function fichaBlock(inf){
   const casas=inf.casas||[]; if(!casas.length)return '';
   let sel=casaSel; if(sel>=casas.length)sel=0;
@@ -1364,6 +1386,7 @@ async function syncRentSheet(){
         if(q==='Lote')h.lote=v?parseInt(v):null;
         else if(/precio.*noche.*baja/i.test(q))h.pb=v||null;   // "Precio por noche (baja)" o "(temporada baja)"
         else if(/precio.*noche.*alta/i.test(q))h.pa=v||null;
+        else if(/video|instagram|reel|youtu/i.test(q))h.video=v||null;   // "Video Instagram": se ve dentro de la ficha
         else if(SKIP.indexOf(q)<0&&!/link|clave|due[ñn]o/i.test(q)&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});  // ocultar link/clave del dueño
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
     // Así, si Santiago le saca el N° de lote a una casa en la planilla, esa casa DESAPARECE de la app.
@@ -1376,7 +1399,7 @@ async function syncRentSheet(){
          temporada baja uso el de alta, si no las casas quedan sin precio. */
       const praw=hs[0].pb||hs[0].pa;
       const price=praw?parseInt(String(praw).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f}));
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f,video:h.video||null}));
       if(r){r.casas=casas;r.ordAlq=hs[0].col;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price,ordAlq:hs[0].col});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render(); RENT_OK=true;
@@ -1395,6 +1418,7 @@ async function syncVentaSheet(){
           rLegal=rowBy('legalidad'), rTer=rowBy('superficie de terreno'), rCub=rowBy('superficie cubierta'),
           rSemi=rowBy('superficie semicubierta'), rValor=rowBy('valor (usd'), rCarac=rowBy('caracteristica'),
           rPago=rowBy('forma de pago'), rPromo=rowBy('valor promocional'), rExp=rowBy('expensas');
+    const rVideo=R.find(r=>/video|instagram|reel|youtu/.test(norm(r[0])))||[];   // fila "Video Instagram"
     const nCols=rProp.length; if(nCols<2)return;               // hoja vacía/rota: no toco nada
     const g=(row,j)=>((row&&row[j])||'').trim();
     capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
@@ -1413,7 +1437,7 @@ async function syncVentaSheet(){
       REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
         mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
         formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
-        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j});
+        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j,video:g(rVideo,j)||null});
     }
     Object.keys(localesByLote).forEach(k=>{const lote=+k,locs=localesByLote[k];
       const precios=locs.map(l=>l.valor).filter(v=>v!=null), min=precios.length?Math.min(...precios):null;
@@ -1895,6 +1919,11 @@ function renderLote(id){
     ? cercaSheet.split(/[\/,]/).map(s=>s.trim()).filter(Boolean).map(x=>`<div class="nb"><div class="ico">${featIcon('leaf')}</div><div class="nm">${esc(x)}</div></div>`).join('')
     : (inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map((c,ci)=>`<div class="comment"><div class="meta"><span>Vos</span><span class="cr">${c.when}<button class="cdel" data-cdel="${ci}" title="Eliminar nota">✕</button></span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
+  // Video: en alquiler el de la casa elegida; en venta el de la propiedad
+  let vid='';
+  if(linked){ const cs=(inf.casas&&inf.casas.length)?inf.casas[Math.min(casaSel,inf.casas.length-1)]:null;
+    const enAlq=isDual(inf)?(MODE==='alojar'):alq;
+    vid=enAlq?((cs&&cs.video)||inf.video):(inf.video||(cs&&cs.video)); }
   const title=inf.inmueble||('Parcela '+p.mapNum);
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.mapNum}`:`${p.barrio} · Parcela ${p.mapNum}`;
   let body='';
@@ -1933,6 +1962,7 @@ function renderLote(id){
   <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
     <button class="sh-mapbtn" id="btnVerMapa">${ic('pin')} Ver en el mapa</button>
     <span class="statusbadge st-${stKey}"><span class="sw"></span>${stL}</span></div>`+body+`
+  ${videoBlock(vid)}
   <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
   <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${galHtml}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
