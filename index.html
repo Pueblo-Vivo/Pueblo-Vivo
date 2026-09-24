@@ -275,6 +275,23 @@ body.listmode .lv-tolist{display:none}
   .comu-chip{width:100%;justify-content:flex-start}
   .comu-list{flex:1;padding-top:2px}
 }
+.dest{flex:0 0 auto;margin:2px 0 4px}
+.dest-hd{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 2px 10px}
+.dest-hd h3{margin:0;font-size:21px;font-weight:800;color:var(--forest);letter-spacing:.3px}
+.dest-hd span{display:block;margin-top:3px;padding-left:7px;border-left:3px solid var(--gold);font-size:11px;font-weight:800;letter-spacing:3px;color:var(--muted)}
+.dest-all{background:none;border:0;border-bottom:2px solid var(--ink);padding:0 0 2px;font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer}
+.dest-wrap{position:relative}
+.dest-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.dest-track::-webkit-scrollbar{display:none}
+.dest-card{position:relative;flex:0 0 80%;max-width:330px;aspect-ratio:5/6;border-radius:20px;overflow:hidden;scroll-snap-align:start;cursor:pointer;background:linear-gradient(135deg,#5f8256,#9caf6a);box-shadow:var(--shadow-sm)}
+.dest-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dest-ov{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 16px;background:linear-gradient(to top,rgba(20,18,12,.88),rgba(20,18,12,0));color:#fff}
+.dest-tag{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.dest-ov h4{margin:4px 0 3px;font-size:23px;font-weight:800;line-height:1.1}
+.dest-pr{font-size:14px;font-weight:700;opacity:.92}
+.dest-vid{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700}
+.dest-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:var(--ink);font-size:24px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer}
+.dest-arr.l{left:6px}.dest-arr.r{right:6px}
 .comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
 .comu-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
 .comu-thumb{flex:0 0 116px;align-self:stretch;min-height:112px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -905,7 +922,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;o.video=L.video;}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;o.video=L.video;o.destacada=L.destacada;}
   const A=ADMIN[id];
   const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos + ocultas)
   // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
@@ -1419,6 +1436,7 @@ async function syncVentaSheet(){
           rSemi=rowBy('superficie semicubierta'), rValor=rowBy('valor (usd'), rCarac=rowBy('caracteristica'),
           rPago=rowBy('forma de pago'), rPromo=rowBy('valor promocional'), rExp=rowBy('expensas');
     const rVideo=R.find(r=>/video|instagram|reel|youtu/.test(norm(r[0])))||[];   // fila "Video Instagram"
+    const rDest=R.find(r=>/destacad/.test(norm(r[0])))||[];   // fila "Destacada": las marcadas van al carrusel de Comunidad
     const nCols=rProp.length; if(nCols<2)return;               // hoja vacía/rota: no toco nada
     const g=(row,j)=>((row&&row[j])||'').trim();
     capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
@@ -1437,7 +1455,7 @@ async function syncVentaSheet(){
       REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
         mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
         formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
-        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j,video:g(rVideo,j)||null});
+        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j,video:g(rVideo,j)||null,destacada:!!g(rDest,j)&&!/^(no|0|-)$/i.test(g(rDest,j))});
     }
     Object.keys(localesByLote).forEach(k=>{const lote=+k,locs=localesByLote[k];
       const precios=locs.map(l=>l.valor).filter(v=>v!=null), min=precios.length?Math.min(...precios):null;
@@ -1445,7 +1463,7 @@ async function syncVentaSheet(){
       if(r){ r.locales=locs; }
       else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs,orden:9000+lote});
     });
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true;
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true; if(MODE==='comunidad')renderComu();
   }catch(e){console.warn('syncVentaSheet',e);}
 }
 /* ===== Info de los Puntos de interés (hoja "Puntos de Interes", transpuesta) ===== */
@@ -1663,6 +1681,50 @@ async function syncComunidadSheet(){
   }catch(e){console.warn('syncComunidadSheet',e);}
 }
 function comuCatLabel(cat){ return (COMU_CATS[cat]||{}).label || (cat?cat.charAt(0)+cat.slice(1).toLowerCase():cat); }
+/* ===== Destacados: carrusel de propiedades en venta, arriba de Comunidad =====
+   Si en la hoja "En venta" hay una fila "Destacada" con alguna marcada, van esas.
+   Si no marcaron ninguna, van las que tienen video (y si tampoco, todas con foto). */
+function destacadas(){
+  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; const foto=lotFirstPhoto(inf); if(!foto)continue; out.push({id:+id,inf,foto}); }
+  out.sort((a,b)=>(a.inf.orden==null?1e9:a.inf.orden)-(b.inf.orden==null?1e9:b.inf.orden));   // orden de la planilla
+  // varios lotes con el mismo video (un loteo entero) salen una sola vez
+  const vistos=new Set(), marc=out.filter(x=>x.inf.destacada),
+        conVid=out.filter(x=>x.inf.video&&!vistos.has(x.inf.video)&&vistos.add(x.inf.video));
+  const l=marc.length?marc:(conVid.length?conVid:out);
+  return l.slice(0,15);
+}
+function destHtml(){
+  const l=destacadas(); if(!l.length)return '';
+  const cards=l.map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    const tag=(conCasa(inf)?'Casa':'Terreno')+(p.barrio?' · '+p.barrio:'');
+    return '<div class="dest-card" data-dest="'+id+'"><img loading="lazy" src="'+driveSrc(foto)+'" alt="" onerror="this.remove()">'+
+      (inf.video?'<span class="dest-vid">▶ Video</span>':'')+
+      '<div class="dest-ov"><span class="dest-tag">— '+esc(tag)+'</span><h4>'+esc(inf.inmueble||('Parcela '+p.mapNum))+'</h4><div class="dest-pr">'+(inf.total?'USD '+money(inf.total):'Consultar precio')+'</div></div></div>'; }).join('');
+  return '<div class="dest"><div class="dest-hd"><div><h3>Destacados</h3><span>EN VENTA</span></div><button class="dest-all" data-destall>Ver todas →</button></div>'+
+    '<div class="dest-wrap"><button class="dest-arr l" aria-label="Anterior">‹</button><div class="dest-track">'+cards+'</div><button class="dest-arr r" aria-label="Siguiente">›</button></div></div>';
+}
+let destTimer=null, destPausa=0;
+function wireDest(root){
+  clearInterval(destTimer);
+  const tr=root.querySelector('.dest-track'); if(!tr)return;
+  const paso=()=>{ const c=tr.querySelector('.dest-card'); return c?c.offsetWidth+12:300; };
+  const ir=d=>{ const fin=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-4;
+    if(d>0&&fin) tr.scrollTo({left:0,behavior:'smooth'});
+    else if(d<0&&tr.scrollLeft<=4) tr.scrollTo({left:tr.scrollWidth,behavior:'smooth'});
+    else tr.scrollBy({left:d*paso(),behavior:'smooth'}); };
+  root.querySelector('.dest-arr.l').onclick=()=>{destPausa=Date.now();ir(-1);};
+  root.querySelector('.dest-arr.r').onclick=()=>{destPausa=Date.now();ir(1);};
+  // si la persona lo está moviendo con el dedo, no lo paso solo por un rato
+  ['touchstart','pointerdown','wheel'].forEach(ev=>tr.addEventListener(ev,()=>{destPausa=Date.now();},{passive:true}));
+  tr.querySelectorAll('[data-dest]').forEach(el=>el.onclick=()=>{ const id=+el.dataset.dest;
+    ventaTipo=conCasa(info(id))?'casa':'terreno'; LISTON=true; setMode('comprar'); openSheet(id); });
+  root.querySelector('[data-destall]').onclick=()=>{ ventaTipo='casa'; LISTON=true; setMode('comprar'); };
+  destTimer=setInterval(()=>{
+    if(!document.body.contains(tr)){clearInterval(destTimer);return;}
+    if(MODE!=='comunidad'||document.hidden||Date.now()-destPausa<8000||sheet.classList.contains('open'))return;
+    ir(1);
+  },4500);
+}
 function renderComu(){
   if(!document.getElementById('comuView'))return;
   // solo los tipos que hay en el sheet, en el orden en que aparecen en la planilla (como los acomode Santiago)
@@ -1679,6 +1741,7 @@ function renderComu(){
   const list=document.getElementById('comuList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No encontramos nada con eso. Probá otra palabra o categoría.</div>';return;}
   let html='',lastCat=null;
+  if(comuCat==='TODOS'&&!comuQ) html+=destHtml();
   items.forEach((x,i)=>{
     if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc(comuCatLabel(x.cat))+'</div>';}
     const e=comuEff(x),wa=comuWA(e.tel),ig=e.igUrl,web=e.webUrl,cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
@@ -1686,6 +1749,7 @@ function renderComu(){
   });
   list.innerHTML=html;
   const shown=items.slice();
+  wireDest(list);
   list.querySelectorAll('.comu-card').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;openComu(shown[+el.dataset.i]);});
 }
 function openComu(x){
