@@ -1407,6 +1407,8 @@ async function syncRentSheet(){
         else if(/precio.*noche.*baja/i.test(q))h.pb=v||null;   // "Precio por noche (baja)" o "(temporada baja)"
         else if(/precio.*noche.*alta/i.test(q))h.pa=v||null;
         else if(/destacad/i.test(q))h.dest=destMarca(v);   // fila "Destacada": va al carrusel de Alojarte
+        else if(/pausad/i.test(q)){ if(destMarca(v))h.paus=true; }   // fila "Pausada": la casa no sale en la app
+        else if(/^estado$/i.test(q)){ if(/pausad/i.test(v))h.paus=true; }
         else if(/video|instagram|reel|youtu/i.test(q))h.video=v||null;   // "Video Instagram": se ve dentro de la ficha
         else if(SKIP.indexOf(q)<0&&!/link|clave|due[ñn]o/i.test(q)&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});  // ocultar link/clave del dueño
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
@@ -1414,7 +1416,7 @@ async function syncRentSheet(){
     capturePhotos();
     REALES=REALES.filter(r=>!(r.op==='alquiler'&&r.valor==null));      // saca alquileres puros de planilla
     REALES.forEach(r=>{delete r.casas;delete r.alsoAlq;delete r.alqPrice;}); // limpia el overlay de alquiler de las ventas
-    const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
+    const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name||h.paus)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
       /* La planilla hoy sólo trae "Precio por noche (alta)". Si no hay valor de
          temporada baja uso el de alta, si no las casas quedan sin precio. */
@@ -1440,7 +1442,9 @@ async function syncVentaSheet(){
           rSemi=rowBy('superficie semicubierta'), rValor=rowBy('valor (usd'), rCarac=rowBy('caracteristica'),
           rPago=rowBy('forma de pago'), rPromo=rowBy('valor promocional'), rExp=rowBy('expensas');
     const rVideo=R.find(r=>/video|instagram|reel|youtu/.test(norm(r[0])))||[];   // fila "Video Instagram"
-    const rDest=R.find(r=>/destacad/.test(norm(r[0])))||[];   // fila "Destacada": las marcadas van al carrusel de Comunidad
+    const rDest=R.find(r=>/destacad/.test(norm(r[0])))||[];   // fila "Destacada": van al carrusel de Comprar
+    // fila "Pausada" (con una x) o "Estado" que diga "pausada": sigue en la planilla pero no sale en la app
+    const rPaus=R.find(r=>/pausad/.test(norm(r[0])))||[], rEst=R.find(r=>/^estado/.test(norm(r[0]).trim()))||[];
     const nCols=rProp.length; if(nCols<2)return;               // hoja vacía/rota: no toco nada
     const g=(row,j)=>((row&&row[j])||'').trim();
     capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
@@ -1449,6 +1453,7 @@ async function syncVentaSheet(){
     for(let j=1;j<nCols;j++){
       const b=g(rBarrio,j); if(b)barrio=b;
       const name=g(rProp,j); if(!name)continue;
+      if(destMarca(g(rPaus,j))||/pausad/i.test(g(rEst,j)))continue;   // pausada
       const tipo=g(rTipo,j);
       const loteS=g(rLote,j).replace(/[^\d]/g,''); if(!loteS)continue; // sin N° de lote: no se puede enlazar
       const lote=+loteS, valorRaw=g(rValor,j), valor=valorRaw?parseInt(valorRaw.replace(/[^\d]/g,'')):null;
