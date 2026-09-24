@@ -278,7 +278,7 @@ body.listmode .lv-tolist{display:none}
 .dest{flex:0 0 auto;margin:2px 0 4px}
 .dest-hd{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 2px 10px}
 .dest-hd h3{margin:0;font-size:21px;font-weight:800;color:var(--forest);letter-spacing:.3px}
-.dest-hd span{display:block;margin-top:3px;padding-left:7px;border-left:3px solid var(--gold);font-size:11px;font-weight:800;letter-spacing:3px;color:var(--muted)}
+.dest-hd span{display:block;margin-top:3px;padding-left:7px;border-left:3px solid var(--gold);font-size:11px;font-weight:800;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
 .dest-all{background:none;border:0;border-bottom:2px solid var(--ink);padding:0 0 2px;font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer}
 .dest-wrap{position:relative}
 .dest-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
@@ -289,6 +289,7 @@ body.listmode .lv-tolist{display:none}
 .dest-tag{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
 .dest-ov h4{margin:4px 0 3px;font-size:23px;font-weight:800;line-height:1.1}
 .dest-pr{font-size:14px;font-weight:700;opacity:.92}
+.dest-ov h4.cap{text-transform:capitalize}
 .dest-vid{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700}
 .dest-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:var(--ink);font-size:24px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer}
 .dest-arr.l{left:6px}.dest-arr.r{right:6px}
@@ -1198,7 +1199,8 @@ function renderListView(){
   const cardCls=id=>{const u=uget(id);return 'lot-card'+(u.fav?' is-fav':(u.seen?' is-seen':''));};   // me gusta manda sobre visto
   const seenTag=id=>uget(id).seen?'<span class="lot-tag t-seen">'+ICON.eye+'Visto</span>':'';
   const favBtn=id=>'<button class="lot-fav'+(uget(id).fav?' on':'')+'" data-fav="'+id+'" title="Me gusta"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg></button>';
-  list.innerHTML=items.map(it=>{ const {inf,p}=it;
+  const dest=anyLFilt(isAlojar)?[]:(isAlojar?destAlq():destVenta());
+  list.innerHTML=destHtml(dest,isAlojar?'Para alojarte':(ventaTipo==='terreno'?'Terrenos en venta':'Casas en venta'))+items.map(it=>{ const {inf,p}=it;
     if(isAlojar){
       const hab=casaField(inf,'cantidad de habitaciones'),ban=casaField(inf,'cantidad de ba');
       const facts=[it.cap&&(it.cap+' huésp.'),hab&&(hab+' hab.'),ban&&(ban+' baño'+(ban==='1'?'':'s'))].filter(Boolean).join(' · ')||'Casa en alquiler';
@@ -1214,6 +1216,7 @@ function renderListView(){
     const card=b.closest('.lot-card'); if(card)card.className=cardCls(id);   // repinta la tarjeta
     estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
+  wireDest(list,dest,d=>openSheet(d.id));
 }
 function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.maxSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
 function renderLvFilters(isAlojar){
@@ -1403,6 +1406,7 @@ async function syncRentSheet(){
         if(q==='Lote')h.lote=v?parseInt(v):null;
         else if(/precio.*noche.*baja/i.test(q))h.pb=v||null;   // "Precio por noche (baja)" o "(temporada baja)"
         else if(/precio.*noche.*alta/i.test(q))h.pa=v||null;
+        else if(/destacad/i.test(q))h.dest=destMarca(v);   // fila "Destacada": va al carrusel de Alojarte
         else if(/video|instagram|reel|youtu/i.test(q))h.video=v||null;   // "Video Instagram": se ve dentro de la ficha
         else if(SKIP.indexOf(q)<0&&!/link|clave|due[ñn]o/i.test(q)&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});  // ocultar link/clave del dueño
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
@@ -1416,7 +1420,7 @@ async function syncRentSheet(){
          temporada baja uso el de alta, si no las casas quedan sin precio. */
       const praw=hs[0].pb||hs[0].pa;
       const price=praw?parseInt(String(praw).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f,video:h.video||null}));
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f,video:h.video||null,dest:h.dest||false}));
       if(r){r.casas=casas;r.ordAlq=hs[0].col;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price,ordAlq:hs[0].col});});
     buildLinks();renderFilters();applyFilter();if(openId!=null)render(); RENT_OK=true;
@@ -1463,7 +1467,7 @@ async function syncVentaSheet(){
       if(r){ r.locales=locs; }
       else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs,orden:9000+lote});
     });
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true; if(MODE==='comunidad')renderComu();
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true;
   }catch(e){console.warn('syncVentaSheet',e);}
 }
 /* ===== Info de los Puntos de interés (hoja "Puntos de Interes", transpuesta) ===== */
@@ -1663,7 +1667,7 @@ async function syncComunidadSheet(){
     // desconocida (ej. "Link emprendedor") NUNCA se lee → no aparece en la app.
     const H=(R[0]||[]).map(h=>(h||'').trim().toLowerCase());
     const findCol=(...ns)=>{ for(const n of ns){const i=H.findIndex(h=>h===n);if(i>=0)return i;} for(const n of ns){const i=H.findIndex(h=>h.indexOf(n)>=0);if(i>=0)return i;} return -1; };
-    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive');
+    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive'), cDest=findCol('destacad');
     // Columna ID (match EXACTO, para no confundirla con "Ciudad"/"Medida"/etc). Es la identidad fija
     // del emprendimiento: el link ?emp= y su clave cuelgan de acá, así renombrar la tarjeta NO rompe el link.
     const cId=H.findIndex(h=>h==='id'||h==='id emprendedor'||h==='codigo'||h==='código');
@@ -1674,37 +1678,66 @@ async function syncComunidadSheet(){
       const nom=G(r,cN); if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=G(r,cF), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
       const slug=comuSlug(nom);   // identidad por NOMBRE (links auto con =EMPLINK(B2); renombrar cambia el link)
-      out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
+      out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length,dest:destMarca(G(r,cDest))});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
   }catch(e){console.warn('syncComunidadSheet',e);}
 }
 function comuCatLabel(cat){ return (COMU_CATS[cat]||{}).label || (cat?cat.charAt(0)+cat.slice(1).toLowerCase():cat); }
-/* ===== Destacados: carrusel de propiedades en venta, arriba de Comunidad =====
-   Si en la hoja "En venta" hay una fila "Destacada" con alguna marcada, van esas.
-   Si no marcaron ninguna, van las que tienen video (y si tampoco, todas con foto). */
-function destacadas(){
-  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; const foto=lotFirstPhoto(inf); if(!foto)continue; out.push({id:+id,inf,foto}); }
-  out.sort((a,b)=>(a.inf.orden==null?1e9:a.inf.orden)-(b.inf.orden==null?1e9:b.inf.orden));   // orden de la planilla
-  // varios lotes con el mismo video (un loteo entero) salen una sola vez
-  const vistos=new Set(), marc=out.filter(x=>x.inf.destacada),
-        conVid=out.filter(x=>x.inf.video&&!vistos.has(x.inf.video)&&vistos.add(x.inf.video));
-  const l=marc.length?marc:(conVid.length?conVid:out);
-  return l.slice(0,15);
+/* ===== Destacados: un carrusel arriba de cada sección =====
+   Comunidad → emprendimientos, Alojarte → alquileres, Comprar → ventas (casa o terreno).
+   Van las marcadas en la columna/fila "Destacada" de su hoja; si no marcaron ninguna,
+   se eligen solas. Máximo DEST_MAX por sección. Sin foto no entra. */
+const DEST_MAX=6;
+const destOrd=(k)=>(a,b)=>(a.inf[k]==null?1e9:a.inf[k])-(b.inf[k]==null?1e9:b.inf[k]);
+const destMarca=v=>!!v&&!/^(no|0|-)$/i.test(String(v).trim());
+function destVenta(){
+  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue;
+    if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue;
+    const foto=lotFirstPhoto(inf); if(foto)out.push({id:+id,inf,foto}); }
+  out.sort(destOrd('orden'));
+  // sin marcadas: primero las que tienen video, una por video (un loteo entero comparte reel)
+  const marc=out.filter(x=>x.inf.destacada), vistos=new Set();
+  const conVid=out.filter(x=>x.inf.video&&!vistos.has(x.inf.video)&&vistos.add(x.inf.video));
+  const l=marc.length?marc:conVid.concat(out.filter(x=>!x.inf.video));
+  return l.slice(0,DEST_MAX).map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    return {id,foto,video:inf.video,tag:(conCasa(inf)?'Casa':'Terreno')+(p.barrio?' · '+p.barrio:''),
+      nombre:inf.inmueble||('Parcela '+p.mapNum),linea:inf.total?'USD '+money(inf.total):'Consultar precio'}; });
 }
-function destHtml(){
-  const l=destacadas(); if(!l.length)return '';
-  const cards=l.map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
-    const tag=(conCasa(inf)?'Casa':'Terreno')+(p.barrio?' · '+p.barrio:'');
-    return '<div class="dest-card" data-dest="'+id+'"><img loading="lazy" src="'+driveSrc(foto)+'" alt="" onerror="this.remove()">'+
-      (inf.video?'<span class="dest-vid">▶ Video</span>':'')+
-      '<div class="dest-ov"><span class="dest-tag">— '+esc(tag)+'</span><h4>'+esc(inf.inmueble||('Parcela '+p.mapNum))+'</h4><div class="dest-pr">'+(inf.total?'USD '+money(inf.total):'Consultar precio')+'</div></div></div>'; }).join('');
-  return '<div class="dest"><div class="dest-hd"><div><h3>Destacados</h3><span>EN VENTA</span></div><button class="dest-all" data-destall>Ver todas →</button></div>'+
+function destAlq(){
+  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue;
+    const foto=lotFirstPhoto(inf); if(foto)out.push({id:+id,inf,foto}); }
+  out.sort(destOrd('ordAlq'));
+  const marc=out.filter(x=>(x.inf.casas||[]).some(c=>c.dest));
+  const conVid=out.filter(x=>(x.inf.casas||[]).some(c=>c.video));
+  const l=marc.length?marc:conVid.concat(out.filter(x=>conVid.indexOf(x)<0));
+  return l.slice(0,DEST_MAX).map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    const cs=(inf.casas||[])[0]||{}, cap=casaField(inf,'capacidad');
+    return {id,foto,video:cs.video,tag:'Alojamiento'+(p.barrio?' · '+p.barrio:''),nombre:inf.inmueble||cs.n||'Casa',
+      linea:(inf.alqPrice?enPesos(inf.alqPrice)+' /noche':'Consultar precio')+(cap?' · '+cap+' huésp.':'')}; });
+}
+let destComuMezcla=null;   // sin marcadas, se eligen al azar una vez por visita (que roten entre todos)
+function destComu(){
+  const con=COMUNIDAD.map(x=>({x,e:comuEff(x)})).filter(o=>o.e.img);
+  let l=con.filter(o=>o.x.dest);
+  if(!l.length){
+    if(!destComuMezcla){ destComuMezcla={}; con.forEach(o=>destComuMezcla[o.x.slug]=Math.random()); }
+    l=con.slice().sort((a,b)=>(destComuMezcla[a.x.slug]||1)-(destComuMezcla[b.x.slug]||1));
+  }
+  return l.slice(0,DEST_MAX).map(({x,e})=>({comu:x,foto:e.img,tag:comuCatLabel(x.cat),nombre:x.nombre.toLowerCase(),
+    linea:e.desc?(e.desc.length>60?e.desc.slice(0,58).trim()+'…':e.desc):'',cap:true}));
+}
+function destHtml(items,sub){
+  if(!items.length)return '';
+  const cards=items.map((d,i)=>'<div class="dest-card" data-di="'+i+'"><img loading="lazy" src="'+driveSrc(d.foto)+'" alt="" onerror="this.remove()">'+
+    (d.video?'<span class="dest-vid">▶ Video</span>':'')+
+    '<div class="dest-ov"><span class="dest-tag">— '+esc(d.tag)+'</span><h4'+(d.cap?' class="cap"':'')+'>'+esc(d.nombre)+'</h4>'+(d.linea?'<div class="dest-pr">'+esc(d.linea)+'</div>':'')+'</div></div>').join('');
+  return '<div class="dest"><div class="dest-hd"><div><h3>Destacados</h3><span>'+esc(sub)+'</span></div></div>'+
     '<div class="dest-wrap"><button class="dest-arr l" aria-label="Anterior">‹</button><div class="dest-track">'+cards+'</div><button class="dest-arr r" aria-label="Siguiente">›</button></div></div>';
 }
 let destTimer=null, destPausa=0;
-function wireDest(root){
+function wireDest(root,items,pick){
   clearInterval(destTimer);
   const tr=root.querySelector('.dest-track'); if(!tr)return;
   const paso=()=>{ const c=tr.querySelector('.dest-card'); return c?c.offsetWidth+12:300; };
@@ -1716,12 +1749,10 @@ function wireDest(root){
   root.querySelector('.dest-arr.r').onclick=()=>{destPausa=Date.now();ir(1);};
   // si la persona lo está moviendo con el dedo, no lo paso solo por un rato
   ['touchstart','pointerdown','wheel'].forEach(ev=>tr.addEventListener(ev,()=>{destPausa=Date.now();},{passive:true}));
-  tr.querySelectorAll('[data-dest]').forEach(el=>el.onclick=()=>{ const id=+el.dataset.dest;
-    ventaTipo=conCasa(info(id))?'casa':'terreno'; LISTON=true; setMode('comprar'); openSheet(id); });
-  root.querySelector('[data-destall]').onclick=()=>{ ventaTipo='casa'; LISTON=true; setMode('comprar'); };
+  tr.querySelectorAll('[data-di]').forEach(el=>el.onclick=()=>pick(items[+el.dataset.di]));
   destTimer=setInterval(()=>{
     if(!document.body.contains(tr)){clearInterval(destTimer);return;}
-    if(MODE!=='comunidad'||document.hidden||Date.now()-destPausa<8000||sheet.classList.contains('open'))return;
+    if(!tr.offsetParent||document.hidden||Date.now()-destPausa<8000||sheet.classList.contains('open'))return;
     ir(1);
   },4500);
 }
@@ -1741,7 +1772,8 @@ function renderComu(){
   const list=document.getElementById('comuList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No encontramos nada con eso. Probá otra palabra o categoría.</div>';return;}
   let html='',lastCat=null;
-  if(comuCat==='TODOS'&&!comuQ) html+=destHtml();
+  const dest=(comuCat==='TODOS'&&!comuQ)?destComu():[];
+  html+=destHtml(dest,'De la comunidad');
   items.forEach((x,i)=>{
     if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc(comuCatLabel(x.cat))+'</div>';}
     const e=comuEff(x),wa=comuWA(e.tel),ig=e.igUrl,web=e.webUrl,cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
@@ -1749,7 +1781,7 @@ function renderComu(){
   });
   list.innerHTML=html;
   const shown=items.slice();
-  wireDest(list);
+  wireDest(list,dest,d=>openComu(d.comu));
   list.querySelectorAll('.comu-card').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;openComu(shown[+el.dataset.i]);});
 }
 function openComu(x){
