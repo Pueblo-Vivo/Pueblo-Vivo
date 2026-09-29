@@ -875,7 +875,10 @@ function info(id){
   // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
   const hide=[].concat((A&&A.hideFotos)||[],(cov&&cov.hidden)||[]);
   const add=[].concat((A&&A.addFotos)||[],(cov&&cov.fotos)||[]);
-  const applyF=arr=>{ let f=(arr||[]).slice(); if(hide.length)f=f.filter(x=>hide.indexOf(x)<0); if(add.length)f=f.concat(add); return f; };
+  const ord=[].concat((A&&A.order)||[],(cov&&cov.order)||[]);   // orden de fotos elegido (inmobiliaria y/o dueño)
+  const applyF=arr=>{ let f=(arr||[]).slice(); if(hide.length)f=f.filter(x=>hide.indexOf(x)<0); if(add.length)f=f.concat(add);
+    if(ord.length){ const head=[]; ord.forEach(u=>{ if(f.indexOf(u)>=0&&head.indexOf(u)<0)head.push(u); }); f=head.concat(f.filter(u=>head.indexOf(u)<0)); }
+    return f; };
   if(o.casas&&o.casas.length){ o.casas=o.casas.map((c,i)=>i===0?Object.assign({},c,{fotos:applyF(c.fotos)}):c); }
   else { o.fotos=applyF(o.fotos); }
   o.ocupado=DISP[numById[id]]||[];                 // disponibilidad compartida (Supabase)
@@ -1755,16 +1758,22 @@ function openCasaEditor(lote,clave){
   const nom=base.inmueble||('Casa '+lote);
   const baked=((base.casas&&base.casas[0]&&base.casas[0].fotos)||(base.fotos)||[]).slice();  // fotos del sheet/Drive
   const _cov=JSON.parse(JSON.stringify(COV[lote]||{}));
-  const data={precio:_cov.precio!=null?_cov.precio:null, fotos:Array.isArray(_cov.fotos)?_cov.fotos:[], hidden:Array.isArray(_cov.hidden)?_cov.hidden:[]};
+  const data={precio:_cov.precio!=null?_cov.precio:null, fotos:Array.isArray(_cov.fotos)?_cov.fotos:[], hidden:Array.isArray(_cov.hidden)?_cov.hidden:[], order:Array.isArray(_cov.order)?_cov.order:[]};
   function draw(){
     const precioVal=data.precio!=null?data.precio:(base.alqPrice||'');
-    const gal=baked.filter(u=>data.hidden.indexOf(u)<0).map(u=>({u,tipo:'baked'})).concat(data.fotos.map(u=>({u,tipo:'up'})));
+    let gal=baked.filter(u=>data.hidden.indexOf(u)<0).map(u=>({u,tipo:'baked'})).concat(data.fotos.map(u=>({u,tipo:'up'})));
+    if(data.order&&data.order.length){ const head=[]; data.order.forEach(u=>{ const g=gal.find(x=>x.u===u); if(g&&head.indexOf(g)<0)head.push(g); }); gal=head.concat(gal.filter(g=>head.indexOf(g)<0)); }
     scroll.innerHTML='<div class="sh-head"><div class="sh-title"><span class="barrio">Editar mi casa · Lote '+lote+'</span><h2>'+esc(nom)+'</h2></div></div>'+
       '<p class="comu-desc">Editá el precio, las fotos y las fechas ocupadas de tu casa. Los cambios se ven al instante en la app.</p>'+
       '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
       '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
-      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(tocá la ✕ para borrar)</small></div>'+
-      '<div class="gallery">'+gal.map((g,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3"><button class="gdel" data-del="'+i+'">✕</button></div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
+      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · ◀ ▶ ordenar)</small></div>'+
+      (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. Usá ◀ ▶ para cambiar el orden.</span></p>':'')+
+      '<div class="gallery">'+gal.map((g,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3">'+
+        (i===0?'<span class="gcover">Portada</span>':'')+
+        '<button class="gdel" data-del="'+i+'">✕</button>'+
+        (gal.length>1?'<div class="gmove"><button data-mv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button data-mv="'+i+':1"'+(i===gal.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+
+        '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       (gal.length?'':'<p class="empty-c">Sin fotos. Agregá una con el +.</p>')+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">'+
       '<div class="sec-t">'+ic('cal')+' Disponibilidad</div>'+
@@ -1773,6 +1782,11 @@ function openCasaEditor(lote,clave){
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
     document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1100,async img=>{ toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); }); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const g=gal[+b.dataset.del]; if(!g)return; if(g.tipo==='baked'){ if(data.hidden.indexOf(g.u)<0)data.hidden.push(g.u); } else { const j=data.fotos.indexOf(g.u); if(j>=0)data.fotos.splice(j,1); } guardarCasa(lote,clave,data,draw); });
+    scroll.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+      const p=b.dataset.mv.split(':'), i=+p[0], j=i+(+p[1]);
+      if(j<0||j>=gal.length)return;
+      const raws=gal.map(g=>g.u); const t=raws[i]; raws[i]=raws[j]; raws[j]=t;
+      data.order=raws; guardarCasa(lote,clave,data,draw); });
     document.getElementById('ceDisp').onclick=()=>openDispEditor(lote,clave);
     scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=gal.map(g=>({src:driveSrc(g.u),raw:g.u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
     openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
@@ -1985,9 +1999,10 @@ function adminBox(id,inf,p){
     <div class="field"><label>Características (separadas por coma)</label><input id="adFeats" value="${esc(feats)}"></div>
     <div class="field inline"><label style="margin:0">¿Tiene casa construida?</label><button class="switch ${conCasa(inf)?'on':''}" id="adCasa"></button></div>
     <div class="field"><label>Fotos del aviso</label>
+      ${(()=>{const fl=(inf.casas&&inf.casas.length?(inf.casas[0].fotos||[]):(inf.fotos||[]));return fl.length?'<div class="gallery" style="margin:0 0 8px;padding:0">'+fl.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+(i===0?'<span class="gcover">Portada</span>':'')+(fl.length>1?'<div class="gmove"><button type="button" data-amv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button type="button" data-amv="'+i+':1"'+(i===fl.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+'</div>').join('')+'</div>':'';})()}
       <button class="save" id="adAddFoto" style="background:#2b9aa0;margin:2px 0">${ic('camera')} Agregar fotos (de la galería)</button>
       <input type="file" id="adFileIn" accept="image/*" multiple style="display:none">
-      <div class="adminhint">Tocá una foto de la galería de arriba para quitarla. Quedan guardadas en este teléfono.</div>
+      <div class="adminhint">La 1ª es la <b>portada</b> de la tarjeta. Usá ◀ ▶ para ordenar. Para borrar una foto, tocala en la galería de arriba de la ficha.</div>
     </div>
     ${isAlq(inf)?`<div class="field"><label>Fechas ocupadas (alquiler)</label>
       <div id="occList">${(inf.ocupado||[]).map((r,i)=>`<div class="occrow"><span>${fmtD(r.from)} – ${fmtD(r.to)}</span><button type="button" data-occ="${i}">✕</button></div>`).join('')||'<div class="adminhint">Ninguna cargada. Bloqueá las fechas que ya están alquiladas.</div>'}</div>
@@ -2037,6 +2052,13 @@ function wireAdmin(id){
     ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);
   };
   // (el borrado de fotos del aviso ahora se hace desde el visor / lightbox)
+  // Ordenar fotos del aviso con ◀ ▶ (la 1ª es la portada de la tarjeta)
+  scroll.querySelectorAll('[data-amv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
+    const inf2=info(id); const list=(inf2.casas&&inf2.casas.length?(inf2.casas[0].fotos||[]):(inf2.fotos||[]));
+    const p=b.dataset.amv.split(':'), i=+p[0], j=i+(+p[1]);
+    if(j<0||j>=list.length)return;
+    const raws=list.slice(); const t=raws[i]; raws[i]=raws[j]; raws[j]=t;
+    const ov=Object.assign({},ADMIN[id]); ov.order=raws; ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); });
   // Fechas ocupadas (alquiler)
   const occAdd=document.getElementById('occAdd');
   if(occAdd)occAdd.onclick=()=>openCal({occupied:info(id).ocupado||[],title:'Marcá las fechas que ya están ocupadas',onDone:(f,t)=>{
