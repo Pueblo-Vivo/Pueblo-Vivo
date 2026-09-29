@@ -3361,26 +3361,54 @@ document.getElementById('solPlay').onclick=solPlayToggle;
 map.on('moveend zoomend',()=>{ if(solMode)solPlaceSun(); });
 
 /* ============ Realidad aumentada: límites del terreno en el campo ============ */
-let arOn=false, arStream=null, arRAF=null, arWatch=null, arHeading=null, arPitch=0, arTune=0, arPos=null, arEyeElev=null, arSegs=[], arResize=null;
-const AR_FOVY=58*Math.PI/180;   // campo visual vertical aprox (ajustable)
+let arOn=false, arStream=null, arRAF=null, arWatch=null, arTune=0, arPos=null, arEyeElev=null, arSegs=[], arResize=null;
+let arAlpha=null, arBeta=0, arGamma=0, arCompass=null;   // orientación cruda (con suavizado)
+const AR_FOVY=60*Math.PI/180;   // campo visual vertical aprox (ajustable)
 function solElevAt(lat,lon){ if(!window.SOLAR||!SOLAR.dem)return null; solDecodeDem(); const D=SOLAR.dem, dem=SOLAR._dem; if(lat>D.n||lat<D.s||lon<D.w||lon>D.e)return null; const y=(D.n-lat)/D.step, x=(lon-D.w)/D.step, x0=Math.floor(x),y0=Math.floor(y),x1=Math.min(x0+1,D.cols-1),y1=Math.min(y0+1,D.rows-1),fx=x-x0,fy=y-y0, g=(r,c)=>dem[Math.min(D.rows-1,Math.max(0,r))*D.cols+Math.min(D.cols-1,Math.max(0,c))]; return (g(y0,x0)*(1-fx)+g(y0,x1)*fx)*(1-fy)+(g(y1,x0)*(1-fx)+g(y1,x1)*fx)*fy; }
-function arOrient(e){ let hd=null; if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading))hd=e.webkitCompassHeading; else if(e.absolute===true&&typeof e.alpha==='number')hd=(360-e.alpha)%360; if(hd!=null)arHeading=hd; if(typeof e.beta==='number')arPitch=e.beta-90; }
+let _cS=null,_cC=null; // suavizado del compás por seno/coseno (evita saltos en 0/360)
+function _ema(p,v,k){ return p==null?v:p+(v-p)*k; }
+function arOrient(e){ if(e.alpha==null&&e.webkitCompassHeading==null)return;
+  if(e.alpha!=null)arAlpha=arAlpha==null?e.alpha:_emaAng(arAlpha,e.alpha,0.35);
+  if(e.beta!=null)arBeta=_ema(arBeta,e.beta,0.35);
+  if(e.gamma!=null)arGamma=_ema(arGamma,e.gamma,0.35);
+  if(typeof e.webkitCompassHeading==='number'&&!isNaN(e.webkitCompassHeading)){ const h=e.webkitCompassHeading*Math.PI/180; _cS=_ema(_cS,Math.sin(h),0.3); _cC=_ema(_cC,Math.cos(h),0.3); arCompass=(Math.atan2(_cS,_cC)*180/Math.PI+360)%360; }
+}
+function _emaAng(p,v,k){ // promedio de ángulos con wrap 0..360
+  const pr=p*Math.PI/180, vr=v*Math.PI/180, s=_ema(Math.sin(pr),Math.sin(vr),k), c=_ema(Math.cos(pr),Math.cos(vr),k); return (Math.atan2(s,c)*180/Math.PI+360)%360; }
+function arScreenAngle(){ let a=null; try{a=(screen.orientation&&screen.orientation.angle);}catch(_){} if(a==null)a=window.orientation||0; return a*Math.PI/180; }
+function arCamBasis(){ if(arAlpha==null)return null;
+  const a=arAlpha*Math.PI/180,b=arBeta*Math.PI/180,g=arGamma*Math.PI/180;
+  const cA=Math.cos(a),sA=Math.sin(a),cB=Math.cos(b),sB=Math.sin(b),cG=Math.cos(g),sG=Math.sin(g);
+  // ejes del dispositivo en el mundo ENU (X=Este,Y=Norte,Z=Arriba), matriz Rz(a)·Rx(b)·Ry(g)
+  let rX=[cA*cG - sA*sB*sG, sA*cG + cA*sB*sG, -cB*sG];   // +X (derecha del device)
+  let uY=[-sA*cB, cA*cB, sB];                             // +Y (arriba del device)
+  let fZ=[cA*sG + sA*sB*cG, sA*sG - cA*sB*cG, cB*cG];     // +Z (sale de la pantalla)
+  let f=[-fZ[0],-fZ[1],-fZ[2]], r=rX, u=uY;               // la cámara mira por -Z
+  const th=arScreenAngle(); if(th){ const c=Math.cos(th),s=Math.sin(th); const nr=[r[0]*c+u[0]*s,r[1]*c+u[1]*s,r[2]*c+u[2]*s],nu=[-r[0]*s+u[0]*c,-r[1]*s+u[1]*c,-r[2]*s+u[2]*c]; r=nr;u=nu; }
+  // corregir el norte con la brújula (iOS): que el rumbo de la cámara sea el del compás (+ ajuste manual)
+  const rz=(v,d)=>{ const c=Math.cos(d),s=Math.sin(d); return [v[0]*c+v[1]*s,-v[0]*s+v[1]*c,v[2]]; };
+  if(arCompass!=null){ const rawH=(Math.atan2(f[0],f[1])*180/Math.PI+360)%360, d=((arCompass+arTune-rawH)*Math.PI/180); f=rz(f,d);r=rz(r,d);u=rz(u,d); }
+  else if(arTune){ const d=arTune*Math.PI/180; f=rz(f,d);r=rz(r,d);u=rz(u,d); }
+  return {f,r,u}; }
+function arHeadingNow(){ if(arCompass!=null)return (arCompass+arTune+360)%360; const bs=arCamBasis(); if(!bs)return null; return (Math.atan2(bs.f[0],bs.f[1])*180/Math.PI+360)%360; }
 function arBuildSegs(){ arSegs=[]; if(!arPos)return; const [la0,lo0]=arPos, R=220, mLat=111320, mLon=111320*Math.cos(la0*Math.PI/180);
   const W=(lat,lon)=>{ const dN=(lat-la0)*mLat,dE=(lon-lo0)*mLon; let up=-1.5; const et=solElevAt(lat,lon); if(et!=null&&arEyeElev!=null)up=et-arEyeElev; return {dN,dE,up,dh:Math.hypot(dN,dE)}; };
   PARCELAS.features.forEach(f=>{ let sLat=0,sLon=0,n=0; const wk=a=>{if(typeof a[0]==='number'){sLon+=a[0];sLat+=a[1];n++;}else a.forEach(wk);}; wk(f.geometry.coordinates); if(Math.hypot((sLat/n-la0)*mLat,(sLon/n-lo0)*mLon)>R+160)return;
     const rings=[]; const collect=a=>{ if(typeof a[0][0]==='number')rings.push(a); else a.forEach(collect); }; collect(f.geometry.coordinates);
     rings.forEach(r=>{ for(let i=0;i<r.length-1;i++) arSegs.push({a:W(r[i][1],r[i][0]), b:W(r[i+1][1],r[i+1][0])}); });
   }); }
-function arProject(w,cw,ch){ const bearing=Math.atan2(w.dE,w.dN)*180/Math.PI; let relYaw=bearing-((arHeading||0)+arTune); relYaw=((relYaw+540)%360)-180; if(Math.abs(relYaw)>85)return null;
-  const elev=Math.atan2(w.up,Math.max(1,w.dh))*180/Math.PI, relPitch=elev-arPitch; if(Math.abs(relPitch)>78)return null;
+function arProjectV(w,bs,cw,ch){ const f=bs.f,r=bs.r,u=bs.u; const fwd=w.dE*f[0]+w.dN*f[1]+w.up*f[2]; if(fwd<=0.6)return null;
+  const rt=w.dE*r[0]+w.dN*r[1]+w.up*r[2], up=w.dE*u[0]+w.dN*u[1]+w.up*u[2];
   const fovY=AR_FOVY, fovX=2*Math.atan(Math.tan(fovY/2)*(cw/ch));
-  return { x: cw/2 + (Math.tan(relYaw*Math.PI/180)/Math.tan(fovX/2))*(cw/2), y: ch/2 - (Math.tan(relPitch*Math.PI/180)/Math.tan(fovY/2))*(ch/2) }; }
+  const x=cw/2+((rt/fwd)/Math.tan(fovX/2))*(cw/2), y=ch/2-((up/fwd)/Math.tan(fovY/2))*(ch/2);
+  return isFinite(x)&&isFinite(y)?{x,y}:null; }
 function arDraw(){ if(!arOn)return; const cv=document.getElementById('arCanvas'), cw=cv.width, ch=cv.height, ctx=cv.getContext('2d'); ctx.clearRect(0,0,cw,ch);
-  if(arPos&&arHeading!=null&&arSegs.length){ ctx.lineWidth=Math.max(2.5,cw*0.006); ctx.strokeStyle='rgba(80,232,110,.92)'; ctx.fillStyle='rgba(255,255,255,.95)'; ctx.lineJoin='round'; ctx.lineCap='round';
-    arSegs.forEach(s=>{ const pA=arProject(s.a,cw,ch), pB=arProject(s.b,cw,ch); if(pA&&pB){ ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke(); } });
-    const rr=Math.max(3,cw*0.007); arSegs.forEach(s=>{ const p=arProject(s.a,cw,ch); if(p){ ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.fill(); } });
+  const bs=arCamBasis();
+  if(arPos&&bs&&arSegs.length){ ctx.lineWidth=Math.max(2.5,cw*0.006); ctx.strokeStyle='rgba(80,232,110,.92)'; ctx.fillStyle='rgba(255,255,255,.95)'; ctx.lineJoin='round'; ctx.lineCap='round';
+    arSegs.forEach(s=>{ const pA=arProjectV(s.a,bs,cw,ch), pB=arProjectV(s.b,bs,cw,ch); if(pA&&pB){ ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke(); } });
+    const rr=Math.max(3,cw*0.007); arSegs.forEach(s=>{ const p=arProjectV(s.a,bs,cw,ch); if(p){ ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.fill(); } });
   }
-  document.getElementById('arHeading').textContent = arHeading==null?'brújula…':('🧭 '+Math.round((((arHeading||0)+arTune)%360+360)%360)+'°');
+  const hn=arHeadingNow(); document.getElementById('arHeading').textContent = hn==null?'brújula…':('🧭 '+Math.round(hn)+'°');
   arRAF=requestAnimationFrame(arDraw); }
 function openAR(){ const view=document.getElementById('arView'); view.classList.add('show'); arOn=true;
   const msg=document.getElementById('arMsg'), showMsg=t=>{msg.innerHTML=t;msg.classList.add('show');}, hideMsg=()=>msg.classList.remove('show');
