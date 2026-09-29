@@ -66,6 +66,11 @@ Todo el front vive en pocos archivos en la raíz:
 - `window.SOLAR` = `{azStep, horizon:{loteId:[décimas de grado por azimut, 0=N horario]}, dem:{n,s,w,e,rows,cols,step,data(base64 Int16 metros)}}`. El **horizonte por parcela** dice a qué altura está la silueta de la sierra en cada dirección → sol/sombra = altura del sol > horizonte. El **DEM** recortado del valle se usa para renderizar las sombras (canvas → `L.imageOverlay`).
 - Regenerar: `node sol-build.js <carpeta-con-tiles>`. Los tiles son SRTM1 (~30 m) `.hgt.gz` skadi (ej. `S33W065`, `S33W066`, `S32W065`, `S32W066`) bajados de `https://elevation-tiles-prod.s3.amazonaws.com/skadi/<S33>/<S33W065>.hgt.gz`. `sol-build.js` NO se sirve; es de referencia (como el `.gs`).
 
+## Realidad aumentada: límites en el campo (`openAR`)
+- FAB cámara en el mapa → `openAR()`: pantalla completa con la **cámara en vivo** y las **líneas de los límites** de las parcelas cercanas (≤220 m) dibujadas encima (canvas), ancladas por GPS + brújula + inclinación. **Sin número de parcela** (pedido del usuario).
+- Cámara: `getUserMedia({facingMode:environment})`. Orientación: `deviceorientation` (iOS pide permiso en el toque). Proyección pinhole (tan) con `AR_FOVY`; rumbo=webkitCompassHeading (+ ajuste manual `arTune`), pitch=beta-90; roll ignorado (asume portrait). Altura de vértices y del ojo desde el DEM (`solElevAt`, usa `window.SOLAR`).
+- Es **guía visual**, NO survey-grade (GPS ±3–10 m, brújula ±5–15°). Slider "Ajustar rumbo" para corregir el norte a ojo.
+
 ## Marcas y KML (privado por dispositivo)
 - Puntos/líneas/rutas y KML importado se guardan en `localStorage` (`pv_marcas_v1`) — **solo en el teléfono de cada uno**, no compartido.
 
