@@ -86,24 +86,45 @@ button{font-family:inherit;cursor:pointer}
   .fav-pill{padding:7px 8px;font-size:12px;gap:4px}
   .fav-pill svg{width:14px;height:14px}
 }
-@media(max-width:352px){ .brand .wm{display:none} }
+@media(max-width:370px){ .brand .wm{display:none} }   /* con la campanita no entra el texto del logo */
 
 /* ---------- Panel "Mis favoritos" / "Mis notas" ---------- */
-#misModal{display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
-#misModal.show{display:flex}
-#misModal .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
-#misModal h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
-#misModal .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
-#misModal .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
-#misModal .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
-#misModal .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
-#misModal .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
-#misModal .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
-#misModal .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
-#misModal .mdel{position:absolute;top:5px;right:3px}
-#misModal .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
-#misModal .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
-#misModal .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
+:is(#misModal,#novModal){display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
+:is(#misModal,#novModal).show{display:flex}
+:is(#misModal,#novModal) .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+:is(#misModal,#novModal) h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
+:is(#misModal,#novModal) .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+:is(#misModal,#novModal) .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
+:is(#misModal,#novModal) .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+:is(#misModal,#novModal) .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+:is(#misModal,#novModal) .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
+:is(#misModal,#novModal) .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
+:is(#misModal,#novModal) .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
+:is(#misModal,#novModal) .mdel{position:absolute;top:5px;right:3px}
+:is(#misModal,#novModal) .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
+:is(#misModal,#novModal) .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
+:is(#misModal,#novModal) .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
+/* ---------- Novedades: campanita y panel ---------- */
+.topbar .nov-btn{position:relative;color:var(--forest)}
+.nov-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+  background:var(--terra);color:#fff;font-size:10.5px;font-weight:800;line-height:1;
+  display:flex;align-items:center;justify-content:center;border:2px solid var(--cream)}
+.nov-badge[hidden]{display:none}
+#novModal .nov-grp{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:2px 2px 8px}
+#novModal .nov-grp:not(:first-child){margin-top:16px}
+#novModal .nov-tag{display:inline-block;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:999px}
+#novModal .nt-nueva{background:var(--leaf-soft);color:var(--forest)}
+#novModal .nt-bajo{background:#dcefe2;color:#2e7a4b}
+#novModal .nt-subio{background:var(--terra-soft);color:var(--terra)}
+#novModal .nt-res{background:#f6e7c6;color:#86560f}
+#novModal .nt-baja{background:#ece6da;color:#7d7566}
+#novModal .nov-item .mn{margin-top:5px}
+#novModal .nov-meta{font-size:12.5px;color:var(--muted);margin-top:1px}
+#novModal .nov-precio{font-size:14px;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums}
+#novModal .nov-precio s{color:var(--muted);margin-right:4px}
+#novModal .nov-precio b{color:var(--forest)}
+#novModal .nov-unread{border-color:var(--gold);box-shadow:inset 3px 0 0 var(--gold)}
+#novModal .nov-off{cursor:default}
 
 /* ---------- Mode toggle ---------- */
 .modebar{position:relative;z-index:1150;background:var(--cream);padding:9px 14px 0;display:flex;justify-content:center}
@@ -254,6 +275,24 @@ body.listmode .lv-tolist{display:none}
   .comu-chip{width:100%;justify-content:flex-start}
   .comu-list{flex:1;padding-top:2px}
 }
+.dest{flex:0 0 auto;margin:2px 0 4px}
+.dest-hd{display:flex;align-items:flex-end;justify-content:space-between;padding:8px 2px 10px}
+.dest-hd h3{margin:0;font-size:21px;font-weight:800;color:var(--forest);letter-spacing:.3px}
+.dest-hd span{display:block;margin-top:3px;padding-left:7px;border-left:3px solid var(--gold);font-size:11px;font-weight:800;letter-spacing:3px;color:var(--muted);text-transform:uppercase}
+.dest-all{background:none;border:0;border-bottom:2px solid var(--ink);padding:0 0 2px;font-size:12.5px;font-weight:800;color:var(--ink);cursor:pointer}
+.dest-wrap{position:relative}
+.dest-track{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.dest-track::-webkit-scrollbar{display:none}
+.dest-card{position:relative;flex:0 0 80%;max-width:330px;aspect-ratio:5/6;border-radius:20px;overflow:hidden;scroll-snap-align:start;cursor:pointer;background:linear-gradient(135deg,#5f8256,#9caf6a);box-shadow:var(--shadow-sm)}
+.dest-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dest-ov{position:absolute;left:0;right:0;bottom:0;padding:48px 16px 16px;background:linear-gradient(to top,rgba(20,18,12,.88),rgba(20,18,12,0));color:#fff}
+.dest-tag{font-size:10.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.dest-ov h4{margin:4px 0 3px;font-size:23px;font-weight:800;line-height:1.1}
+.dest-pr{font-size:14px;font-weight:700;opacity:.92}
+.dest-ov h4.cap{text-transform:capitalize}
+.dest-vid{position:absolute;top:12px;left:12px;padding:5px 10px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:700}
+.dest-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.92);color:var(--ink);font-size:24px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer}
+.dest-arr.l{left:6px}.dest-arr.r{right:6px}
 .comu-seccat{font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--terra);padding:8px 2px 0}
 .comu-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;box-shadow:var(--shadow-sm);display:flex;align-items:stretch}
 .comu-thumb{flex:0 0 116px;align-self:stretch;min-height:112px;display:flex;align-items:center;justify-content:center;overflow:hidden}
@@ -399,6 +438,10 @@ body.listmode .lv-tolist{display:none}
 .amen2.off{color:#b8af9d;text-decoration:line-through}
 .amen2.off svg{color:#d3cbba;text-decoration:none}
 .fichadet{margin-top:14px}
+.vidwrap{position:relative;width:100%;max-width:420px;margin:0 auto;border-radius:14px;overflow:hidden;background:#f0e8da;aspect-ratio:16/9}
+.vidwrap.ig{aspect-ratio:auto;height:min(640px,calc(100vw * 1.45 + 60px))}
+.vidwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vidlink{display:block;text-align:center;margin:8px 0 2px;font-size:13px;font-weight:700;color:var(--forest);text-decoration:none}
 .fichadet summary{cursor:pointer;font-weight:700;color:var(--forest);font-size:14px;padding:13px 15px;list-style:none;display:flex;align-items:center;justify-content:space-between;background:#edf3e9;border:1.5px solid #d3e1cb;border-radius:13px;transition:background .15s}
 .fichadet summary:active{background:#e3ecdd}
 .fichadet[open] summary{border-radius:13px 13px 0 0;border-bottom-color:transparent}
@@ -671,6 +714,10 @@ body.listmode .lv-tolist{display:none}
     </svg>
     <span class="wm">pueblo vivo</span>
   </div>
+  <button class="tb-btn nov-btn" id="novBtn" title="Novedades" aria-label="Novedades">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    <span class="nov-badge" id="novBadge" hidden>0</span>
+  </button>
   <button class="tb-btn" id="btnAdmin" title="Panel inmobiliaria">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 4 13.4H4a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 5.6 6.6l-.1-.1A2 2 0 1 1 8.3 3.7l.1.1A1.6 1.6 0 0 0 10 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8z"/></svg>
   </button>
@@ -726,6 +773,7 @@ body.listmode .lv-tolist{display:none}
     <button data-mk="linea">〰️ Línea</button>
     <button id="btnRuta">⏺ Grabar ruta</button>
     <button id="btnKml">📂 Abrir KML</button>
+    <button id="btnKmz">⬇️ Bajar KMZ</button>
     <button id="mkFinish" style="display:none">✓ Terminar</button>
   </div>
   <input id="mkFile" type="file" accept="image/*" capture="environment" style="display:none">
@@ -779,6 +827,12 @@ body.listmode .lv-tolist{display:none}
   <p class="msub" id="misSub"></p>
   <div class="mlist" id="misList"></div>
   <button class="mclose" id="misClose">Cerrar</button>
+</div></div>
+<div id="novModal"><div class="card">
+  <h3>Novedades</h3>
+  <p class="msub" id="novSub"></p>
+  <div class="mlist" id="novList"></div>
+  <button class="mclose" id="novClose">Cerrar</button>
 </div></div>
 <div id="lightbox">
   <button class="lbclose" id="lbClose">✕</button>
@@ -869,7 +923,7 @@ function saveAdmin(){try{localStorage.setItem(AKEY,JSON.stringify(ADMIN));}catch
 function info(id){
   let o=Object.assign({},DATA[id]);
   const L=linkByNum[numById[id]];
-  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;}
+  if(L){o.fromSheet=true;o.listingKey=L.key;o.op=L.op||'venta';o.inmueble=L.inmueble;o.legalidad=L.legalidad;o.tipo=L.tipo;o.nota=L.nota;o.otros=L.otros;o.mtCub=L.mtCub;o.semicub=L.semicub;o.mtTerreno=L.mtTerreno;o.carac=L.carac;o.formaPago=L.formaPago;o.valorPromo=L.valorPromo;o.expensas=L.expensas;o.casa=L.casa;o.alsoAlq=L.alsoAlq;o.alsoVenta=L.alsoVenta;o.alqPrice=L.alqPrice;o.casas=L.casas;o.locales=L.locales;if(L.fotos&&L.fotos.length)o.fotos=L.fotos.slice();o.valorRaw=L.valorRaw;o.sheetMapaN=L.mapaN;if(L.valor!=null)o.total=L.valor;o.estado=(L.nota&&/PAUSAD/i.test(L.nota))?'reservado':'libre';o.orden=L.orden;o.ordAlq=L.ordAlq;o.video=L.video;o.destacada=L.destacada;}
   const A=ADMIN[id];
   const cov=COV[numById[id]];                       // cambios del dueño (precio + fotos + ocultas)
   // ocultar (admin hideFotos + dueño hidden) y agregar (admin addFotos + dueño fotos), aplicado a las fotos que se muestran
@@ -971,14 +1025,14 @@ function openBarrio(name){
   const vP=venta.map(x=>x.inf.total).filter(Boolean), aP=alq.map(x=>x.inf.alqPrice).filter(Boolean);
   const rng=arr=>!arr.length?'':(Math.min(...arr)===Math.max(...arr)?'USD '+money(arr[0]):'USD '+money(Math.min(...arr))+'–'+money(Math.max(...arr)));
   const mapNumOf=id=>PARCELAS.features.find(f=>f.properties.id==id).properties.mapNum;
-  const row=(x,op)=>{const inf=x.inf;const nom=inf.inmueble||('Parcela '+mapNumOf(x.id));const pr=op==='v'?(inf.total?'USD '+money(inf.total):'Consultar'):(inf.alqPrice?'USD '+money(inf.alqPrice)+'/noche':'Consultar');return `<div class="brow" data-ol="${x.id}"><span class="bnm">${esc(nom)}</span><span class="bpr">${pr}</span></div>`;};
+  const row=(x,op)=>{const inf=x.inf;const nom=inf.inmueble||('Parcela '+mapNumOf(x.id));const pr=op==='v'?(inf.total?'USD '+money(inf.total):'Consultar'):precioNoche(inf.alqPrice);return `<div class="brow" data-ol="${x.id}"><span class="bnm">${esc(nom)}</span><span class="bpr">${pr}</span></div>`;};
   const det=BARRIOS_INFO[barrioKey(name)];
   const detHtml=(det&&det.length)?`<div class="sec-t">${ic('pin')} Sobre el barrio</div><div class="ficha">${det.map(([l,v])=>`<div class="frow2"><span class="fl">${esc(l)}</span><span class="fv">${esc(v)}</span></div>`).join('')}</div>`:'';
   scroll.innerHTML=`<div class="sh-head"><div class="sh-title"><span class="barrio">Barrio</span><h2>${esc(name)}</h2></div></div>
     <div class="bstats"><div class="bstat"><b>${ids.length}</b><span>parcelas</span></div><div class="bstat"><b>${venta.length}</b><span>en venta</span></div><div class="bstat"><b>${alq.length}</b><span>en alquiler</span></div></div>
     ${detHtml}
     ${venta.length?`<div class="sec-t">${ic('pin')} En venta${rng(vP)?' · '+rng(vP):''}</div>${venta.map(x=>row(x,'v')).join('')}`:''}
-    ${alq.length?`<div class="sec-t">${ic('home')} En alquiler${aP.length?' · desde USD '+money(Math.min(...aP))+'/noche':''}</div>${alq.map(x=>row(x,'a')).join('')}`:''}
+    ${alq.length?`<div class="sec-t">${ic('home')} En alquiler${aP.length?' · desde '+enPesos(Math.min(...aP))+'/noche':''}</div>${alq.map(x=>row(x,'a')).join('')}`:''}
     ${(!venta.length&&!alq.length)?'<p class="empty-c">Todavía no hay propiedades cargadas en este barrio.</p>':''}
     <p class="disclaimer">Tocá una propiedad para ver su ficha.</p>`;
   scroll.querySelectorAll('[data-ol]').forEach(el=>el.onclick=()=>openSheet(+el.dataset.ol));
@@ -1148,11 +1202,12 @@ function renderListView(){
   const cardCls=id=>{const u=uget(id);return 'lot-card'+(u.fav?' is-fav':(u.seen?' is-seen':''));};   // me gusta manda sobre visto
   const seenTag=id=>uget(id).seen?'<span class="lot-tag t-seen">'+ICON.eye+'Visto</span>':'';
   const favBtn=id=>'<button class="lot-fav'+(uget(id).fav?' on':'')+'" data-fav="'+id+'" title="Me gusta"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.8-10-9.3C.4 8.3 2 5 5.2 5c2 0 3.3 1.1 4 2.2C9.8 6.1 11.2 5 13.2 5 16.4 5 18 8.3 16 11.7 13.5 16.2 12 21 12 21z"/></svg></button>';
-  list.innerHTML=items.map(it=>{ const {inf,p}=it;
+  const dest=anyLFilt(isAlojar)?[]:(isAlojar?destAlq():destVenta());
+  list.innerHTML=destHtml(dest,isAlojar?'Para alojarte':(ventaTipo==='terreno'?'Terrenos en venta':'Casas en venta'))+items.map(it=>{ const {inf,p}=it;
     if(isAlojar){
       const hab=casaField(inf,'cantidad de habitaciones'),ban=casaField(inf,'cantidad de ba');
       const facts=[it.cap&&(it.cap+' huésp.'),hab&&(hab+' hab.'),ban&&(ban+' baño'+(ban==='1'?'':'s'))].filter(Boolean).join(' · ')||'Casa en alquiler';
-      return '<div class="'+cardCls(it.id)+'" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler'+seenTag(it.id)+'</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">USD '+(it.price?money(it.price):'—')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
+      return '<div class="'+cardCls(it.id)+'" data-id="'+it.id+'">'+favBtn(it.id)+lotThumb(inf,true)+'<div class="lot-cb"><span class="barrio">'+esc(p.barrio||'Umepay')+' · Alquiler'+seenTag(it.id)+'</span><h3>'+esc(inf.inmueble||'Casa')+'</h3><div class="lot-facts">'+facts+'</div><div class="lot-price">'+(it.price?enPesos(it.price):'Consultar')+' <small>/noche</small></div><button class="lot-mapbtn" data-map="'+it.id+'">Ver en el mapa</button></div></div>';
     }
     const ppm=inf.total&&it.sup?Math.round(inf.total/it.sup):null;
     const facts=[money(it.sup)+' m²',conCasa(inf)?'Con casa':'Terreno',(inf.tipo&&!/terreno/i.test(inf.tipo))?esc(inf.tipo):null].filter(Boolean).join(' · ');
@@ -1164,6 +1219,7 @@ function renderListView(){
     const card=b.closest('.lot-card'); if(card)card.className=cardCls(id);   // repinta la tarjeta
     estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');});
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
+  wireDest(list,dest,d=>openSheet(d.id));
 }
 function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.maxSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
 function renderLvFilters(isAlojar){
@@ -1172,7 +1228,7 @@ function renderLvFilters(isAlojar){
   let html='';
   if(isAlojar){
     const d=stayDates();
-    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30,50,80,120,200].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+v+'/noche')).join('')+'</select>';
+    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30,50,80,120,200].map(v=>opt(v,LFILT.maxPrice,'Hasta '+enPesos(v)+'/noche')).join('')+'</select>';
     html+='<select id="lfCap"><option value="0">Personas: todas</option>'+[2,3,4,5,6].map(v=>opt(v,LFILT.minCap,v+'+ personas')).join('')+'</select>';
     html+='<select id="lfHab"><option value="0">Habitaciones: todas</option>'+[1,2,3].map(v=>opt(v,LFILT.minHab,v+'+ hab.')).join('')+'</select>';
     html+='<button class="lvchip'+(d?' on':'')+'" id="lfDates">'+ic('cal')+(d?(fmtShort(d[0])+' → '+fmtShort(d[1])):'Fechas')+'</button>';
@@ -1275,6 +1331,24 @@ function amIcon(k){const M={
  tv:'<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>'
 };return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(M[k]||'')+'</svg>';}
 const AMEN2=[['wifi','wifi','WiFi'],['cocina equipada','cocina','Cocina'],['agua caliente','agua','Agua caliente'],['calefacci','calef','Calefacción'],['estufa le','estufa','Estufa a leña'],['heladera','heladera','Heladera'],['parrilla','parrilla','Parrilla / quincho'],['galer','deck','Galería / deck'],['estacionamiento','parking','Estacionamiento'],['lavarropas','lava','Lavarropas'],['tv','tv','TV']];
+/* ===== Video de la propiedad (fila "Video Instagram" de la planilla) =====
+   Se ve adentro de la ficha, sin salir de la app. Acepta links de Instagram
+   (reel / post) y, por las dudas, de YouTube. Si el link no es de ninguno de
+   los dos, queda solo el botón para abrirlo. */
+function videoEmbed(url){
+  const u=String(url||'').trim(); let m;
+  if((m=u.match(/instagram\.com\/(?:[\w.]+\/)?(reels?|p|tv)\/([\w-]+)/i))) return 'https://www.instagram.com/'+(m[1].toLowerCase()==='p'?'p':'reel')+'/'+m[2]+'/embed/';
+  if((m=u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{6,})/i))) return 'https://www.youtube-nocookie.com/embed/'+m[1];
+  return null;
+}
+function videoBlock(url){
+  if(!url||!/^https?:\/\//i.test(String(url).trim()))return '';
+  const src=videoEmbed(url), ig=/instagram/i.test(url), yt=/youtu/i.test(url);
+  const donde=ig?'Instagram':(yt?'YouTube':'el navegador');
+  return `<div class="sec-t">${ic('camera')} Video</div>
+    ${src?`<div class="vidwrap${ig?' ig':''}"><iframe src="${esc(src)}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen scrolling="no" title="Video de la propiedad"></iframe></div>`:''}
+    <a class="vidlink" href="${esc(String(url).trim())}" target="_blank" rel="noopener">Abrir en ${donde} ›</a>`;
+}
 function fichaBlock(inf){
   const casas=inf.casas||[]; if(!casas.length)return '';
   let sel=casaSel; if(sel>=casas.length)sel=0;
@@ -1285,7 +1359,8 @@ function fichaBlock(inf){
   const tipo=gf('tipo de propiedad'), hue=gf('capacidad'), hab=gf('cantidad de habitaciones'), ban=gf('cantidad de ba');
   const facts=[hue&&(hue+' huéspedes'),hab&&(hab+' hab.'),ban&&(ban+' baño'+(ban.trim()==='1'?'':'s'))].filter(Boolean).join('  ·  ');
   const amHtml=AMEN2.map(a=>`<div class="amen2 ${has(a[0])?'':'off'}">${amIcon(a[1])}<span>${a[2]}</span></div>`).join('');
-  const precio=(c.pb||c.pa)?`<div class="fichaprice">${c.pb?('Temp. baja: <b>USD '+esc(String(c.pb))+'</b>/noche'):''}${(c.pb&&c.pa)?' · ':''}${c.pa?('alta: <b>USD '+esc(String(c.pa))+'</b>/noche'):''}</div>`:'';
+  const nPes=x=>enPesos(parseInt(String(x).replace(/\D/g,''),10)||0);
+  const precio=(c.pb||c.pa)?`<div class="fichaprice">${c.pb?('Temp. baja: <b>'+nPes(c.pb)+'</b>/noche'):''}${(c.pb&&c.pa)?' · ':''}${c.pa?((c.pb?'alta: ':'Temp. alta: ')+'<b>'+nPes(c.pa)+'</b>/noche'):''}</div>`:'';
   const secs={},order=[]; c.f.forEach(([s,l,v])=>{if(/cerca de|tipo de propiedad/i.test(l))return;if(!secs[s]){secs[s]=[];order.push(s);}secs[s].push([l,v]);});
   const body=order.map(s=>`<div class="fsec">${esc(s)}</div>`+secs[s].map(([l,v])=>`<div class="frow2"><span class="fl">${esc(l)}</span><span class="fv">${esc(v)}</span></div>`).join('')).join('');
   return `${tabs}<div class="fichanom">${esc(c.n)}${tipo?` · <span style="font-weight:400;font-size:14px;color:#6b6152">${esc(tipo)}</span>`:''}</div>${facts?`<div class="alojfacts">${facts}</div>`:''}${precio}
@@ -1304,6 +1379,18 @@ function capturePhotos(){
   (window.LOTES_REALES||[]).forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length&&!PHOTOS_BY_NAME[c.n])PHOTOS_BY_NAME[c.n]=c.fotos;});});
   REALES.forEach(r=>{(r.casas||[]).forEach(c=>{if(c.fotos&&c.fotos.length)PHOTOS_BY_NAME[c.n]=c.fotos;});});
 }
+/* ===== Los alquileres se muestran en pesos =====
+   El precio se sigue cargando en dólares por noche (en la planilla y en el editor
+   del dueño), pero al público se le muestra en pesos. La cotización sale de la
+   propia planilla de Alquiler: una fila cuya pregunta diga "Cotización dólar".
+   Si esa fila no está, se usa este valor. Cambiarla en la planilla re-precia todo
+   sin tocar la app. */
+let DOLAR_ALQ=1550;
+/* Redondeo SIEMPRE para arriba, al mil siguiente: el precio que se publica nunca
+   queda por debajo del valor real y además se lee redondo (109.000, no 108.500). */
+function pesosNum(usd){ return Math.ceil((+usd||0)*DOLAR_ALQ/1000)*1000; }
+function enPesos(usd){ return '$'+money(pesosNum(usd)); }
+function precioNoche(usd){ return usd ? enPesos(usd)+'/noche' : 'Consultar'; }
 async function syncRentSheet(){
   try{
     const url='https://docs.google.com/spreadsheets/d/'+RENT_SHEET_ID+'/export?format=csv&gid='+RENT_GID;
@@ -1312,23 +1399,36 @@ async function syncRentSheet(){
     const names=R[2].slice(2), houses=names.map((n,i)=>({name:(n||'').trim(),col:i+2,f:[]}));
     const SKIP=['Lote','Barrio','Link carpeta de fotos (Drive)']; let sec='';
     R.forEach((row,ri)=>{if(ri<3)return;const s0=(row[0]||'').trim();if(s0)sec=s0;const q=(row[1]||'').trim();if(!q)return;
+      // Fila global (no es un dato de cada casa): la cotización del dólar
+      if(/cotizaci[oó]n|d[oó]lar/i.test(q)){
+        const v=row.slice(2).map(x=>(x||'').replace(/\D/g,'')).find(x=>x);
+        if(v) DOLAR_ALQ=parseInt(v,10)||DOLAR_ALQ;
+        return;
+      }
       houses.forEach(h=>{const v=(row[h.col]||'').trim();
         if(q==='Lote')h.lote=v?parseInt(v):null;
         else if(/precio.*noche.*baja/i.test(q))h.pb=v||null;   // "Precio por noche (baja)" o "(temporada baja)"
         else if(/precio.*noche.*alta/i.test(q))h.pa=v||null;
+        else if(/destacad/i.test(q))h.dest=destMarca(v);   // fila "Destacada": va al carrusel de Alojarte
+        else if(/pausad/i.test(q)){ if(destMarca(v))h.paus=true; }   // fila "Pausada": la casa no sale en la app
+        else if(/^estado$/i.test(q)){ if(/pausad/i.test(v))h.paus=true; }
+        else if(/video|instagram|reel|youtu/i.test(q))h.video=v||null;   // "Video Instagram": se ve dentro de la ficha
         else if(SKIP.indexOf(q)<0&&!/link|clave|due[ñn]o/i.test(q)&&v&&v!=='x'&&v!=='o')h.f.push([sec,q,v]);});});  // ocultar link/clave del dueño
     // Reflejar la planilla 100%: preservo las fotos por nombre de casa, borro los alquileres viejos y reconstruyo.
     // Así, si Santiago le saca el N° de lote a una casa en la planilla, esa casa DESAPARECE de la app.
     capturePhotos();
     REALES=REALES.filter(r=>!(r.op==='alquiler'&&r.valor==null));      // saca alquileres puros de planilla
     REALES.forEach(r=>{delete r.casas;delete r.alsoAlq;delete r.alqPrice;}); // limpia el overlay de alquiler de las ventas
-    const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
+    const byLote={};houses.forEach(h=>{if(h.lote==null||!h.name||h.paus)return;(byLote[h.lote]=byLote[h.lote]||[]).push(h);});
     Object.keys(byLote).forEach(k=>{const lote=+k,hs=byLote[k];let r=REALES.find(x=>x.loteNum===lote);
-      const price=hs[0].pb?parseInt(String(hs[0].pb).replace(/\D/g,'')):null;
-      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f}));
+      /* La planilla hoy sólo trae "Precio por noche (alta)". Si no hay valor de
+         temporada baja uso el de alta, si no las casas quedan sin precio. */
+      const praw=hs[0].pb||hs[0].pa;
+      const price=praw?parseInt(String(praw).replace(/\D/g,'')):null;
+      const casas=hs.map(h=>({n:h.name,pb:h.pb||null,pa:h.pa||null,fotos:(PHOTOS_BY_NAME[h.name]&&PHOTOS_BY_NAME[h.name].length)?PHOTOS_BY_NAME[h.name]:(CASA_FOTOS[h.name]||[]),f:h.f,video:h.video||null,dest:h.dest||false}));
       if(r){r.casas=casas;r.ordAlq=hs[0].col;if(r.valor!=null)r.alsoAlq=true;else r.op='alquiler';if(price)r.alqPrice=price;}
       else REALES.push({key:'al-'+lote,barrio:'',inmueble:hs.length>1?hs.map(h=>h.name).join(' / '):hs[0].name,tipo:'casa',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,otros:null,valor:null,valorRaw:null,nota:null,loteNum:lote,op:'alquiler',casas,alqPrice:price,ordAlq:hs[0].col});});
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render();
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); RENT_OK=true;
   }catch(e){console.warn('syncRentSheet',e);}
 }
 /* ===== VENTA: la hoja "En venta" (transpuesta) es la fuente de verdad de la solapa Comprar ===== */
@@ -1344,6 +1444,10 @@ async function syncVentaSheet(){
           rLegal=rowBy('legalidad'), rTer=rowBy('superficie de terreno'), rCub=rowBy('superficie cubierta'),
           rSemi=rowBy('superficie semicubierta'), rValor=rowBy('valor (usd'), rCarac=rowBy('caracteristica'),
           rPago=rowBy('forma de pago'), rPromo=rowBy('valor promocional'), rExp=rowBy('expensas');
+    const rVideo=R.find(r=>/video|instagram|reel|youtu/.test(norm(r[0])))||[];   // fila "Video Instagram"
+    const rDest=R.find(r=>/destacad/.test(norm(r[0])))||[];   // fila "Destacada": van al carrusel de Comprar
+    // fila "Pausada" (con una x) o "Estado" que diga "pausada": sigue en la planilla pero no sale en la app
+    const rPaus=R.find(r=>/pausad/.test(norm(r[0])))||[], rEst=R.find(r=>/^estado/.test(norm(r[0]).trim()))||[];
     const nCols=rProp.length; if(nCols<2)return;               // hoja vacía/rota: no toco nada
     const g=(row,j)=>((row&&row[j])||'').trim();
     capturePhotos();                                            // preservo fotos de casas antes de tocar REALES
@@ -1352,6 +1456,7 @@ async function syncVentaSheet(){
     for(let j=1;j<nCols;j++){
       const b=g(rBarrio,j); if(b)barrio=b;
       const name=g(rProp,j); if(!name)continue;
+      if(destMarca(g(rPaus,j))||/pausad/i.test(g(rEst,j)))continue;   // pausada
       const tipo=g(rTipo,j);
       const loteS=g(rLote,j).replace(/[^\d]/g,''); if(!loteS)continue; // sin N° de lote: no se puede enlazar
       const lote=+loteS, valorRaw=g(rValor,j), valor=valorRaw?parseInt(valorRaw.replace(/[^\d]/g,'')):null;
@@ -1362,7 +1467,7 @@ async function syncVentaSheet(){
       REALES.push({key:'v-'+lote,barrio,inmueble:name,tipo:tipo||null,mapaN:null,legalidad:g(rLegal,j)||null,
         mtTerreno:g(rTer,j)||null,mtCub:g(rCub,j)||null,semicub:g(rSemi,j)||null,carac:g(rCarac,j)||null,
         formaPago:g(rPago,j)||null,valorPromo:g(rPromo,j)||null,expensas:g(rExp,j)||null,otros:null,nota:null,
-        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j});
+        valor,valorRaw:valorRaw||null,loteNum:lote,op:'venta',orden:j,video:g(rVideo,j)||null,destacada:!!g(rDest,j)&&!/^(no|0|-)$/i.test(g(rDest,j))});
     }
     Object.keys(localesByLote).forEach(k=>{const lote=+k,locs=localesByLote[k];
       const precios=locs.map(l=>l.valor).filter(v=>v!=null), min=precios.length?Math.min(...precios):null;
@@ -1370,7 +1475,7 @@ async function syncVentaSheet(){
       if(r){ r.locales=locs; }
       else REALES.push({key:'loc-'+lote,barrio:locs[0].barrio||'',inmueble:'Locales comerciales',tipo:'Locales comerciales',mapaN:null,legalidad:null,mtTerreno:null,mtCub:null,semicub:null,carac:null,formaPago:null,valorPromo:null,expensas:null,otros:null,nota:null,valor:min,valorRaw:(min!=null?String(min):null),loteNum:lote,op:'venta',locales:locs,orden:9000+lote});
     });
-    buildLinks();renderFilters();applyFilter();if(openId!=null)render();
+    buildLinks();renderFilters();applyFilter();if(openId!=null)render(); VENTA_OK=true;
   }catch(e){console.warn('syncVentaSheet',e);}
 }
 /* ===== Info de los Puntos de interés (hoja "Puntos de Interes", transpuesta) ===== */
@@ -1570,7 +1675,7 @@ async function syncComunidadSheet(){
     // desconocida (ej. "Link emprendedor") NUNCA se lee → no aparece en la app.
     const H=(R[0]||[]).map(h=>(h||'').trim().toLowerCase());
     const findCol=(...ns)=>{ for(const n of ns){const i=H.findIndex(h=>h===n);if(i>=0)return i;} for(const n of ns){const i=H.findIndex(h=>h.indexOf(n)>=0);if(i>=0)return i;} return -1; };
-    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive');
+    const cT=findCol('tipo'),cN=findCol('nombre'),cD=findCol('descripcion','descripción','desc'),cTel=findCol('telefono','teléfono','whatsapp','tel'),cIg=findCol('instagram','ig'),cMail=findCol('mail','correo','email'),cF=findCol('fotos','foto','drive'), cDest=findCol('destacad');
     // Columna ID (match EXACTO, para no confundirla con "Ciudad"/"Medida"/etc). Es la identidad fija
     // del emprendimiento: el link ?emp= y su clave cuelgan de acá, así renombrar la tarjeta NO rompe el link.
     const cId=H.findIndex(h=>h==='id'||h==='id emprendedor'||h==='codigo'||h==='código');
@@ -1581,13 +1686,84 @@ async function syncComunidadSheet(){
       const nom=G(r,cN); if(!nom||/^nombre$/i.test(nom))continue;
       const fotos=G(r,cF), imgs=COMU_FOTOS[comuFolderId(fotos)]||[];
       const slug=comuSlug(nom);   // identidad por NOMBRE (links auto con =EMPLINK(B2); renombrar cambia el link)
-      out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length});
+      out.push({cat:cat||'LOCAL',nombre:nom,slug:slug,desc:G(r,cD),tel:G(r,cTel),ig:G(r,cIg),mail:G(r,cMail),fotos:fotos,imgs:imgs,img:imgs[0]||null,ord:out.length,dest:destMarca(G(r,cDest))});
     }
     COMUNIDAD=out;
     if(MODE==='comunidad')renderComu();
   }catch(e){console.warn('syncComunidadSheet',e);}
 }
 function comuCatLabel(cat){ return (COMU_CATS[cat]||{}).label || (cat?cat.charAt(0)+cat.slice(1).toLowerCase():cat); }
+/* ===== Destacados: un carrusel arriba de cada sección =====
+   Comunidad → emprendimientos, Alojarte → alquileres, Comprar → ventas (casa o terreno).
+   Van las marcadas en la columna/fila "Destacada" de su hoja; si no marcaron ninguna,
+   se eligen solas. Máximo DEST_MAX por sección. Sin foto no entra. */
+const DEST_MAX=6;
+const destOrd=(k)=>(a,b)=>(a.inf[k]==null?1e9:a.inf[k])-(b.inf[k]==null?1e9:b.inf[k]);
+const destMarca=v=>!!v&&!/^(no|0|-)$/i.test(String(v).trim());
+function destVenta(){
+  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue;
+    if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue;
+    const foto=lotFirstPhoto(inf); if(foto)out.push({id:+id,inf,foto}); }
+  out.sort(destOrd('orden'));
+  // sin marcadas: primero las que tienen video, una por video (un loteo entero comparte reel)
+  const marc=out.filter(x=>x.inf.destacada), vistos=new Set();
+  const conVid=out.filter(x=>x.inf.video&&!vistos.has(x.inf.video)&&vistos.add(x.inf.video));
+  const l=marc.length?marc:conVid.concat(out.filter(x=>!x.inf.video));
+  return l.slice(0,DEST_MAX).map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    return {id,foto,video:inf.video,tag:(conCasa(inf)?'Casa':'Terreno')+(p.barrio?' · '+p.barrio:''),
+      nombre:inf.inmueble||('Parcela '+p.mapNum),linea:inf.total?'USD '+money(inf.total):'Consultar precio'}; });
+}
+function destAlq(){
+  const out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue;
+    const foto=lotFirstPhoto(inf); if(foto)out.push({id:+id,inf,foto}); }
+  out.sort(destOrd('ordAlq'));
+  const marc=out.filter(x=>(x.inf.casas||[]).some(c=>c.dest));
+  const conVid=out.filter(x=>(x.inf.casas||[]).some(c=>c.video));
+  const l=marc.length?marc:conVid.concat(out.filter(x=>conVid.indexOf(x)<0));
+  return l.slice(0,DEST_MAX).map(({id,inf,foto})=>{ const p=PARCELAS.features.find(x=>x.properties.id==id).properties;
+    const cs=(inf.casas||[])[0]||{}, cap=casaField(inf,'capacidad');
+    return {id,foto,video:cs.video,tag:'Alojamiento'+(p.barrio?' · '+p.barrio:''),nombre:inf.inmueble||cs.n||'Casa',
+      linea:(inf.alqPrice?enPesos(inf.alqPrice)+' /noche':'Consultar precio')+(cap?' · '+cap+' huésp.':'')}; });
+}
+let destComuMezcla=null;   // sin marcadas, se eligen al azar una vez por visita (que roten entre todos)
+function destComu(){
+  const con=COMUNIDAD.map(x=>({x,e:comuEff(x)})).filter(o=>o.e.img);
+  let l=con.filter(o=>o.x.dest);
+  if(!l.length){
+    if(!destComuMezcla){ destComuMezcla={}; con.forEach(o=>destComuMezcla[o.x.slug]=Math.random()); }
+    l=con.slice().sort((a,b)=>(destComuMezcla[a.x.slug]||1)-(destComuMezcla[b.x.slug]||1));
+  }
+  return l.slice(0,DEST_MAX).map(({x,e})=>({comu:x,foto:e.img,tag:comuCatLabel(x.cat),nombre:x.nombre.toLowerCase(),
+    linea:e.desc?(e.desc.length>60?e.desc.slice(0,58).trim()+'…':e.desc):'',cap:true}));
+}
+function destHtml(items,sub){
+  if(!items.length)return '';
+  const cards=items.map((d,i)=>'<div class="dest-card" data-di="'+i+'"><img loading="lazy" src="'+driveSrc(d.foto)+'" alt="" onerror="this.remove()">'+
+    (d.video?'<span class="dest-vid">▶ Video</span>':'')+
+    '<div class="dest-ov"><span class="dest-tag">— '+esc(d.tag)+'</span><h4'+(d.cap?' class="cap"':'')+'>'+esc(d.nombre)+'</h4>'+(d.linea?'<div class="dest-pr">'+esc(d.linea)+'</div>':'')+'</div></div>').join('');
+  return '<div class="dest"><div class="dest-hd"><div><h3>Destacados</h3><span>'+esc(sub)+'</span></div></div>'+
+    '<div class="dest-wrap"><button class="dest-arr l" aria-label="Anterior">‹</button><div class="dest-track">'+cards+'</div><button class="dest-arr r" aria-label="Siguiente">›</button></div></div>';
+}
+let destTimer=null, destPausa=0;
+function wireDest(root,items,pick){
+  clearInterval(destTimer);
+  const tr=root.querySelector('.dest-track'); if(!tr)return;
+  const paso=()=>{ const c=tr.querySelector('.dest-card'); return c?c.offsetWidth+12:300; };
+  const ir=d=>{ const fin=tr.scrollLeft+tr.clientWidth>=tr.scrollWidth-4;
+    if(d>0&&fin) tr.scrollTo({left:0,behavior:'smooth'});
+    else if(d<0&&tr.scrollLeft<=4) tr.scrollTo({left:tr.scrollWidth,behavior:'smooth'});
+    else tr.scrollBy({left:d*paso(),behavior:'smooth'}); };
+  root.querySelector('.dest-arr.l').onclick=()=>{destPausa=Date.now();ir(-1);};
+  root.querySelector('.dest-arr.r').onclick=()=>{destPausa=Date.now();ir(1);};
+  // si la persona lo está moviendo con el dedo, no lo paso solo por un rato
+  ['touchstart','pointerdown','wheel'].forEach(ev=>tr.addEventListener(ev,()=>{destPausa=Date.now();},{passive:true}));
+  tr.querySelectorAll('[data-di]').forEach(el=>el.onclick=()=>pick(items[+el.dataset.di]));
+  destTimer=setInterval(()=>{
+    if(!document.body.contains(tr)){clearInterval(destTimer);return;}
+    if(!tr.offsetParent||document.hidden||Date.now()-destPausa<8000||sheet.classList.contains('open'))return;
+    ir(1);
+  },4500);
+}
 function renderComu(){
   if(!document.getElementById('comuView'))return;
   // solo los tipos que hay en el sheet, en el orden en que aparecen en la planilla (como los acomode Santiago)
@@ -1604,6 +1780,8 @@ function renderComu(){
   const list=document.getElementById('comuList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No encontramos nada con eso. Probá otra palabra o categoría.</div>';return;}
   let html='',lastCat=null;
+  const dest=(comuCat==='TODOS'&&!comuQ)?destComu():[];
+  html+=destHtml(dest,'De la comunidad');
   items.forEach((x,i)=>{
     if(comuCat==='TODOS'&&x.cat!==lastCat){lastCat=x.cat;html+='<div class="comu-seccat">'+esc(comuCatLabel(x.cat))+'</div>';}
     const e=comuEff(x),wa=comuWA(e.tel),ig=e.igUrl,web=e.webUrl,cc=(COMU_CATS[x.cat]||{}).c||'#b5532a';
@@ -1611,6 +1789,7 @@ function renderComu(){
   });
   list.innerHTML=html;
   const shown=items.slice();
+  wireDest(list,dest,d=>openComu(d.comu));
   list.querySelectorAll('.comu-card').forEach(el=>el.onclick=e=>{if(e.target.closest('a'))return;openComu(shown[+el.dataset.i]);});
 }
 function openComu(x){
@@ -1671,7 +1850,7 @@ function initDispLink(){
 }
 
 /* ===== Editor del dueño: precio + fotos + disponibilidad (con su clave) ===== */
-async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
+async function loadCasaOverride(){ if(!sb)return; try{ const {data,error}=await sb.from('casa_override').select('lote,data'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=r.data||{}; }); COV=m; COV_OK=true; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadCasaOverride',e);} }
 function guardarCasa(lote,clave,data,cb){
   if(!sb){toast('Sin conexión');return;}
   sb.rpc('set_casa',{p_lote:Number(lote),p_clave:String(clave),p_data:data}).then(function(res){
@@ -1767,6 +1946,7 @@ function openCasaEditor(lote,clave){
       '<p class="comu-desc">Editá el precio, las fotos y las fechas ocupadas de tu casa. Los cambios se ven al instante en la app.</p>'+
       '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
       '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
+      '<p class="comu-desc" style="margin-top:6px">Cargalo en dólares. A la gente se le muestra en pesos'+(precioVal?': hoy tu casa figura en <b>'+enPesos(precioVal)+'</b> por noche':'')+'.</p>'+
       '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · ◀ ▶ ordenar)</small></div>'+
       (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. Usá ◀ ▶ para cambiar el orden.</span></p>':'')+
       '<div class="gallery">'+gal.map((g,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3">'+
@@ -1854,6 +2034,11 @@ function renderLote(id){
     ? cercaSheet.split(/[\/,]/).map(s=>s.trim()).filter(Boolean).map(x=>`<div class="nb"><div class="ico">${featIcon('leaf')}</div><div class="nm">${esc(x)}</div></div>`).join('')
     : (inf.dist||[]).sort((a,b)=>a.m-b.m).map(d=>`<div class="nb"><div class="ico">${featIcon(d.icon==='tea'?'leaf':'drop')}</div><div class="nm">${d.name}<small>${d.desc}</small></div><div class="d">${fmtDist(d.m)}</div></div>`).join('');
   const comments=u.comments.length?u.comments.map((c,ci)=>`<div class="comment"><div class="meta"><span>Vos</span><span class="cr">${c.when}<button class="cdel" data-cdel="${ci}" title="Eliminar nota">✕</button></span></div><p>${esc(c.txt)}</p></div>`).join(''):`<p class="empty-c">Anotá lo que viste, qué te gustó, qué consultar…</p>`;
+  // Video: en alquiler el de la casa elegida; en venta el de la propiedad
+  let vid='';
+  if(linked){ const cs=(inf.casas&&inf.casas.length)?inf.casas[Math.min(casaSel,inf.casas.length-1)]:null;
+    const enAlq=isDual(inf)?(MODE==='alojar'):alq;
+    vid=enAlq?((cs&&cs.video)||inf.video):(inf.video||(cs&&cs.video)); }
   const title=inf.inmueble||('Parcela '+p.mapNum);
   const sub=inf.inmueble?`${p.barrio} · Parcela ${p.mapNum}`:`${p.barrio} · Parcela ${p.mapNum}`;
   let body='';
@@ -1861,7 +2046,10 @@ function renderLote(id){
     const ppm=inf.total&&sup?Math.round(inf.total/sup):'';
     const showAlq = isDual(inf) ? (MODE==='alojar') : (opOf(inf)==='alquiler');
     const shownP=showAlq?inf.alqPrice:inf.total;
-    body=`<div class="priceblock"><span class="price"><span class="cur">USD</span>${shownP?money(shownP):'—'}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
+    /* En alquiler el precio va en pesos; en venta sigue en dólares */
+    const curLbl=showAlq?'$':'USD';
+    const valLbl=shownP?(showAlq?money(pesosNum(shownP)):money(shownP)):'—';
+    body=`<div class="priceblock"><span class="price"><span class="cur">${curLbl}</span>${valLbl}${showAlq?'<span class="per"> /noche</span>':''}</span>${(!showAlq&&ppm)?`<span class="permeter">≈ USD ${ppm}/m²</span>`:''}</div>
     ${showAlq?'':planillaBox(inf)}
     ${(!showAlq&&inf.locales&&inf.locales.length)?localesBlock(inf):''}
     <div class="stats">
@@ -1870,7 +2058,7 @@ function renderLote(id){
       <div class="stat"><div class="lab">Operación</div><div class="val" style="font-size:14px">${isDual(inf)?'Venta y alquiler':(showAlq?'Alquiler':'Venta')}</div></div></div>
     ${isDual(inf)?(showAlq
       ? `<div class="notlisted alt" style="margin-top:10px">${ic('pin')}<span>También está <b>en venta</b>${inf.total?` · USD ${money(inf.total)}`:''}.</span><button class="gotobtn" data-goto="comprar">Ver info de venta ›</button></div>`
-      : `<div class="notlisted alt" style="margin-top:10px">${ic('pin')}<span>También se <b>alquila</b>${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}.</span><button class="gotobtn" data-goto="alojar">Ver info de alojamiento ›</button></div>`):''}
+      : `<div class="notlisted alt" style="margin-top:10px">${ic('pin')}<span>También se <b>alquila</b>${inf.alqPrice?` · ${enPesos(inf.alqPrice)}/noche`:''}.</span><button class="gotobtn" data-goto="alojar">Ver info de alojamiento ›</button></div>`):''}
     ${showAlq?fichaBlock(inf)+availabilityBlock(inf):''}
     ${(showAlq&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('pencil')} Editar casa (precio · fotos · fechas)</button></div>`:''}`;
   }else{
@@ -1889,6 +2077,7 @@ function renderLote(id){
   <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
     <button class="sh-mapbtn" id="btnVerMapa">${ic('pin')} Ver en el mapa</button>
     <span class="statusbadge st-${stKey}"><span class="sw"></span>${stL}</span></div>`+body+`
+  ${videoBlock(vid)}
   <div class="sec-t">${ic('pin')} Cerca de</div><div class="nearby">${nearby||'<p class="empty-c">Sin referencias.</p>'}</div>
   <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${galHtml}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
@@ -1939,7 +2128,7 @@ function renderCasa(id){
   scroll.innerHTML=`
   <div class="sh-head"><div class="sh-title"><span class="barrio">${p.barrio} · Alojamiento</span><h2>Casa ${p.num!=null?p.num:('#'+id)}</h2></div>
     <span class="statusbadge st-${avail?'disp':'ocup'}"><span class="sw"></span>${avail?'Disponible':'Ocupada hoy'}</span></div>
-  <div class="priceblock"><span class="price"><span class="cur">USD</span>${rt.nightly}<span class="per"> /noche</span></span><span class="permeter">hasta ${rt.cap} personas</span></div>
+  <div class="priceblock"><span class="price"><span class="cur">$</span>${money(pesosNum(rt.nightly))}<span class="per"> /noche</span></span><span class="permeter">hasta ${rt.cap} personas</span></div>
   <div class="sec-t">${ic('camera')} Fotos</div>
   <div class="gallery">${offF}${userF}<button class="addphoto" id="addPhoto">${ic('plus')}<span>Subir<br>mi foto</span></button></div>
   <input type="file" id="fileIn" accept="image/*" capture="environment" style="display:none">
@@ -1991,7 +2180,7 @@ function adminBox(id,inf,p){
     <div class="field"><label>Estado</label><select id="adEstado">${opt(['libre','reservado','vendido'],inf.estado)}</select></div>
     <div class="field"><label>Operación</label><select id="adOp">${opt2(inf)}</select></div>
     <div class="field"><label>Precio venta (USD)</label><input id="adPrecio" type="number" value="${inf.total||''}"></div>
-    <div class="field"><label>Precio alquiler (USD/noche)</label><input id="adAlq" type="number" value="${inf.alqPrice||''}" placeholder="ej: 70"></div>
+    <div class="field"><label>Precio alquiler (USD/noche)</label><input id="adAlq" type="number" value="${inf.alqPrice||''}" placeholder="ej: 70"><small style="color:var(--muted)">Se carga en dólares y se muestra en pesos (dólar a ${money(DOLAR_ALQ)}).</small></div>
     <div class="field"><label>Orientación</label><select id="adOrient">${opt(ORIENT,inf.orient)}</select></div>
     <div class="field"><label>Legalidad</label><input id="adLegal" value="${esc(inf.legalidad||'')}" placeholder="escritura directa, condominio…"></div>
     <div class="field"><label>Tipo</label><input id="adTipo" value="${esc(inf.tipo||'terreno')}"></div>
@@ -2247,7 +2436,7 @@ function updateRouteBadge(){} // (recorrido de favoritos removido)
 function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   let txt;
   if(isAlq(inf)){const d=stayDates();const nom=inf.inmueble||('Casa '+p.mapNum);
-    txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · USD ${money(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
+    txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · ${enPesos(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
   else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 // Link para compartir una propiedad puntual (abre la app directo en su ficha, en el mismo contexto)
@@ -2258,7 +2447,7 @@ function shareLink(id){
   const esAlq = isDual(inf) ? (MODE==='alojar') : (opOf(inf)==='alquiler');
   const modo = esAlq?'alquiler':'venta';
   const nom=inf.inmueble||('Parcela '+p.mapNum);
-  const precio=esAlq?(inf.alqPrice?('USD '+money(inf.alqPrice)+'/noche'):''):(inf.total?('USD '+money(inf.total)):'');
+  const precio=esAlq?(inf.alqPrice?(enPesos(inf.alqPrice)+'/noche'):''):(inf.total?('USD '+money(inf.total)):'');
   const etiqueta=esAlq?'En alquiler':'En venta';
   const url=propLink(id,modo);
   const titulo='Pueblo Vivo · '+nom;
@@ -2282,7 +2471,7 @@ function openShared(raw,modo){
   openSheet(id);
 }
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
-  const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\nUSD ${inf.rental.nightly}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
+  const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\n${enPesos(inf.rental.nightly)}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const supP=supOf(p,inf), ppmP=inf.total&&supP?Math.round(inf.total/supP):inf.usd;
@@ -2451,6 +2640,76 @@ async function importarKML(file){ if(!file)return; let text; const nm=(file.name
   toast(nuevos.length+' elemento(s) importados ✓'); }
 document.getElementById('btnKml').onclick=()=>document.getElementById('kmlFile').click();
 document.getElementById('kmlFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';importarKML(f);};
+/* Bajar mis marcas como KMZ (puntos, líneas, rutas y polígonos; las fotos van adentro del archivo) */
+const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+/* ZIP sin comprimir (método store): alcanza para KMZ y no depende de ninguna librería */
+function zipStore(files){ const enc=new TextEncoder(),parts=[],cen=[]; let off=0,n=0;
+  files.forEach(f=>{ const nb=enc.encode(f.name),data=f.data,crc=crc32(data),sz=data.length;
+    const lh=new Uint8Array(30+nb.length),dl=new DataView(lh.buffer);
+    dl.setUint32(0,0x04034b50,true);dl.setUint16(4,20,true);dl.setUint16(6,0x0800,true);dl.setUint16(8,0,true);
+    dl.setUint16(10,0,true);dl.setUint16(12,0x21,true);dl.setUint32(14,crc,true);dl.setUint32(18,sz,true);dl.setUint32(22,sz,true);
+    dl.setUint16(26,nb.length,true);dl.setUint16(28,0,true);lh.set(nb,30);
+    parts.push(lh,data);
+    const ch=new Uint8Array(46+nb.length),dc=new DataView(ch.buffer);
+    dc.setUint32(0,0x02014b50,true);dc.setUint16(4,20,true);dc.setUint16(6,20,true);dc.setUint16(8,0x0800,true);dc.setUint16(10,0,true);
+    dc.setUint16(12,0,true);dc.setUint16(14,0x21,true);dc.setUint32(16,crc,true);dc.setUint32(20,sz,true);dc.setUint32(24,sz,true);
+    dc.setUint16(28,nb.length,true);dc.setUint32(42,off,true);ch.set(nb,46);
+    cen.push(ch); off+=lh.length+sz; n++; });
+  let cs=0; cen.forEach(c=>cs+=c.length);
+  const eo=new Uint8Array(22),de=new DataView(eo.buffer);
+  de.setUint32(0,0x06054b50,true);de.setUint16(8,n,true);de.setUint16(10,n,true);de.setUint32(12,cs,true);de.setUint32(16,off,true);
+  return new Blob(parts.concat(cen,[eo]),{type:'application/vnd.google-earth.kmz'}); }
+function dataUrlBytes(u){ const i=u.indexOf(','); const b=atob(u.slice(i+1)); const a=new Uint8Array(b.length); for(let j=0;j<b.length;j++)a[j]=b.charCodeAt(j); return a; }
+function kmlEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function kmlCo(cs){ return cs.map(c=>c[1].toFixed(7)+','+c[0].toFixed(7)+',0').join(' '); }
+function marcasKmz(){
+  if(!marcas.length){ toast('Todavía no marcaste nada'); return null; }
+  const files=[], g={p:[],l:[],ruta:[],poly:[]}; let nf=0;
+  marcas.forEach((m,i)=>{
+    const et=m.t==='p'?'Punto':m.t==='l'?'Línea':m.t==='ruta'?'Ruta':'Polígono';
+    const nom=kmlEsc(m.n||(et+' '+(i+1)));
+    let geo='',desc='',st='#pvLinea';
+    if(m.t==='p'){ st='#pvPunto';
+      geo='<Point><coordinates>'+kmlCo(m.c)+'</coordinates></Point>';
+      if(m.foto&&/^data:image/.test(m.foto)){ try{ nf++; const fn='files/foto-'+nf+'.jpg';
+        files.push({name:fn,data:dataUrlBytes(m.foto)});
+        desc='<description><![CDATA[<img src="'+fn+'" width="500"/>]]></description>'; }catch(e){} }
+    } else if(m.t==='poly'){ st='#pvPoly';
+      const c=m.c.slice(), a=c[0], b=c[c.length-1];
+      if(a[0]!==b[0]||a[1]!==b[1]) c.push(a);
+      geo='<Polygon><tessellate>1</tessellate><outerBoundaryIs><LinearRing><coordinates>'+kmlCo(c)+'</coordinates></LinearRing></outerBoundaryIs></Polygon>';
+    } else { st=m.t==='ruta'?'#pvRuta':'#pvLinea';
+      geo='<LineString><tessellate>1</tessellate><coordinates>'+kmlCo(m.c)+'</coordinates></LineString>'; }
+    g[m.t==='p'?'p':m.t==='poly'?'poly':m.t==='ruta'?'ruta':'l'].push('<Placemark><name>'+nom+'</name>'+desc+'<styleUrl>'+st+'</styleUrl>'+geo+'</Placemark>');
+  });
+  const carp=(t,arr)=>arr.length?'<Folder><name>'+t+' ('+arr.length+')</name><open>1</open>'+arr.join('')+'</Folder>':'';
+  const kml='<?xml version="1.0" encoding="UTF-8"?>\n'+
+    '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Mis marcas · Pueblo Vivo</name><open>1</open>'+
+    '<Style id="pvPunto"><IconStyle><color>ff2a53b5</color><scale>1.1</scale></IconStyle><LabelStyle><scale>.9</scale></LabelStyle></Style>'+
+    '<Style id="pvLinea"><LineStyle><color>ff2a53b5</color><width>4</width></LineStyle></Style>'+
+    '<Style id="pvRuta"><LineStyle><color>ffe67b2f</color><width>4</width></LineStyle></Style>'+
+    '<Style id="pvPoly"><LineStyle><color>ff1e4a7a</color><width>2</width></LineStyle><PolyStyle><color>593f9acf</color></PolyStyle></Style>'+
+    carp('Puntos',g.p)+carp('Líneas',g.l)+carp('Rutas',g.ruta)+carp('Polígonos',g.poly)+
+    '</Document></kml>';
+  files.unshift({name:'doc.kml',data:new TextEncoder().encode(kml)});
+  return zipStore(files);
+}
+function bajarKmz(){
+  const blob=marcasKmz(); if(!blob)return;
+  const d=new Date(), p=n=>(n<10?'0':'')+n;
+  const nombre='marcas-pueblo-vivo-'+d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'.kmz';
+  // En iPhone conviene la hoja de compartir: deja mandarlo a Archivos, Google Earth, mail o WhatsApp
+  try{ const f=new File([blob],nombre,{type:'application/vnd.google-earth.kmz'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
+      navigator.share({files:[f],title:'Mis marcas · Pueblo Vivo'}).catch(()=>{}); return; }
+  }catch(e){}
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=nombre; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); },1500);
+  toast('Bajando '+nombre);
+}
+document.getElementById('btnKmz').onclick=bajarKmz;
 /* Grabar ruta: va guardando una línea mientras te movés (GPS) */
 function distM(a,b){const R=6371000,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180,la1=a[0]*Math.PI/180,la2=b[0]*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 const btnRuta=document.getElementById('btnRuta');
@@ -2702,7 +2961,7 @@ function loteLabel(id){
   let precio='Sin publicación';                  // la planilla manda: sin listing no hay precio
   if(inf.fromSheet){
     if(isVenta(inf)&&inf.total)precio='USD '+money(inf.total);
-    else if(inf.alqPrice)precio='USD '+money(inf.alqPrice)+' por noche';
+    else if(inf.alqPrice)precio=enPesos(inf.alqPrice)+' por noche';
     else precio='Consultar precio';
   }
   return {barrio:p.barrio||'Umepay',nombre:nombre,precio:precio};
@@ -2711,6 +2970,114 @@ function misFavs(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(ST
 function misVistos(){const o=[];for(const id in STATE){if(!DATA[id])continue;if(STATE[id]&&STATE[id].seen)o.push(+id);}return o;}
 function misNotas(){const o=[];for(const id in STATE){if(!DATA[id])continue;const c=STATE[id]&&STATE[id].comments;if(c&&c.length)o.push(+id);}return o;}
 function contarNotas(){return misNotas().reduce((s,id)=>s+STATE[id].comments.length,0);}
+/* ===== Novedades: avisar lo que cambió desde la última visita =====
+   Todo pasa en ESTE teléfono, sin servidor: guardo una foto de lo publicado (qué
+   propiedades hay, a qué precio y en qué estado) y la próxima vez que se abre la app
+   la comparo con lo que trae la planilla. Los precios se comparan en DÓLARES, así que
+   si cambia la cotización no se avisa nada: solo cuando cambia el precio de verdad. */
+var NOV_SNAP='pv_nov_snap_v1', NOV_FEED='pv_nov_feed_v1';
+var VENTA_OK=false, RENT_OK=false, COV_OK=false;   // se prenden cuando cada carga terminó bien
+function novLeer(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)||'null'); return v==null?def:v; }catch(e){ return def; } }
+function novGuardar(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+/* Foto de lo publicado: una entrada por propiedad y por operación (venta / alquiler) */
+function novFoto(){
+  const barrioDe={}; (PARCELAS.features||[]).forEach(f=>{ barrioDe[f.properties.id]=f.properties.barrio||''; });
+  const out={};
+  for(const id in DATA){
+    const inf=info(+id); if(!inf.fromSheet) continue;
+    const base={n:inf.inmueble||('Lote en '+(barrioDe[id]||'Umepay')), b:barrioDe[id]||'', e:inf.estado||'libre'};
+    if(isVenta(inf)) out[id+':v']=Object.assign({p:inf.total||null},base);
+    if(isAlq(inf))   out[id+':a']=Object.assign({p:inf.alqPrice||null},base);
+  }
+  return out;
+}
+var NOV_ORDEN={nueva:0,disponible:1,bajo:2,conprecio:3,subio:4,reservada:5,baja:6};
+function novDetectar(){
+  // Si alguna carga falló (sin señal, planilla caída), no comparo: mejor no avisar que avisar mal
+  if(!(VENTA_OK&&RENT_OK&&COV_OK)) return;
+  const ahora=Date.now(), actual=novFoto(), prev=novLeer(NOV_SNAP,null), nuevos=[];
+  if(prev&&prev.items){
+    const antes=prev.items;
+    const vivosAntes=Object.keys(antes).filter(k=>!antes[k].gone);
+    const desaparecen=vivosAntes.filter(k=>!actual[k]);
+    // Freno de seguridad: si de golpe "desaparece" mucho, es la planilla a medio cargar o a
+    // medio editar. No aviso ni guardo nada; la próxima vez que se abra se vuelve a comparar.
+    if(desaparecen.length>3 && desaparecen.length>vivosAntes.length*0.4) return;
+    const ev=(k,tipo,c,extra)=>nuevos.push(Object.assign(
+      {k,id:+k.split(':')[0],op:k.split(':')[1],tipo,n:c.n,b:c.b,p:c.p,t:ahora,desde:prev.t,leida:false},extra||{}));
+    for(const k in actual){
+      const c=actual[k], a=antes[k];
+      if(!a){ ev(k,'nueva',c); continue; }
+      if(a.gone){ ev(k,'disponible',c); continue; }                 // la habían sacado y volvió
+      if(a.e!=='reservado'&&c.e==='reservado') ev(k,'reservada',c);
+      else if(a.e==='reservado'&&c.e!=='reservado') ev(k,'disponible',c);
+      if(a.p&&c.p&&a.p!==c.p) ev(k,c.p<a.p?'bajo':'subio',c,{antes:a.p});
+      else if(!a.p&&c.p) ev(k,'conprecio',c);                        // estaba en "Consultar"
+    }
+    desaparecen.forEach(k=>ev(k,'baja',antes[k]));
+  }
+  // Foto nueva = lo publicado hoy + lo que se sacó (180 días), para poder avisar si vuelve
+  const items=Object.assign({},actual);
+  if(prev&&prev.items){
+    for(const k in prev.items){
+      if(items[k]) continue;
+      const a=prev.items[k], gt=a.gone?a.gt:ahora;
+      if(ahora-gt<180*864e5) items[k]=Object.assign({},a,{gone:true,gt});
+    }
+  }
+  novGuardar(NOV_SNAP,{t:ahora,items});
+  nuevos.sort((x,y)=>(NOV_ORDEN[x.tipo]||0)-(NOV_ORDEN[y.tipo]||0));
+  const feed=nuevos.concat(novLeer(NOV_FEED,[])).filter(x=>ahora-x.t<60*864e5).slice(0,40);
+  novGuardar(NOV_FEED,feed);
+  novBadge();
+  if(nuevos.length) toast(nuevos.length===1?'Hay 1 novedad desde tu última visita':'Hay '+nuevos.length+' novedades desde tu última visita');
+}
+function novBadge(){
+  const b=document.getElementById('novBadge'); if(!b) return;
+  const n=novLeer(NOV_FEED,[]).filter(x=>!x.leida).length;
+  b.textContent=n>9?'9+':String(n); b.hidden=!n;
+}
+function novFecha(ts){ const d=new Date(ts), M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']; return d.getDate()+' '+M[d.getMonth()]; }
+function novPrecio(op,p){ if(!p) return 'Consultar'; return op==='a' ? enPesos(p)+'/noche' : 'USD '+money(p); }
+var NOV_TIPO={
+  nueva:['Nueva','nt-nueva'], disponible:['Otra vez disponible','nt-nueva'],
+  bajo:['Bajó de precio','nt-bajo'], conprecio:['Ya tiene precio','nt-bajo'], subio:['Subió de precio','nt-subio'],
+  reservada:['Reservada','nt-res'], baja:['Ya no está disponible','nt-baja']
+};
+function openNovedades(){
+  const m=document.getElementById('novModal'); if(!m) return;
+  const feed=novLeer(NOV_FEED,[]), list=document.getElementById('novList');
+  document.getElementById('novSub').textContent=feed.length?'Lo que cambió en las propiedades publicadas':'';
+  if(!feed.length){
+    list.innerHTML='<div class="mempty">Todavía no hay novedades.<br>Cuando se publique una propiedad nueva o cambie un precio, te lo contamos acá.</div>';
+  }else{
+    // Agrupo por visita: cada grupo son los cambios que encontramos al abrir la app ese día
+    const grupos=[];
+    feed.forEach(x=>{ let g=grupos.find(g=>g.t===x.t); if(!g){ g={t:x.t,desde:x.desde,items:[]}; grupos.push(g); } g.items.push(x); });
+    list.innerHTML=grupos.map(g=>
+      '<div class="nov-grp">Desde tu visita del '+novFecha(g.desde)+'</div>'+
+      g.items.map(x=>{
+        const T=NOV_TIPO[x.tipo]||['Cambio','nt-nueva'], clic=x.tipo!=='baja';
+        const precio=(x.tipo==='bajo'||x.tipo==='subio')
+          ? '<s>'+novPrecio(x.op,x.antes)+'</s> <b>'+novPrecio(x.op,x.p)+'</b>'
+          : (x.tipo==='baja' ? '' : '<b>'+novPrecio(x.op,x.p)+'</b>');
+        return '<div class="mitem nov-item'+(x.leida?'':' nov-unread')+(clic?'':' nov-off')+'"'+(clic?' data-nov="'+x.id+':'+x.op+'"':'')+'>'+
+          '<span class="nov-tag '+T[1]+'">'+T[0]+'</span>'+
+          '<div class="mn">'+esc(x.n)+'</div>'+
+          '<div class="nov-meta">'+(x.op==='a'?'En alquiler':'En venta')+(x.b?' · '+esc(x.b):'')+'</div>'+
+          (precio?'<div class="nov-precio">'+precio+'</div>':'')+
+        '</div>';
+      }).join('')
+    ).join('');
+    list.querySelectorAll('[data-nov]').forEach(el=>el.onclick=()=>{
+      const pr=el.dataset.nov.split(':'); m.classList.remove('show');
+      openShared(+pr[0], pr[1]==='a'?'alquiler':'venta');
+    });
+  }
+  m.classList.add('show');
+  // Al abrir el panel, todo queda leído (el resaltado se ve igual esta vez)
+  if(feed.some(x=>!x.leida)){ feed.forEach(x=>x.leida=true); novGuardar(NOV_FEED,feed); novBadge(); }
+}
 function updateTopCounts(){
   const f=document.getElementById('favCount'),n=document.getElementById('notesCount'),s=document.getElementById('seenCount');
   if(f)f.textContent=misFavs().length;
@@ -2757,11 +3124,17 @@ document.getElementById('misModal').onclick=e=>{if(e.target.id==='misModal')e.cu
 
 buildLinks();renderFilters();renderLegend();applyFilter();refreshLabels();updateRouteBadge();updateTopCounts();
 if(sb){ sbInitAuth(); loadShared(); }
-loadDisp(); loadCasaOverride(); loadComuOverride(); initDispLink();
+loadDisp(); var _pCov=loadCasaOverride(); loadComuOverride(); initDispLink();
 initVisitorGate();
 const _verParams=(()=>{try{const p=new URLSearchParams(location.search);return {id:p.get('ver'),modo:p.get('modo')};}catch(e){return {id:null,modo:null};}})();
 const _verId=_verParams.id;
-syncVentaSheet().then(syncRentSheet).then(()=>{ if(_verId!=null)try{openShared(_verId,_verParams.modo);}catch(e){} });
+var _pPlanillas=syncVentaSheet().then(syncRentSheet);
+_pPlanillas.then(()=>{ if(_verId!=null)try{openShared(_verId,_verParams.modo);}catch(e){} });
+Promise.all([_pPlanillas,_pCov]).then(()=>{ try{ novDetectar(); }catch(e){ console.warn('novedades',e); } });
+document.getElementById('novBtn').onclick=openNovedades;
+document.getElementById('novClose').onclick=()=>document.getElementById('novModal').classList.remove('show');
+document.getElementById('novModal').onclick=e=>{ if(e.target.id==='novModal') e.target.classList.remove('show'); };
+novBadge();
 syncBarrioSheet();syncPoiSheet();syncComunidadSheet();
 try{map.fitBounds(L.featureGroup(Object.values(layers)).getBounds(),{padding:[30,30]});}catch(e){}
 if(!esLinkEditor()&&_verId==null)setMode('comunidad');   // la app abre en Comunidad (los links de editor / ?ver= fijan su propio modo)
