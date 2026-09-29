@@ -89,21 +89,21 @@ button{font-family:inherit;cursor:pointer}
 @media(max-width:370px){ .brand .wm{display:none} }   /* con la campanita no entra el texto del logo */
 
 /* ---------- Panel "Mis favoritos" / "Mis notas" ---------- */
-:is(#misModal,#novModal){display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
-:is(#misModal,#novModal).show{display:flex}
-:is(#misModal,#novModal) .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
-:is(#misModal,#novModal) h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
-:is(#misModal,#novModal) .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
-:is(#misModal,#novModal) .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
-:is(#misModal,#novModal) .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
-:is(#misModal,#novModal) .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
-:is(#misModal,#novModal) .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
-:is(#misModal,#novModal) .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
-:is(#misModal,#novModal) .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
-:is(#misModal,#novModal) .mdel{position:absolute;top:5px;right:3px}
-:is(#misModal,#novModal) .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
-:is(#misModal,#novModal) .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
-:is(#misModal,#novModal) .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
+:is(#misModal,#novModal,#kmlModal){display:none;position:fixed;inset:0;z-index:1850;background:rgba(28,26,21,.5);align-items:center;justify-content:center;padding:18px}
+:is(#misModal,#novModal,#kmlModal).show{display:flex}
+:is(#misModal,#novModal,#kmlModal) .card{background:var(--cream);border-radius:18px;padding:18px;max-width:430px;width:100%;max-height:82vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+:is(#misModal,#novModal,#kmlModal) h3{font-family:'Fraunces',serif;color:var(--forest);font-size:19px;margin-bottom:2px}
+:is(#misModal,#novModal,#kmlModal) .msub{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+:is(#misModal,#novModal,#kmlModal) .mlist{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;margin:0 -2px;padding:0 2px}
+:is(#misModal,#novModal,#kmlModal) .mitem{background:#fff;border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin-bottom:9px;cursor:pointer}
+:is(#misModal,#novModal,#kmlModal) .mitem .mb{font-size:10.5px;color:var(--terra);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+:is(#misModal,#novModal,#kmlModal) .mitem .mn{font-family:'Fraunces',serif;font-weight:700;font-size:16px;color:var(--ink);margin-top:1px}
+:is(#misModal,#novModal,#kmlModal) .mitem .mp{font-size:14px;color:var(--forest);font-weight:800;margin-top:2px}
+:is(#misModal,#novModal,#kmlModal) .mnote{position:relative;background:#fbf7ef;border-left:3px solid var(--gold);border-radius:8px;padding:7px 26px 7px 9px;margin-top:7px;font-size:13px;color:#5a5347;line-height:1.35}
+:is(#misModal,#novModal,#kmlModal) .mdel{position:absolute;top:5px;right:3px}
+:is(#misModal,#novModal,#kmlModal) .mnote small{display:block;font-size:10.5px;color:#9a9183;margin-top:3px}
+:is(#misModal,#novModal,#kmlModal) .mempty{text-align:center;color:var(--muted);font-size:13.5px;padding:28px 12px;line-height:1.45}
+:is(#misModal,#novModal,#kmlModal) .mclose{margin-top:12px;border:1.5px solid #d9d0bf;background:#fff;color:var(--ink);border-radius:12px;padding:11px;font-weight:700;font-size:15px;width:100%;cursor:pointer}
 /* ---------- Novedades: campanita y panel ---------- */
 .topbar .nov-btn{position:relative;color:var(--forest)}
 .nov-badge{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;
@@ -799,6 +799,7 @@ body.listmode .lv-tolist{display:none}
     <button data-mk="linea">〰️ Línea</button>
     <button id="btnRuta">⏺ Grabar ruta</button>
     <button id="btnKml">📂 Abrir KML</button>
+    <button id="btnKmlDel">🗑️ Borrar KML</button>
     <button id="btnKmz">⬇️ Bajar KMZ</button>
     <button id="mkFinish" style="display:none">✓ Terminar</button>
   </div>
@@ -866,6 +867,12 @@ body.listmode .lv-tolist{display:none}
   <p class="msub" id="novSub"></p>
   <div class="mlist" id="novList"></div>
   <button class="mclose" id="novClose">Cerrar</button>
+</div></div>
+<div id="kmlModal"><div class="card">
+  <h3>KML importados</h3>
+  <p class="msub">Estos son los archivos que subiste al mapa. Se guardan solo en este dispositivo. Tocá "Borrar" para sacar uno entero.</p>
+  <div class="mlist" id="kmlList"></div>
+  <button class="mclose" id="kmlClose">Cerrar</button>
 </div></div>
 <div id="lightbox">
   <button class="lbclose" id="lbClose">✕</button>
@@ -2657,11 +2664,26 @@ async function importarKML(file){ if(!file)return; let text; const nm=(file.name
   if(!text){ toast('No pude leer el archivo (probá con .kml)'); return; }
   const nuevos=parseKML(text);
   if(!nuevos.length){ toast('No encontré puntos, líneas ni polígonos en el archivo'); return; }
+  const kg='k'+Date.now(), kn=(file.name||'KML').replace(/\.(kml|kmz)$/i,'');   // agrupo el KML para poder borrarlo entero
+  nuevos.forEach(m=>{ m.kg=kg; m.kn=kn; });
   marcas=marcas.concat(nuevos); saveMarcas(); drawMarcas();
   try{ LISTON=false; if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar'); const pts=[]; nuevos.forEach(m=>m.c.forEach(c=>pts.push(c))); if(pts.length)setTimeout(()=>{try{map.fitBounds(L.latLngBounds(pts),{padding:[40,40]});}catch(e){}},120); }catch(e){}
   toast(nuevos.length+' elemento(s) importados ✓'); }
 document.getElementById('btnKml').onclick=()=>document.getElementById('kmlFile').click();
 document.getElementById('kmlFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';importarKML(f);};
+/* Administrador de KML importados: borrar uno entero (o todos) */
+function kmlGroups(){ const g={}; marcas.forEach(m=>{ if(!m.kml)return; const id=m.kg||'legacy'; if(!g[id])g[id]={id,n:m.kn||'KML importado',count:0}; g[id].count++; }); return Object.values(g); }
+function openKmlManager(){ const gs=kmlGroups(), list=document.getElementById('kmlList');
+  if(!gs.length){ list.innerHTML='<div class="mempty">Todavía no importaste ningún KML.<br>Usá "📂 Abrir KML" para subir uno.</div>'; }
+  else{ list.innerHTML=gs.map(g=>'<div class="mitem" style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:default"><div style="min-width:0"><div class="mn">'+esc(g.n)+'</div><div style="color:var(--muted);font-weight:600;font-size:12.5px">'+g.count+' elemento'+(g.count>1?'s':'')+'</div></div><button class="kmldelbtn" data-kg="'+esc(g.id)+'" style="flex:0 0 auto;border:0;background:var(--terra);color:#fff;border-radius:10px;padding:8px 13px;font-weight:700;cursor:pointer">Borrar</button></div>').join('')
+      + (gs.length>1?'<button id="kmlDelAll" style="width:100%;margin-top:4px;background:#fff;border:1.5px solid var(--terra);color:var(--terra);border-radius:11px;padding:9px;font-weight:700;cursor:pointer">Borrar todos</button>':''); }
+  document.getElementById('kmlModal').classList.add('show');
+  list.querySelectorAll('.kmldelbtn').forEach(b=>b.onclick=()=>{ const id=b.dataset.kg, g=kmlGroups().find(x=>x.id===id); if(g&&!confirm('¿Borrar el KML «'+g.n+'» ('+g.count+' elemento'+(g.count>1?'s':'')+')?'))return; marcas=marcas.filter(m=>!(m.kml&&(m.kg||'legacy')===id)); saveMarcas(); drawMarcas(); openKmlManager(); toast('KML borrado'); });
+  const da=document.getElementById('kmlDelAll'); if(da)da.onclick=()=>{ if(!confirm('¿Borrar TODOS los KML importados?'))return; marcas=marcas.filter(m=>!m.kml); saveMarcas(); drawMarcas(); openKmlManager(); toast('KML borrados'); };
+}
+document.getElementById('btnKmlDel').onclick=openKmlManager;
+document.getElementById('kmlClose').onclick=()=>document.getElementById('kmlModal').classList.remove('show');
+document.getElementById('kmlModal').addEventListener('click',e=>{ if(e.target.id==='kmlModal')document.getElementById('kmlModal').classList.remove('show'); });
 /* Bajar mis marcas como KMZ (puntos, líneas, rutas y polígonos; las fotos van adentro del archivo) */
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
 function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_T[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
