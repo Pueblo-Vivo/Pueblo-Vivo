@@ -323,6 +323,8 @@ body.listmode .lv-tolist{display:none}
 .gallery.sorting .gwrap{touch-action:none}
 .gwrap .gdel{position:absolute;top:4px;right:4px;background:rgba(214,74,54,.95);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1;padding:0}
 .gwrap .gcover{position:absolute;top:4px;left:4px;background:var(--gold);color:#3a2806;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px}
+.gwrap .ghandle{position:absolute;left:4px;bottom:4px;width:38px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(28,26,21,.78);color:#fff;border:0;border-radius:8px;font-size:16px;line-height:1;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;letter-spacing:1px}
+.gwrap.dragging .ghandle{cursor:grabbing}
 .gwrap .gmove{position:absolute;left:4px;bottom:4px;display:flex;gap:4px}
 .gwrap .gmove button{background:rgba(28,26,21,.74);color:#fff;border:0;border-radius:6px;width:26px;height:23px;font-size:12px;line-height:1;padding:0;font-weight:800;cursor:pointer}
 .gwrap .gmove button:disabled{opacity:.28;cursor:default}
@@ -1912,10 +1914,11 @@ function openComuEditor(slug,clave){
       '<div class="sec-t">Mail</div><input id="ceMail" value="'+esc(data.mail||'')+'" placeholder="tucorreo@mail.com" style="'+inp+'">'+
       '<div class="actions" style="margin:12px 0"><button class="btn-primary" id="ceSave" style="grid-column:1/-1">Guardar cambios</button></div>'+
       '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
-      (data.fotos.length>1?'<p class="privhint" style="margin-bottom:8px"><span><b>Mantené apretada</b> una foto y <b>arrastrala</b> para cambiar el orden. La primera es la <b>portada</b>: es la que se ve en tu tarjeta.</span></p>':'')+
+      (data.fotos.length>1?'<p class="privhint" style="margin-bottom:8px"><span>Agarrá el <b>tirador ⠿</b> de una foto y <b>arrastrala</b> para cambiar el orden. La primera es la <b>portada</b>: es la que se ve en tu tarjeta.</span></p>':'')+
       '<div class="gallery" id="cmSortGal">'+data.fotos.map((u,i)=>'<div class="gwrap" data-raw="'+esc(u)+'"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+
         (i===0?'<span class="gcover">Portada</span>':'')+
         '<button class="gdel" data-delf="'+i+'">✕</button>'+
+        (data.fotos.length>1?'<div class="ghandle" title="Arrastrar para ordenar">⠿</div>':'')+
         '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">';
     document.getElementById('ceSave').onclick=()=>{ readForm(); guardarComu(slug,clave,data); };
@@ -1944,11 +1947,12 @@ function openCasaEditor(lote,clave){
       '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
       '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
       '<p class="comu-desc" style="margin-top:6px">Cargalo en dólares. A la gente se le muestra en pesos'+(precioVal?': hoy tu casa figura en <b>'+enPesos(precioVal)+'</b> por noche':'')+'.</p>'+
-      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · mantené y arrastrá para ordenar)</small></div>'+
-      (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. <b>Mantené apretada</b> una foto y <b>arrastrala</b> para cambiar el orden.</span></p>':'')+
+      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · ⠿ arrastrar para ordenar)</small></div>'+
+      (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. Agarrá el <b>tirador ⠿</b> de una foto y <b>arrastrala</b> para cambiar el orden.</span></p>':'')+
       '<div class="gallery" id="ceSortGal">'+gal.map((g,i)=>'<div class="gwrap" data-raw="'+esc(g.u)+'"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3">'+
         (i===0?'<span class="gcover">Portada</span>':'')+
         '<button class="gdel" data-del="'+i+'">✕</button>'+
+        (gal.length>1?'<div class="ghandle" title="Arrastrar para ordenar">⠿</div>':'')+
         '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       (gal.length?'':'<p class="empty-c">Sin fotos. Agregá una con el +.</p>')+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">'+
@@ -2180,10 +2184,10 @@ function adminBox(id,inf,p){
     <div class="field"><label>Características (separadas por coma)</label><input id="adFeats" value="${esc(feats)}"></div>
     <div class="field inline"><label style="margin:0">¿Tiene casa construida?</label><button class="switch ${conCasa(inf)?'on':''}" id="adCasa"></button></div>
     <div class="field"><label>Fotos del aviso</label>
-      ${(()=>{const fl=(inf.casas&&inf.casas.length?(inf.casas[0].fotos||[]):(inf.fotos||[]));return fl.length?'<div class="gallery" id="adSortGal" style="margin:0 0 8px;padding:0">'+fl.map((u,i)=>'<div class="gwrap" data-raw="'+esc(u)+'"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+(i===0?'<span class="gcover">Portada</span>':'')+'</div>').join('')+'</div>':'';})()}
+      ${(()=>{const fl=(inf.casas&&inf.casas.length?(inf.casas[0].fotos||[]):(inf.fotos||[]));return fl.length?'<div class="gallery" id="adSortGal" style="margin:0 0 8px;padding:0">'+fl.map((u,i)=>'<div class="gwrap" data-raw="'+esc(u)+'"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+(i===0?'<span class="gcover">Portada</span>':'')+(fl.length>1?'<div class="ghandle" title="Arrastrar para ordenar">⠿</div>':'')+'</div>').join('')+'</div>':'';})()}
       <button class="save" id="adAddFoto" style="background:#2b9aa0;margin:2px 0">${ic('camera')} Agregar fotos (de la galería)</button>
       <input type="file" id="adFileIn" accept="image/*" multiple style="display:none">
-      <div class="adminhint">La 1ª es la <b>portada</b> de la tarjeta. <b>Mantené apretada</b> una foto y <b>arrastrala</b> para ordenar. Para borrar una foto, tocala en la galería de arriba de la ficha.</div>
+      <div class="adminhint">La 1ª es la <b>portada</b> de la tarjeta. Agarrá el <b>tirador ⠿</b> de una foto y <b>arrastrala</b> para ordenar. Para borrar una foto, tocala en la galería de arriba de la ficha.</div>
     </div>
     ${isAlq(inf)?`<div class="field"><label>Fechas ocupadas (alquiler)</label>
       <div id="occList">${(inf.ocupado||[]).map((r,i)=>`<div class="occrow"><span>${fmtD(r.from)} – ${fmtD(r.to)}</span><button type="button" data-occ="${i}">✕</button></div>`).join('')||'<div class="adminhint">Ninguna cargada. Bloqueá las fechas que ya están alquiladas.</div>'}</div>
@@ -2880,34 +2884,34 @@ document.getElementById('btnLogout').onclick=doLogout;
 // solo se reordena el DOM; al soltar se guarda.
 function enableDragSort(gallery, commit){
   if(!gallery) return;
-  let dragEl=null, holdTimer=null, dragging=false, pid=null, sx=0, sy=0;
+  let dragEl=null, pid=null, handle=null, moved=false;
   const afterEl=x=>{ let best={o:-Infinity,el:null}; gallery.querySelectorAll('.gwrap:not(.dragging)').forEach(c=>{ const b=c.getBoundingClientRect(); const o=x-(b.left+b.width/2); if(o<0&&o>best.o)best={o,el:c}; }); return best.el; };
-  const finish=()=>{ clearTimeout(holdTimer);
-    if(dragging&&dragEl){ dragEl.classList.remove('dragging'); gallery.classList.remove('sorting'); try{dragEl.releasePointerCapture(pid);}catch(_){}
-      gallery._suppress=true; setTimeout(()=>{gallery._suppress=false;},350);
-      const orden=[...gallery.querySelectorAll('.gwrap')].map(x=>x.dataset.raw).filter(Boolean);
-      dragEl=null; dragging=false; if(commit)commit(orden); return;
-    }
-    dragEl=null; dragging=false;
-  };
+  const autoScroll=x=>{ const b=gallery.getBoundingClientRect(); if(x>b.right-40)gallery.scrollLeft+=14; else if(x<b.left+40)gallery.scrollLeft-=14; };
   gallery.querySelectorAll('.gwrap').forEach(el=>{
-    el.style.touchAction='pan-x';
-    el.addEventListener('pointerdown',e=>{ if(e.target.closest('.gdel'))return;
-      dragEl=el; pid=e.pointerId; sx=e.clientX; sy=e.clientY; dragging=false;
-      holdTimer=setTimeout(()=>{ dragging=true; el.classList.add('dragging'); gallery.classList.add('sorting'); try{el.setPointerCapture(pid);}catch(_){}; if(navigator.vibrate)try{navigator.vibrate(15);}catch(_){}; },200);
+    const h=el.querySelector('.ghandle'); if(!h)return;
+    h.style.touchAction='none';
+    h.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation();
+      dragEl=el; pid=e.pointerId; handle=h; moved=false;
+      el.classList.add('dragging'); gallery.classList.add('sorting');
+      try{h.setPointerCapture(pid);}catch(_){}
+      if(navigator.vibrate)try{navigator.vibrate(12);}catch(_){}
     });
-    el.addEventListener('pointermove',e=>{ if(!dragEl)return;
-      if(!dragging){ if(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8){ clearTimeout(holdTimer); dragEl=null; } return; }
-      e.preventDefault();
+    h.addEventListener('pointermove',e=>{ if(!dragEl)return; e.preventDefault(); moved=true;
+      autoScroll(e.clientX);
       const a=afterEl(e.clientX), addBtn=gallery.querySelector('.addphoto');
       if(a==null){ if(addBtn)gallery.insertBefore(dragEl,addBtn); else gallery.appendChild(dragEl); }
       else if(a!==dragEl){ gallery.insertBefore(dragEl,a); }
     });
-    el.addEventListener('pointerup',finish);
-    el.addEventListener('pointercancel',finish);
+    const end=()=>{ if(!dragEl)return;
+      dragEl.classList.remove('dragging'); gallery.classList.remove('sorting');
+      try{handle.releasePointerCapture(pid);}catch(_){}
+      const orden=[...gallery.querySelectorAll('.gwrap')].map(x=>x.dataset.raw).filter(Boolean);
+      const did=moved; dragEl=null; handle=null;
+      if(did&&commit)commit(orden);
+    };
+    h.addEventListener('pointerup',end);
+    h.addEventListener('pointercancel',end);
   });
-  // evita que un arrastre termine abriendo el visor de la foto
-  gallery.addEventListener('click',e=>{ if(gallery._suppress){ e.stopPropagation(); e.preventDefault(); } },true);
 }
 
 /* ============ Visor de fotos (lightbox) ============ */
