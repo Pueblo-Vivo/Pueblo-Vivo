@@ -388,6 +388,27 @@ body.listmode .lv-tolist{display:none}
 #markBar button.on{background:var(--terra);color:#fff}
 #markBar .mk-hint{font-size:11.5px;color:var(--muted);max-width:150px;line-height:1.15}
 #markBar .mk-x{background:transparent;color:var(--muted);font-weight:800;padding:6px 8px}
+/* Barra Sol y sombra */
+#solBar{display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:1200;width:min(400px,95vw);box-sizing:border-box;background:#fff;border-radius:16px;padding:11px 13px;box-shadow:0 8px 30px rgba(0,0,0,.28)}
+#solBar.show{display:block}
+#solBar .sol-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+#solBar .sol-top b{font-size:14px;color:var(--ink)}
+#solBar #solExit{border:0;background:#f0ece3;color:var(--ink);width:28px;height:28px;border-radius:50%;font-size:15px;font-weight:800;cursor:pointer}
+#solBar .sol-read{font-size:12.5px;color:var(--muted);line-height:1.45;margin-bottom:8px}
+#solBar .sol-read b{color:var(--ink)}
+#solBar .sol-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+#solBar .sol-chips button{border:0;background:#f0ece3;color:var(--ink);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
+#solBar .sol-chips button.on{background:var(--gold);color:#3a2806}
+#solBar .sol-hourrow{display:flex;align-items:center;gap:9px}
+#solBar #solPlay{border:0;background:var(--terra);color:#fff;width:34px;height:34px;border-radius:50%;font-size:14px;cursor:pointer;flex:0 0 auto}
+#solBar #solPlay.playing{background:#c0392b}
+#solBar #solHour{flex:1;accent-color:var(--gold)}
+#solBar .sol-hlbl{font-size:13px;font-weight:800;color:var(--ink);min-width:44px;text-align:right}
+#solBar .sol-now{margin-top:8px;font-size:13px;font-weight:700;text-align:center;border-radius:10px;padding:6px}
+#solBar .sol-now.sun{background:#fff4d6;color:#8a5a00}
+#solBar .sol-now.shade{background:#e3e8f2;color:#3a4a6b}
+#solBar .sol-now.night{background:#e6e6ee;color:#4a4a66}
+.sol-sunmark{font-size:26px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5));line-height:1}
 .mk-pin{width:22px;height:22px;border-radius:50% 50% 50% 0;background:var(--terra);border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
 #markBar button.rec{background:#c0392b;color:#fff}
 .mk-pop{font-size:13px;text-align:center;min-width:170px}
@@ -783,6 +804,13 @@ body.listmode .lv-tolist{display:none}
   </div>
   <input id="mkFile" type="file" accept="image/*" capture="environment" style="display:none">
   <input id="kmlFile" type="file" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" style="display:none">
+  <div id="solBar">
+    <div class="sol-top"><b id="solTitle">☀️ Sol y sombra</b><button id="solExit" title="Salir">✕</button></div>
+    <div class="sol-read" id="solRead">—</div>
+    <div class="sol-chips" id="solChips"></div>
+    <div class="sol-hourrow"><button id="solPlay" title="Reproducir el día">▶</button><input id="solHour" type="range" min="0" max="1439" step="5" value="720"><span id="solHourLbl" class="sol-hlbl">12:00</span></div>
+    <div class="sol-now" id="solNow">—</div>
+  </div>
   <div class="tray" id="tray">
     <div class="info"><span id="trayN">0</span> seleccionados<small>para comparar (máx 3)</small></div>
     <button id="trayCmp">Comparar</button>
@@ -2068,6 +2096,7 @@ function renderLote(id){
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
     </div>
+    <div class="actions" style="margin-top:10px"><button class="act full" id="btnSol" style="background:#fff4d6;color:#8a5a00">☀️ Ver sol y sombra</button></div>
     ${linked?`<div class="actions" style="margin-top:10px"><button class="act" id="btnShare">${ic('share')}Compartir</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
   scroll.innerHTML=`
   <div class="sh-head sh-head--map"><div class="sh-title"><span class="barrio">${esc(sub)}</span><h2>${esc(title)}</h2></div>
@@ -2089,6 +2118,7 @@ function renderLote(id){
   <p class="disclaimer">Prototipo · cartografía y puntos de interés: Umepay.</p>`;
   wireCommon(id);
   document.getElementById('btnVerMapa').onclick=()=>{ LISTON=false; closeSheet(); if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar'); else setMode(MODE); setTimeout(()=>{try{highlight(id);}catch(e){}},90); };
+  { const bsol=document.getElementById('btnSol'); if(bsol)bsol.onclick=()=>openSol(id); }
   document.getElementById('btnSeen').onclick=()=>{u.seen=!u.seen;save();render();renderFilters();estiloRefresh(id);};
   document.getElementById('cSend').onclick=sendComment;
   document.getElementById('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendComment();});
@@ -3197,6 +3227,90 @@ async function triggerInstall(){
 })();
 
 /* Pido almacenamiento persistente: reduce que el teléfono borre el caché y la app deje de abrir offline */
+/* ============ Sol y sombra (asoleamiento con relieve real de las sierras) ============ */
+let solMode=false, solLotId=null, solCentroid=null, solDateBase=null, solLayer=null, solPlayT=null, solLastDate=null, _solLoading=false;
+const _RAD=Math.PI/180;
+function loadSolar(cb){ if(window.SOLAR)return cb(); if(_solLoading){_solLoading.push(cb);return;} _solLoading=[cb]; toast('Cargando relieve…'); const s=document.createElement('script'); s.src='sol-data.js?v=1'; s.onload=()=>{const cbs=_solLoading;_solLoading=false;cbs.forEach(f=>f());}; s.onerror=()=>{_solLoading=false;toast('No se pudo cargar el relieve');}; document.head.appendChild(s); }
+// posición del sol: {alt,az} en grados; az desde el NORTE, horario (0=N,90=E,180=S,270=O)
+function sunPos(date,lat,lon){ const d=date.getTime()/864e5-0.5+2440588-2451545;
+  const M=_RAD*(357.5291+0.98560028*d);
+  const L=M+_RAD*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))+_RAD*102.9372+Math.PI;
+  const e=_RAD*23.4397, dec=Math.asin(Math.sin(e)*Math.sin(L)), ra=Math.atan2(Math.sin(L)*Math.cos(e),Math.cos(L));
+  const th=_RAD*(280.16+360.9856235*d)+lon*_RAD, H=th-ra, phi=lat*_RAD;
+  const alt=Math.asin(Math.sin(phi)*Math.sin(dec)+Math.cos(phi)*Math.cos(dec)*Math.cos(H));
+  let az=(Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(phi)-Math.tan(dec)*Math.cos(phi))+Math.PI)%(2*Math.PI); if(az<0)az+=2*Math.PI;
+  return {alt:alt/_RAD, az:az/_RAD}; }
+function solHorizonDeg(lotId,azDeg){ const arr=SOLAR.horizon[lotId]; if(!arr)return 0; const st=SOLAR.azStep, x=(((azDeg%360)+360)%360)/st, i0=Math.floor(x)%arr.length, i1=(i0+1)%arr.length, f=x-Math.floor(x); return (arr[i0]*(1-f)+arr[i1]*f)/10; }
+function lotCentroid(id){ const f=PARCELAS.features.find(x=>x.properties.id==id); let sLat=0,sLon=0,n=0; const w=a=>{ if(typeof a[0]==='number'){sLon+=a[0];sLat+=a[1];n++;} else a.forEach(w); }; w(f.geometry.coordinates); return [sLat/n,sLon/n]; }
+function fmtHM(min){ min=Math.round(min); const h=Math.floor(min/60)%24, m=min%60; return h+':'+String(m).padStart(2,'0'); }
+function solDayStats(lotId,base,lat,lon){ let firstLit=null,lastLit=null,litMin=0,astroRise=null,astroSet=null,pa=false; for(let m=0;m<=1440;m+=2){ const dt=new Date(base.getTime()+m*60000), p=sunPos(dt,lat,lon), astro=p.alt>0, lit=astro&&p.alt>solHorizonDeg(lotId,p.az); if(astro&&!pa)astroRise=m; if(!astro&&pa)astroSet=m; if(lit){ if(firstLit==null)firstLit=m; lastLit=m; litMin+=2; } pa=astro; } return {firstLit,lastLit,litMin,astroRise,astroSet}; }
+function solDecodeDem(){ if(SOLAR._dem)return; const D=SOLAR.dem, bin=atob(D.data), buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i); SOLAR._dem=new Int16Array(buf.buffer); }
+function solRenderShadow(date){ solDecodeDem();
+  const D=SOLAR.dem, cols=D.cols, rows=D.rows, dem=SOLAR._dem;
+  const clat=(D.n+D.s)/2, clon=(D.w+D.e)/2, mLat=111320, mLon=111320*Math.cos(clat*_RAD), cellX=D.step*mLon, cellY=D.step*mLat;
+  const p=sunPos(date,clat,clon);
+  const cnv=SOLAR._cnv||(SOLAR._cnv=document.createElement('canvas')); cnv.width=cols; cnv.height=rows;
+  const ctx=cnv.getContext('2d'), img=ctx.createImageData(cols,rows), px=img.data;
+  if(p.alt<=0){ for(let i=0;i<cols*rows;i++){ const o=i*4; px[o]=14;px[o+1]=20;px[o+2]=46;px[o+3]=130; } }
+  else{
+    const az=p.az*_RAD, tanA=Math.tan(p.alt*_RAD), dxE=Math.sin(az), dyN=Math.cos(az);
+    const stepM=cellX, dCol=(dxE*stepM)/cellX, dRow=(-dyN*stepM)/cellY, maxSteps=160;
+    const ca=Math.cos(p.alt*_RAD), lx=Math.sin(az)*ca, ly=-Math.cos(az)*ca, lz=Math.sin(p.alt*_RAD);
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){ const idx=r*cols+c, e0=dem[idx];
+      let shadow=false, cc=c, rr=r, dist=0;
+      for(let s=1;s<=maxSteps;s++){ cc+=dCol; rr+=dRow; dist+=stepM; const ic=Math.round(cc), ir=Math.round(rr); if(ic<0||ic>=cols||ir<0||ir>=rows)break; const drop=dist*dist/(2*6371000)*0.87; if(dem[ir*cols+ic]>e0+dist*tanA+drop){shadow=true;break;} }
+      const eL=dem[r*cols+Math.max(0,c-1)], eR=dem[r*cols+Math.min(cols-1,c+1)], eU=dem[Math.max(0,r-1)*cols+c], eDn=dem[Math.min(rows-1,r+1)*cols+c];
+      let nx=(eL-eR)/(2*cellX), ny=(eDn-eU)/(2*cellY), nl=Math.hypot(nx,ny,1), hs=Math.max(0,Math.min(1,(nx*lx+ny*ly+lz)/nl)), o=idx*4;
+      if(shadow){ px[o]=18;px[o+1]=30;px[o+2]=66;px[o+3]=115; }
+      else { px[o]=255;px[o+1]=224;px[o+2]=150;px[o+3]=Math.max(0,40-Math.round(34*hs)); }
+    }
+  }
+  ctx.putImageData(img,0,0);
+  const url=cnv.toDataURL(), bounds=[[D.s,D.w],[D.n,D.e]];
+  if(!SOLAR._ov){ SOLAR._ov=L.imageOverlay(url,bounds,{opacity:1,interactive:false}); } else { SOLAR._ov.setUrl(url); }
+  if(!map.hasLayer(SOLAR._ov))SOLAR._ov.addTo(map);
+}
+function solPlaceSun(){ if(!solMode||!solLastDate)return; const [la,lo]=solCentroid, p=sunPos(solLastDate,la,lo), hor=solHorizonDeg(solLotId,p.az), lit=p.alt>0&&p.alt>hor;
+  solLayer.clearLayers();
+  if(p.alt>0){ const cpt=map.latLngToContainerPoint(L.latLng(la,lo)), rr=Math.min(map.getSize().x,map.getSize().y)*0.34, az=p.az*_RAD, end=map.containerPointToLatLng([cpt.x+Math.sin(az)*rr, cpt.y-Math.cos(az)*rr]);
+    L.polyline([[la,lo],end],{color:lit?'#f2b705':'#8a93a6',weight:5,opacity:.9,dashArray:lit?null:'4,7'}).addTo(solLayer);
+    L.marker(end,{icon:L.divIcon({className:'',html:'<div class="sol-sunmark">'+(lit?'☀️':'⛅')+'</div>',iconSize:[30,30],iconAnchor:[15,15]}),interactive:false}).addTo(solLayer); } }
+function solUpdate(){ const min=+document.getElementById('solHour').value; document.getElementById('solHourLbl').textContent=fmtHM(min);
+  const date=new Date(solDateBase.getTime()+min*60000); solLastDate=date;
+  const [la,lo]=solCentroid, p=sunPos(date,la,lo), hor=solHorizonDeg(solLotId,p.az), lit=p.alt>0&&p.alt>hor;
+  solRenderShadow(date); solPlaceSun();
+  const el=document.getElementById('solNow'); el.className='sol-now '+(p.alt<=0?'night':(lit?'sun':'shade'));
+  el.textContent = p.alt<=0 ? '🌙 De noche' : (lit ? '☀ Al sol' : '⛰ Sombra de la sierra — el sol está a '+p.alt.toFixed(0)+'° y el cerro tapa hasta '+hor.toFixed(0)+'°'); }
+function solRefreshDay(){ const [la,lo]=solCentroid, s=solDayStats(solLotId,solDateBase,la,lo), H=m=>m==null?'—':fmtHM(m), hh=Math.floor(s.litMin/60), mm=s.litMin%60;
+  let t='🌄 Sale <b>'+H(s.firstLit)+'</b> · 🌇 Se esconde <b>'+H(s.lastLit)+'</b> · ☀ <b>'+hh+'h'+(mm?String(mm).padStart(2,'0'):'')+'</b> de sol';
+  if(s.astroRise!=null&&s.firstLit!=null&&s.firstLit-s.astroRise>6)t+='<br><small>⛰ La sierra tapa el amanecer '+(s.firstLit-s.astroRise)+' min</small>';
+  if(s.astroSet!=null&&s.lastLit!=null&&s.astroSet-s.lastLit>6)t+='<br><small>⛰ La sierra corta el atardecer '+(s.astroSet-s.lastLit)+' min antes</small>';
+  document.getElementById('solRead').innerHTML=t; }
+function solSetDate(d){ solDateBase=new Date(d.getFullYear(),d.getMonth(),d.getDate()); solRefreshDay(); solUpdate();
+  document.querySelectorAll('#solChips button').forEach(b=>b.classList.toggle('on', b.dataset.iso===solDateBase.toISOString().slice(0,10))); }
+function solBuildChips(){ const y=new Date().getFullYear(); const opts=[['Hoy',new Date()],['Verano ☀',new Date(y,11,21)],['Otoño',new Date(y,2,21)],['Invierno ❄',new Date(y,5,21)],['Primavera',new Date(y,8,21)]];
+  document.getElementById('solChips').innerHTML=opts.map(([lb,d])=>{ const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return '<button data-iso="'+dd.toISOString().slice(0,10)+'">'+lb+'</button>'; }).join('');
+  document.querySelectorAll('#solChips button').forEach((b,i)=>b.onclick=()=>solSetDate(opts[i][1])); }
+function solPlayToggle(){ const btn=document.getElementById('solPlay'), sl=document.getElementById('solHour');
+  if(solPlayT){ clearInterval(solPlayT); solPlayT=null; btn.textContent='▶'; btn.classList.remove('playing'); return; }
+  const st=solDayStats(solLotId,solDateBase,solCentroid[0],solCentroid[1]);
+  let m=(st.astroRise!=null?st.astroRise:360); const endM=(st.astroSet!=null?st.astroSet:1200);
+  sl.value=m; solUpdate(); btn.textContent='⏸'; btn.classList.add('playing');
+  solPlayT=setInterval(()=>{ m+=8; if(m>endM){ clearInterval(solPlayT); solPlayT=null; btn.textContent='▶'; btn.classList.remove('playing'); return; } sl.value=m; solUpdate(); },200); }
+function openSol(id){ loadSolar(()=>{ solLotId=id; solCentroid=lotCentroid(id); LISTON=false; closeSheet(); if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar');
+  if(typeof satOn!=='undefined'&&!satOn){ try{document.getElementById('btnSat').click();}catch(e){} }
+  setTimeout(()=>{ try{ const lyr=layers[id]; if(lyr){ map.fitBounds(lyr.getBounds(),{maxZoom:17,padding:[70,70]}); highlight(id);} }catch(e){}
+    if(!solLayer)solLayer=L.layerGroup().addTo(map);
+    solMode=true; document.getElementById('solBar').classList.add('show');
+    document.getElementById('solTitle').textContent='☀️ Sol y sombra · '+((info(id).inmueble)||('Lote '+(numById[id]||id)));
+    solBuildChips(); document.getElementById('solHour').value=780; solSetDate(new Date());
+  },160); }); }
+function closeSol(){ solMode=false; if(solPlayT){clearInterval(solPlayT);solPlayT=null;} document.getElementById('solBar').classList.remove('show'); document.getElementById('solPlay').textContent='▶'; document.getElementById('solPlay').classList.remove('playing'); if(solLayer)solLayer.clearLayers(); if(SOLAR&&SOLAR._ov&&map.hasLayer(SOLAR._ov))map.removeLayer(SOLAR._ov); }
+document.getElementById('solExit').onclick=closeSol;
+document.getElementById('solHour').addEventListener('input',()=>{ if(solPlayT){clearInterval(solPlayT);solPlayT=null;document.getElementById('solPlay').textContent='▶';document.getElementById('solPlay').classList.remove('playing');} solUpdate(); });
+document.getElementById('solPlay').onclick=solPlayToggle;
+map.on('moveend zoomend',()=>{ if(solMode)solPlaceSun(); });
+
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 /* PWA + auto-actualización (se refresca solo cuando hay versión nueva) */
 if('serviceWorker' in navigator && location.protocol!=='file:'){

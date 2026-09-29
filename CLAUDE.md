@@ -60,6 +60,12 @@ Todo el front vive en pocos archivos en la raíz:
 - Safari en iPhone **borra el cache** de webs NO instaladas → falla offline. Solución: **Agregar a inicio** (PWA instalada) y abrir 1 vez con wifi.
 - El fondo de mapa (tiles satélite/calle) es cache-first: offline solo se ven zonas ya visitadas. Parcelas, ubicación y marcas del usuario sí funcionan offline.
 
+## Sol y sombra / asoleamiento con relieve (`sol-data.js`)
+- Botón "☀️ Ver sol y sombra" en la ficha → `openSol(id)`. Elegís fecha (chips estaciones) y hora (barra + ▶ reproducir el día); muestra sol/sombra, salida/puesta **reales** (con las sierras) y horas de sol, y dibuja las **sombras de los cerros** sobre el mapa.
+- Los cálculos del sol son locales (`sunPos`, sin librería). El dato pesado es `sol-data.js` (`window.SOLAR`, ~280 KB): se **carga solo al abrir el sol** (lazy), no en el arranque.
+- `window.SOLAR` = `{azStep, horizon:{loteId:[décimas de grado por azimut, 0=N horario]}, dem:{n,s,w,e,rows,cols,step,data(base64 Int16 metros)}}`. El **horizonte por parcela** dice a qué altura está la silueta de la sierra en cada dirección → sol/sombra = altura del sol > horizonte. El **DEM** recortado del valle se usa para renderizar las sombras (canvas → `L.imageOverlay`).
+- Regenerar: `node sol-build.js <carpeta-con-tiles>`. Los tiles son SRTM1 (~30 m) `.hgt.gz` skadi (ej. `S33W065`, `S33W066`, `S32W065`, `S32W066`) bajados de `https://elevation-tiles-prod.s3.amazonaws.com/skadi/<S33>/<S33W065>.hgt.gz`. `sol-build.js` NO se sirve; es de referencia (como el `.gs`).
+
 ## Marcas y KML (privado por dispositivo)
 - Puntos/líneas/rutas y KML importado se guardan en `localStorage` (`pv_marcas_v1`) — **solo en el teléfono de cada uno**, no compartido.
 
