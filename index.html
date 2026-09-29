@@ -3361,7 +3361,7 @@ document.getElementById('solPlay').onclick=solPlayToggle;
 map.on('moveend zoomend',()=>{ if(solMode)solPlaceSun(); });
 
 /* ============ Realidad aumentada: límites del terreno en el campo ============ */
-let arOn=false, arStream=null, arRAF=null, arWatch=null, arTune=0, arPos=null, arEyeElev=null, arSegs=[], arResize=null;
+let arOn=false, arStream=null, arRAF=null, arWatch=null, arTune=0, arPos=null, arEyeElev=null, arSegs=[], arVerts=[], arLotId=null, arResize=null;
 let arAlpha=null, arBeta=0, arGamma=0, arCompass=null;   // orientación cruda (con suavizado)
 const AR_FOVY=60*Math.PI/180;   // campo visual vertical aprox (ajustable)
 function solElevAt(lat,lon){ if(!window.SOLAR||!SOLAR.dem)return null; solDecodeDem(); const D=SOLAR.dem, dem=SOLAR._dem; if(lat>D.n||lat<D.s||lon<D.w||lon>D.e)return null; const y=(D.n-lat)/D.step, x=(lon-D.w)/D.step, x0=Math.floor(x),y0=Math.floor(y),x1=Math.min(x0+1,D.cols-1),y1=Math.min(y0+1,D.rows-1),fx=x-x0,fy=y-y0, g=(r,c)=>dem[Math.min(D.rows-1,Math.max(0,r))*D.cols+Math.min(D.cols-1,Math.max(0,c))]; return (g(y0,x0)*(1-fx)+g(y0,x1)*fx)*(1-fy)+(g(y1,x0)*(1-fx)+g(y1,x1)*fx)*fy; }
@@ -3391,12 +3391,16 @@ function arCamBasis(){ if(arAlpha==null)return null;
   else if(arTune){ const d=arTune*Math.PI/180; f=rz(f,d);r=rz(r,d);u=rz(u,d); }
   return {f,r,u}; }
 function arHeadingNow(){ if(arCompass!=null)return (arCompass+arTune+360)%360; const bs=arCamBasis(); if(!bs)return null; return (Math.atan2(bs.f[0],bs.f[1])*180/Math.PI+360)%360; }
-function arBuildSegs(){ arSegs=[]; if(!arPos)return; const [la0,lo0]=arPos, R=220, mLat=111320, mLon=111320*Math.cos(la0*Math.PI/180);
+function arPointInPoly(lat,lon,ring){ let inside=false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){ const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1]; if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside; } return inside; }
+function arRings(f){ const rings=[]; (function collect(a){ if(typeof a[0][0]==='number')rings.push(a); else a.forEach(collect); })(f.geometry.coordinates); return rings; }
+function arCurrentLot(){ if(!arPos)return null; const [la,lo]=arPos, mLat=111320, mLon=111320*Math.cos(la*Math.PI/180); let nearest=null,nd=1e18;
+  for(const f of PARCELAS.features){ let sLat=0,sLon=0,n=0; (function wk(a){ if(typeof a[0]==='number'){sLon+=a[0];sLat+=a[1];n++;} else a.forEach(wk); })(f.geometry.coordinates); const dc=Math.hypot((sLat/n-la)*mLat,(sLon/n-lo)*mLon); if(dc<nd){nd=dc;nearest=f;}
+    for(const r of arRings(f)){ if(arPointInPoly(la,lo,r))return f; } }
+  return nearest; }
+function arBuildSegs(){ arSegs=[]; arVerts=[]; if(!arPos)return; const f=arCurrentLot(); if(!f){arLotId=null;return;} arLotId=f.properties.id;
+  const [la0,lo0]=arPos, mLat=111320, mLon=111320*Math.cos(la0*Math.PI/180);
   const W=(lat,lon)=>{ const dN=(lat-la0)*mLat,dE=(lon-lo0)*mLon; let up=-1.5; const et=solElevAt(lat,lon); if(et!=null&&arEyeElev!=null)up=et-arEyeElev; return {dN,dE,up,dh:Math.hypot(dN,dE)}; };
-  PARCELAS.features.forEach(f=>{ let sLat=0,sLon=0,n=0; const wk=a=>{if(typeof a[0]==='number'){sLon+=a[0];sLat+=a[1];n++;}else a.forEach(wk);}; wk(f.geometry.coordinates); if(Math.hypot((sLat/n-la0)*mLat,(sLon/n-lo0)*mLon)>R+160)return;
-    const rings=[]; const collect=a=>{ if(typeof a[0][0]==='number')rings.push(a); else a.forEach(collect); }; collect(f.geometry.coordinates);
-    rings.forEach(r=>{ for(let i=0;i<r.length-1;i++) arSegs.push({a:W(r[i][1],r[i][0]), b:W(r[i+1][1],r[i+1][0])}); });
-  }); }
+  arRings(f).forEach(r=>{ for(let i=0;i<r.length-1;i++){ const A=W(r[i][1],r[i][0]), B=W(r[i+1][1],r[i+1][0]); arSegs.push({a:A,b:B}); arVerts.push(A); } }); }
 function arProjectV(w,bs,cw,ch){ const f=bs.f,r=bs.r,u=bs.u; const fwd=w.dE*f[0]+w.dN*f[1]+w.up*f[2]; if(fwd<=0.6)return null;
   const rt=w.dE*r[0]+w.dN*r[1]+w.up*r[2], up=w.dE*u[0]+w.dN*u[1]+w.up*u[2];
   const fovY=AR_FOVY, fovX=2*Math.atan(Math.tan(fovY/2)*(cw/ch));
@@ -3404,9 +3408,16 @@ function arProjectV(w,bs,cw,ch){ const f=bs.f,r=bs.r,u=bs.u; const fwd=w.dE*f[0]
   return isFinite(x)&&isFinite(y)?{x,y}:null; }
 function arDraw(){ if(!arOn)return; const cv=document.getElementById('arCanvas'), cw=cv.width, ch=cv.height, ctx=cv.getContext('2d'); ctx.clearRect(0,0,cw,ch);
   const bs=arCamBasis();
-  if(arPos&&bs&&arSegs.length){ ctx.lineWidth=Math.max(2.5,cw*0.006); ctx.strokeStyle='rgba(80,232,110,.92)'; ctx.fillStyle='rgba(255,255,255,.95)'; ctx.lineJoin='round'; ctx.lineCap='round';
+  if(arPos&&bs&&arSegs.length){ ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.lineWidth=Math.max(2.5,cw*0.006); ctx.strokeStyle='rgba(80,232,110,.9)';
     arSegs.forEach(s=>{ const pA=arProjectV(s.a,bs,cw,ch), pB=arProjectV(s.b,bs,cw,ch); if(pA&&pB){ ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke(); } });
-    const rr=Math.max(3,cw*0.007); arSegs.forEach(s=>{ const p=arProjectV(s.a,bs,cw,ch); if(p){ ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.fill(); } });
+    const rr=Math.max(6,cw*0.014), fs=Math.max(13,Math.round(cw*0.03)); ctx.font='bold '+fs+'px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    arVerts.forEach(w=>{ const p=arProjectV(w,bs,cw,ch); if(!p)return;
+      ctx.fillStyle='rgba(255,206,64,.98)'; ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.fill(); ctx.lineWidth=Math.max(1.5,cw*0.003); ctx.strokeStyle='rgba(40,30,0,.75)'; ctx.stroke();
+      const t=Math.round(w.dh)+' m', tw=ctx.measureText(t).width, ty=p.y-rr-fs*0.95;
+      ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(p.x-tw/2-7,ty-fs*0.62,tw+14,fs*1.24);
+      ctx.fillStyle='#fff'; ctx.fillText(t,p.x,ty);
+    });
   }
   const hn=arHeadingNow(); document.getElementById('arHeading').textContent = hn==null?'brújula…':('🧭 '+Math.round(hn)+'°');
   arRAF=requestAnimationFrame(arDraw); }
@@ -3418,7 +3429,7 @@ function openAR(){ const view=document.getElementById('arView'); view.classList.
   if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){ DeviceOrientationEvent.requestPermission().then(s=>{ if(s==='granted')window.addEventListener('deviceorientation',arOrient,true); }).catch(()=>{}); }
   else { window.addEventListener('deviceorientationabsolute',arOrient,true); window.addEventListener('deviceorientation',arOrient,true); }
   loadSolar(()=>{ if(arPos){ const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); } });
-  if(navigator.geolocation){ arWatch=navigator.geolocation.watchPosition(p=>{ arPos=[p.coords.latitude,p.coords.longitude]; const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); if(arStream)hideMsg(); if(!arSegs.length)showMsg('No hay límites a menos de 200 m.<br><small>Acercate a las parcelas.</small>'); }, ()=>showMsg('No pude obtener tu ubicación.<br><small>Activá el GPS y dale permiso.</small>'), {enableHighAccuracy:true,maximumAge:2000,timeout:20000}); }
+  if(navigator.geolocation){ arWatch=navigator.geolocation.watchPosition(p=>{ arPos=[p.coords.latitude,p.coords.longitude]; const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); if(arStream)hideMsg(); if(!arSegs.length)showMsg('No pude ubicar una parcela cerca tuyo.'); }, ()=>showMsg('No pude obtener tu ubicación.<br><small>Activá el GPS y dale permiso.</small>'), {enableHighAccuracy:true,maximumAge:2000,timeout:20000}); }
   arRAF=requestAnimationFrame(arDraw); }
 function closeAR(){ arOn=false; document.getElementById('arView').classList.remove('show'); if(arRAF)cancelAnimationFrame(arRAF); arRAF=null; if(arStream){arStream.getTracks().forEach(t=>t.stop());arStream=null;} const v=document.getElementById('arVideo'); if(v)v.srcObject=null; if(arWatch!=null&&navigator.geolocation){navigator.geolocation.clearWatch(arWatch);arWatch=null;} window.removeEventListener('deviceorientation',arOrient,true); window.removeEventListener('deviceorientationabsolute',arOrient,true); if(arResize)window.removeEventListener('resize',arResize); }
 document.getElementById('btnAR').onclick=openAR;
