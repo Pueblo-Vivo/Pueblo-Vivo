@@ -317,7 +317,10 @@ body.listmode .lv-tolist{display:none}
 .comu-strip{display:flex;gap:8px;overflow-x:auto;margin:10px 0 2px;scrollbar-width:none}
 .comu-strip::-webkit-scrollbar{height:0}
 .comu-strip img{width:72px;height:56px;object-fit:cover;border-radius:9px;cursor:pointer;flex:0 0 auto}
-.gwrap{position:relative}
+.gwrap{position:relative;transition:transform .12s ease}
+.gwrap.dragging{opacity:.92;transform:scale(1.06);box-shadow:0 10px 26px rgba(0,0,0,.4);z-index:6;transition:none}
+.gallery.sorting{touch-action:none;cursor:grabbing}
+.gallery.sorting .gwrap{touch-action:none}
 .gwrap .gdel{position:absolute;top:4px;right:4px;background:rgba(214,74,54,.95);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:1;padding:0}
 .gwrap .gcover{position:absolute;top:4px;left:4px;background:var(--gold);color:#3a2806;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.4px}
 .gwrap .gmove{position:absolute;left:4px;bottom:4px;display:flex;gap:4px}
@@ -1909,23 +1912,17 @@ function openComuEditor(slug,clave){
       '<div class="sec-t">Mail</div><input id="ceMail" value="'+esc(data.mail||'')+'" placeholder="tucorreo@mail.com" style="'+inp+'">'+
       '<div class="actions" style="margin:12px 0"><button class="btn-primary" id="ceSave" style="grid-column:1/-1">Guardar cambios</button></div>'+
       '<div class="sec-t">'+ic('camera')+' Fotos</div>'+
-      (data.fotos.length>1?'<p class="privhint" style="margin-bottom:8px"><span>Usá ◀ ▶ para cambiar el orden. La primera es la <b>portada</b>: es la que se ve en tu tarjeta.</span></p>':'')+
-      '<div class="gallery">'+data.fotos.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+
+      (data.fotos.length>1?'<p class="privhint" style="margin-bottom:8px"><span><b>Mantené apretada</b> una foto y <b>arrastrala</b> para cambiar el orden. La primera es la <b>portada</b>: es la que se ve en tu tarjeta.</span></p>':'')+
+      '<div class="gallery" id="cmSortGal">'+data.fotos.map((u,i)=>'<div class="gwrap" data-raw="'+esc(u)+'"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+
         (i===0?'<span class="gcover">Portada</span>':'')+
         '<button class="gdel" data-delf="'+i+'">✕</button>'+
-        (data.fotos.length>1?'<div class="gmove"><button data-mv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button data-mv="'+i+':1"'+(i===data.fotos.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+
         '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">';
     document.getElementById('ceSave').onclick=()=>{ readForm(); guardarComu(slug,clave,data); };
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
     document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1200,async img=>{ readForm(); toast('Subiendo foto…'); const url=await uploadComuFoto(slug,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarComu(slug,clave,data,draw); }); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ readForm(); data.fotos.splice(+b.dataset.delf,1); guardarComu(slug,clave,data,draw); });
-    scroll.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
-      const p=b.dataset.mv.split(':'), i=+p[0], j=i+(+p[1]);
-      if(j<0||j>=data.fotos.length)return;
-      readForm();
-      const t=data.fotos[i]; data.fotos[i]=data.fotos[j]; data.fotos[j]=t;
-      guardarComu(slug,clave,data,draw); });
+    enableDragSort(document.getElementById('cmSortGal'), orden=>{ readForm(); data.fotos=orden.slice(); guardarComu(slug,clave,data,draw); });
     scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:driveSrc(u),raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
     openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
   }
@@ -1947,12 +1944,11 @@ function openCasaEditor(lote,clave){
       '<div class="sec-t">'+ic('pin')+' Precio por noche (USD)</div>'+
       '<div style="display:flex;gap:8px;align-items:center"><input id="ceP" type="number" inputmode="numeric" value="'+precioVal+'" placeholder="ej: 70" style="flex:1;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:16px"><button class="btn-primary" id="ceSaveP" style="width:auto;padding:0 18px;grid-column:auto">Guardar</button></div>'+
       '<p class="comu-desc" style="margin-top:6px">Cargalo en dólares. A la gente se le muestra en pesos'+(precioVal?': hoy tu casa figura en <b>'+enPesos(precioVal)+'</b> por noche':'')+'.</p>'+
-      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · ◀ ▶ ordenar)</small></div>'+
-      (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. Usá ◀ ▶ para cambiar el orden.</span></p>':'')+
-      '<div class="gallery">'+gal.map((g,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3">'+
+      '<div class="sec-t">'+ic('camera')+' Fotos <small style="font-weight:400;color:var(--muted)">(✕ borrar · mantené y arrastrá para ordenar)</small></div>'+
+      (gal.length>1?'<p class="privhint" style="margin:0 0 8px"><span>La primera es la <b>portada</b>: la que se ve en la tarjeta. <b>Mantené apretada</b> una foto y <b>arrastrala</b> para cambiar el orden.</span></p>':'')+
+      '<div class="gallery" id="ceSortGal">'+gal.map((g,i)=>'<div class="gwrap" data-raw="'+esc(g.u)+'"><img class="gphoto" src="'+driveSrc(g.u)+'" onerror="this.style.opacity=.3">'+
         (i===0?'<span class="gcover">Portada</span>':'')+
         '<button class="gdel" data-del="'+i+'">✕</button>'+
-        (gal.length>1?'<div class="gmove"><button data-mv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button data-mv="'+i+':1"'+(i===gal.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+
         '</div>').join('')+'<button class="addphoto" id="ceAddF">'+ic('plus')+'<span>Agregar<br>foto</span></button></div>'+
       (gal.length?'':'<p class="empty-c">Sin fotos. Agregá una con el +.</p>')+
       '<input type="file" id="ceFile" accept="image/*" style="display:none">'+
@@ -1962,11 +1958,7 @@ function openCasaEditor(lote,clave){
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
     document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1100,async img=>{ toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); }); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const g=gal[+b.dataset.del]; if(!g)return; if(g.tipo==='baked'){ if(data.hidden.indexOf(g.u)<0)data.hidden.push(g.u); } else { const j=data.fotos.indexOf(g.u); if(j>=0)data.fotos.splice(j,1); } guardarCasa(lote,clave,data,draw); });
-    scroll.querySelectorAll('[data-mv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
-      const p=b.dataset.mv.split(':'), i=+p[0], j=i+(+p[1]);
-      if(j<0||j>=gal.length)return;
-      const raws=gal.map(g=>g.u); const t=raws[i]; raws[i]=raws[j]; raws[j]=t;
-      data.order=raws; guardarCasa(lote,clave,data,draw); });
+    enableDragSort(document.getElementById('ceSortGal'), orden=>{ data.order=orden; guardarCasa(lote,clave,data,draw); });
     document.getElementById('ceDisp').onclick=()=>openDispEditor(lote,clave);
     scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=gal.map(g=>({src:driveSrc(g.u),raw:g.u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
     openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
@@ -2188,10 +2180,10 @@ function adminBox(id,inf,p){
     <div class="field"><label>Características (separadas por coma)</label><input id="adFeats" value="${esc(feats)}"></div>
     <div class="field inline"><label style="margin:0">¿Tiene casa construida?</label><button class="switch ${conCasa(inf)?'on':''}" id="adCasa"></button></div>
     <div class="field"><label>Fotos del aviso</label>
-      ${(()=>{const fl=(inf.casas&&inf.casas.length?(inf.casas[0].fotos||[]):(inf.fotos||[]));return fl.length?'<div class="gallery" style="margin:0 0 8px;padding:0">'+fl.map((u,i)=>'<div class="gwrap"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+(i===0?'<span class="gcover">Portada</span>':'')+(fl.length>1?'<div class="gmove"><button type="button" data-amv="'+i+':-1"'+(i===0?' disabled':'')+' title="Mover antes">◀</button><button type="button" data-amv="'+i+':1"'+(i===fl.length-1?' disabled':'')+' title="Mover después">▶</button></div>':'')+'</div>').join('')+'</div>':'';})()}
+      ${(()=>{const fl=(inf.casas&&inf.casas.length?(inf.casas[0].fotos||[]):(inf.fotos||[]));return fl.length?'<div class="gallery" id="adSortGal" style="margin:0 0 8px;padding:0">'+fl.map((u,i)=>'<div class="gwrap" data-raw="'+esc(u)+'"><img class="gphoto" src="'+driveSrc(u)+'" onerror="this.style.opacity=.3">'+(i===0?'<span class="gcover">Portada</span>':'')+'</div>').join('')+'</div>':'';})()}
       <button class="save" id="adAddFoto" style="background:#2b9aa0;margin:2px 0">${ic('camera')} Agregar fotos (de la galería)</button>
       <input type="file" id="adFileIn" accept="image/*" multiple style="display:none">
-      <div class="adminhint">La 1ª es la <b>portada</b> de la tarjeta. Usá ◀ ▶ para ordenar. Para borrar una foto, tocala en la galería de arriba de la ficha.</div>
+      <div class="adminhint">La 1ª es la <b>portada</b> de la tarjeta. <b>Mantené apretada</b> una foto y <b>arrastrala</b> para ordenar. Para borrar una foto, tocala en la galería de arriba de la ficha.</div>
     </div>
     ${isAlq(inf)?`<div class="field"><label>Fechas ocupadas (alquiler)</label>
       <div id="occList">${(inf.ocupado||[]).map((r,i)=>`<div class="occrow"><span>${fmtD(r.from)} – ${fmtD(r.to)}</span><button type="button" data-occ="${i}">✕</button></div>`).join('')||'<div class="adminhint">Ninguna cargada. Bloqueá las fechas que ya están alquiladas.</div>'}</div>
@@ -2241,13 +2233,9 @@ function wireAdmin(id){
     ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov);
   };
   // (el borrado de fotos del aviso ahora se hace desde el visor / lightbox)
-  // Ordenar fotos del aviso con ◀ ▶ (la 1ª es la portada de la tarjeta)
-  scroll.querySelectorAll('[data-amv]').forEach(b=>b.onclick=e=>{ e.stopPropagation();
-    const inf2=info(id); const list=(inf2.casas&&inf2.casas.length?(inf2.casas[0].fotos||[]):(inf2.fotos||[]));
-    const p=b.dataset.amv.split(':'), i=+p[0], j=i+(+p[1]);
-    if(j<0||j>=list.length)return;
-    const raws=list.slice(); const t=raws[i]; raws[i]=raws[j]; raws[j]=t;
-    const ov=Object.assign({},ADMIN[id]); ov.order=raws; ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); });
+  // Ordenar fotos del aviso arrastrando (mantené apretado y arrastrá; la 1ª es la portada de la tarjeta)
+  enableDragSort(document.getElementById('adSortGal'), orden=>{
+    const ov=Object.assign({},ADMIN[id]); ov.order=orden; ADMIN[id]=ov; saveAdmin(); render(); pushOverride(id,ov); });
   // Fechas ocupadas (alquiler)
   const occAdd=document.getElementById('occAdd');
   if(occAdd)occAdd.onclick=()=>openCal({occupied:info(id).ocupado||[],title:'Marcá las fechas que ya están ocupadas',onDone:(f,t)=>{
@@ -2885,6 +2873,42 @@ document.getElementById('lgCancel').onclick=()=>document.getElementById('loginMo
 document.getElementById('lgLocal').onclick=()=>{ document.getElementById('loginModal').classList.remove('show'); enterAdmin(true); toast('Modo local: los cambios quedan solo en este dispositivo'); };
 document.getElementById('lgPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('btnLogout').onclick=doLogout;
+
+/* ============ Ordenar fotos arrastrando (mantené apretado y arrastrá) ============ */
+// Funciona con el dedo en el celu (Pointer Events). Cada .gwrap debe tener data-raw con la url de la foto.
+// commit(orden) recibe el nuevo orden (array de urls) para guardar. Es tolerante: mientras arrastrás
+// solo se reordena el DOM; al soltar se guarda.
+function enableDragSort(gallery, commit){
+  if(!gallery) return;
+  let dragEl=null, holdTimer=null, dragging=false, pid=null, sx=0, sy=0;
+  const afterEl=x=>{ let best={o:-Infinity,el:null}; gallery.querySelectorAll('.gwrap:not(.dragging)').forEach(c=>{ const b=c.getBoundingClientRect(); const o=x-(b.left+b.width/2); if(o<0&&o>best.o)best={o,el:c}; }); return best.el; };
+  const finish=()=>{ clearTimeout(holdTimer);
+    if(dragging&&dragEl){ dragEl.classList.remove('dragging'); gallery.classList.remove('sorting'); try{dragEl.releasePointerCapture(pid);}catch(_){}
+      gallery._suppress=true; setTimeout(()=>{gallery._suppress=false;},350);
+      const orden=[...gallery.querySelectorAll('.gwrap')].map(x=>x.dataset.raw).filter(Boolean);
+      dragEl=null; dragging=false; if(commit)commit(orden); return;
+    }
+    dragEl=null; dragging=false;
+  };
+  gallery.querySelectorAll('.gwrap').forEach(el=>{
+    el.style.touchAction='pan-x';
+    el.addEventListener('pointerdown',e=>{ if(e.target.closest('.gdel'))return;
+      dragEl=el; pid=e.pointerId; sx=e.clientX; sy=e.clientY; dragging=false;
+      holdTimer=setTimeout(()=>{ dragging=true; el.classList.add('dragging'); gallery.classList.add('sorting'); try{el.setPointerCapture(pid);}catch(_){}; if(navigator.vibrate)try{navigator.vibrate(15);}catch(_){}; },200);
+    });
+    el.addEventListener('pointermove',e=>{ if(!dragEl)return;
+      if(!dragging){ if(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8){ clearTimeout(holdTimer); dragEl=null; } return; }
+      e.preventDefault();
+      const a=afterEl(e.clientX), addBtn=gallery.querySelector('.addphoto');
+      if(a==null){ if(addBtn)gallery.insertBefore(dragEl,addBtn); else gallery.appendChild(dragEl); }
+      else if(a!==dragEl){ gallery.insertBefore(dragEl,a); }
+    });
+    el.addEventListener('pointerup',finish);
+    el.addEventListener('pointercancel',finish);
+  });
+  // evita que un arrastre termine abriendo el visor de la foto
+  gallery.addEventListener('click',e=>{ if(gallery._suppress){ e.stopPropagation(); e.preventDefault(); } },true);
+}
 
 /* ============ Visor de fotos (lightbox) ============ */
 let currentGallery=[], currentGalleryId=null, lbIndex=0;
