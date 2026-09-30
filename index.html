@@ -136,6 +136,9 @@ button{font-family:inherit;cursor:pointer}
 .seg button.active{background:#fff;color:var(--forest);box-shadow:var(--shadow-sm)}
 .seg button.active.alq{color:var(--terra)}
 .seg button.active.comu{color:#a26b2a}
+.seg button.active.casa{color:#9a4d9e}
+.seg button.active.terr{color:#e07d2b}
+.seg button .sdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
 @media(min-width:820px){
   .seg{max-width:540px;border-radius:999px;justify-content:space-between}
   .seg button{flex:0 1 auto;white-space:nowrap;font-size:13px;line-height:1.15;padding:9px 16px;border-radius:999px}
@@ -796,10 +799,10 @@ body.listmode .lv-tolist{display:none}
 
 <div class="modebar">
   <div class="seg">
-    <button id="mComunidad" class="comu active" data-mode="comunidad">Comunidad</button>
-    <button id="mAlojar" class="alq" data-mode="alojar">Alojarte</button>
-    <button id="mComprarCasa" data-mode="casa">Comprar casa</button>
-    <button id="mComprarTerreno" data-mode="terreno">Comprar terreno</button>
+    <button id="mComunidad" class="comu active" data-mode="comunidad"><i class="sdot" style="background:#a26b2a"></i>Comunidad</button>
+    <button id="mAlojar" class="alq" data-mode="alojar"><i class="sdot" style="background:#2b9aa0"></i>Alojarte</button>
+    <button id="mComprarCasa" class="casa" data-mode="casa"><i class="sdot" style="background:#9a4d9e"></i>Comprar casa</button>
+    <button id="mComprarTerreno" class="terr" data-mode="terreno"><i class="sdot" style="background:#e07d2b"></i>Comprar terreno</button>
   </div>
 </div>
 
@@ -1658,9 +1661,12 @@ function setMode(m){
   else if(isList){ renderListView(); }
   else{ renderFilters();renderLegend();applyFilter(); try{map.invalidateSize();}catch(e){} }
 }
-document.getElementById('mComprarCasa').onclick=()=>{LISTON=true;ventaTipo='casa';setMode('comprar');};
-document.getElementById('mComprarTerreno').onclick=()=>{LISTON=true;ventaTipo='terreno';setMode('comprar');};
-document.getElementById('mAlojar').onclick=()=>{LISTON=true;setMode('alojar');};
+// Si estás en el MAPA (no en lista ni comunidad), cambiar de categoría te deja en el MAPA
+// (las otras parcelas quedan en gris). Si estás en lista, seguís en lista.
+function goCat(mode,vt){ if(vt)ventaTipo=vt; if(MODE==='comunidad')LISTON=true; setMode(mode); }
+document.getElementById('mComprarCasa').onclick=()=>goCat('comprar','casa');
+document.getElementById('mComprarTerreno').onclick=()=>goCat('comprar','terreno');
+document.getElementById('mAlojar').onclick=()=>goCat('alojar');
 document.getElementById('mComunidad').onclick=()=>setMode('comunidad');
 document.getElementById('lvMapBtn').onclick=()=>{LISTON=false;setMode(MODE);};
 document.getElementById('btnList').onclick=()=>{LISTON=true;setMode(MODE);};
@@ -2138,10 +2144,10 @@ function renderLote(id){
     ${showAlq?fichaBlock(inf)+availabilityBlock(inf):''}
     ${(showAlq&&MOD_CLAVE)?`<div class="actions" style="margin-top:10px"><button class="btn-primary" id="btnEditDisp" style="grid-column:1/-1;background:#7a4a16">${ic('pencil')} Editar casa (precio · fotos · fechas)</button></div>`:''}`;
   }else{
-    body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>. Si se ofrece, sumalo al inventario:</span></div>
-    <div class="actions">
+    body=`<div class="notlisted">${ic('pin')}<span>Este lote <b>no está en venta ni en alquiler</b>.${adminMode?' Si se ofrece, sumalo al inventario:':''}</span></div>
+    ${adminMode?`<div class="actions">
       <button class="btn-primary" id="btnPonerVenta" style="grid-column:1/-1">${ic('plus')} Poner en venta</button>
-      <button class="btn-primary" id="btnPonerAlq" style="grid-column:1/-1;background:#2b9aa0">${ic('plus')} Poner en alquiler</button></div>`;
+      <button class="btn-primary" id="btnPonerAlq" style="grid-column:1/-1;background:#2b9aa0">${ic('plus')} Poner en alquiler</button></div>`:''}`;
   }
   const acciones=`<div class="actions">
       <button class="act like ${u.fav?'on':''}" id="btnLike">${ic('heart')}Me gusta</button>
@@ -2183,8 +2189,8 @@ function renderLote(id){
     const bed=document.getElementById('btnEditDisp'); if(bed)bed.onclick=()=>openCasaEditor(numById[id],MOD_CLAVE);
     scroll.querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{ setMode(b.dataset.goto); openSheet(id); });
   }else{
-    document.getElementById('btnPonerVenta').onclick=()=>setOp(id,'venta');
-    document.getElementById('btnPonerAlq').onclick=()=>setOp(id,'alquiler');
+    const bpv=document.getElementById('btnPonerVenta'); if(bpv)bpv.onclick=()=>setOp(id,'venta');
+    const bpa=document.getElementById('btnPonerAlq'); if(bpa)bpa.onclick=()=>setOp(id,'alquiler');
   }
 }
 function setOp(id,op){
