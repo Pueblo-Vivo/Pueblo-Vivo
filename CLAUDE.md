@@ -70,6 +70,8 @@ Todo el front vive en pocos archivos en la raíz:
 - FAB cámara en el mapa → `openAR()`: pantalla completa con la **cámara en vivo** y las **líneas de los límites** de las parcelas cercanas (≤220 m) dibujadas encima (canvas), ancladas por GPS + brújula + inclinación. **Sin número de parcela** (pedido del usuario).
 - Cámara: `getUserMedia({facingMode:environment})`. Orientación: `deviceorientation` (iOS pide permiso en el toque). Proyección pinhole (tan) con `AR_FOVY`; rumbo=webkitCompassHeading (+ ajuste manual `arTune`), pitch=beta-90; roll ignorado (asume portrait). Altura de vértices y del ojo desde el DEM (`solElevAt`, usa `window.SOLAR`).
 - Es **guía visual**, NO survey-grade (GPS ±3–10 m, brújula ±5–15°). Slider "Ajustar rumbo" para corregir el norte a ojo.
+- Orientación 3D real: matriz device→ENU desde alpha/beta/gamma (ZXY) + rotación de pantalla + corrección de norte por `webkitCompassHeading`, suavizado EMA; proyección pinhole por base de cámara (`arCamBasis`/`arProjectV`). Muestra **solo la parcela donde estás** (punto-en-polígono `arCurrentLot`) con vértices y distancia.
+- **Sol en la cámara** (`openSolAR`, botón en `#solBar`): mismo motor, proyecta el **arco del sol** del día (dorado si pega, gris si está detrás de la sierra), la **silueta del horizonte/sierra** (de `SOLAR.horizon`) y el **sol actual**; controles propios (`#arSunCtl`: chips de fecha, barra de hora, ▶).
 
 ## Marcas y KML (privado por dispositivo)
 - Puntos/líneas/rutas y KML importado se guardan en `localStorage` (`pv_marcas_v1`) — **solo en el teléfono de cada uno**, no compartido.

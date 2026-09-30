@@ -424,6 +424,18 @@ body.listmode .lv-tolist{display:none}
 #arView .ar-tune input{flex:1;accent-color:#57d06a}
 #arView #arTuneL{min-width:34px;text-align:right}
 #arView .ar-hint{color:#e7e7e7;font-size:11px;margin-top:6px;text-align:center;opacity:.9}
+#arSunCtl{display:none;position:absolute;left:0;right:0;bottom:64px;padding:10px 14px;z-index:2}
+#arSunCtl.show{display:block}
+#arSunCtl .ar-sun-now{text-align:center;font-size:13px;font-weight:800;color:#fff;background:rgba(0,0,0,.5);border-radius:20px;padding:7px 12px;margin-bottom:9px;backdrop-filter:blur(4px)}
+#arSunCtl .ar-sun-now.shade{background:rgba(60,74,107,.72)}
+#arSunCtl .ar-sun-now.night{background:rgba(40,40,60,.72)}
+#arSunCtl .sol-chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:9px}
+#arSunCtl .sol-chips button{border:0;background:rgba(255,255,255,.85);color:#3a2806;border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
+#arSunCtl .sol-chips button.on{background:var(--gold);color:#3a2806}
+#arSunCtl .sol-hourrow{display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.42);border-radius:14px;padding:7px 11px}
+#arSunCtl #arSunPlay{border:0;background:var(--gold);color:#3a2806;width:32px;height:32px;border-radius:50%;font-size:13px;cursor:pointer;flex:0 0 auto}
+#arSunCtl #arSunHour{flex:1;accent-color:var(--gold)}
+#arSunCtl .sol-hlbl{font-size:13px;font-weight:800;color:#fff;min-width:44px;text-align:right}
 .mk-pin{width:22px;height:22px;border-radius:50% 50% 50% 0;background:var(--terra);border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 2px 6px rgba(0,0,0,.35)}
 #markBar button.rec{background:#c0392b;color:#fff}
 .mk-pop{font-size:13px;text-align:center;min-width:170px}
@@ -828,6 +840,7 @@ body.listmode .lv-tolist{display:none}
     <div class="sol-chips" id="solChips"></div>
     <div class="sol-hourrow"><button id="solPlay" title="Reproducir el día">▶</button><input id="solHour" type="range" min="0" max="1439" step="5" value="720"><span id="solHourLbl" class="sol-hlbl">12:00</span></div>
     <div class="sol-now" id="solNow">—</div>
+    <button id="solCam" style="width:100%;margin-top:9px;border:0;background:var(--ink);color:#fff;border-radius:11px;padding:10px;font-weight:800;font-size:13px;cursor:pointer">📷 Ver el sol en la cámara</button>
   </div>
   <div class="tray" id="tray">
     <div class="info"><span id="trayN">0</span> seleccionados<small>para comparar (máx 3)</small></div>
@@ -890,6 +903,11 @@ body.listmode .lv-tolist{display:none}
   <canvas id="arCanvas"></canvas>
   <div class="ar-top"><span id="arHeading">·</span><button id="arExit">✕ Salir</button></div>
   <div id="arMsg" class="ar-msg"></div>
+  <div id="arSunCtl">
+    <div class="ar-sun-now" id="arSunNow">—</div>
+    <div class="sol-chips" id="arSunChips"></div>
+    <div class="sol-hourrow"><button id="arSunPlay">▶</button><input id="arSunHour" type="range" min="0" max="1439" step="5" value="780"><span id="arSunHourLbl" class="sol-hlbl">13:00</span></div>
+  </div>
   <div class="ar-bottom">
     <div class="ar-tune"><span>Ajustar rumbo</span><input id="arTune" type="range" min="-40" max="40" step="1" value="0"><span id="arTuneL">0°</span></div>
     <div class="ar-hint">Guía visual (GPS ±3–10 m). Movés el celu en 8 para calibrar la brújula.</div>
@@ -3363,6 +3381,7 @@ map.on('moveend zoomend',()=>{ if(solMode)solPlaceSun(); });
 /* ============ Realidad aumentada: límites del terreno en el campo ============ */
 let arOn=false, arStream=null, arRAF=null, arWatch=null, arTune=0, arPos=null, arEyeElev=null, arSegs=[], arVerts=[], arLotId=null, arResize=null;
 let arAlpha=null, arBeta=0, arGamma=0, arCompass=null;   // orientación cruda (con suavizado)
+let arSunMode=false, arArc=[], arSunPlayT=null;          // modo sol en la cámara
 const AR_FOVY=60*Math.PI/180;   // campo visual vertical aprox (ajustable)
 function solElevAt(lat,lon){ if(!window.SOLAR||!SOLAR.dem)return null; solDecodeDem(); const D=SOLAR.dem, dem=SOLAR._dem; if(lat>D.n||lat<D.s||lon<D.w||lon>D.e)return null; const y=(D.n-lat)/D.step, x=(lon-D.w)/D.step, x0=Math.floor(x),y0=Math.floor(y),x1=Math.min(x0+1,D.cols-1),y1=Math.min(y0+1,D.rows-1),fx=x-x0,fy=y-y0, g=(r,c)=>dem[Math.min(D.rows-1,Math.max(0,r))*D.cols+Math.min(D.cols-1,Math.max(0,c))]; return (g(y0,x0)*(1-fx)+g(y0,x1)*fx)*(1-fy)+(g(y1,x0)*(1-fx)+g(y1,x1)*fx)*fy; }
 let _cS=null,_cC=null; // suavizado del compás por seno/coseno (evita saltos en 0/360)
@@ -3408,7 +3427,8 @@ function arProjectV(w,bs,cw,ch){ const f=bs.f,r=bs.r,u=bs.u; const fwd=w.dE*f[0]
   return isFinite(x)&&isFinite(y)?{x,y}:null; }
 function arDraw(){ if(!arOn)return; const cv=document.getElementById('arCanvas'), cw=cv.width, ch=cv.height, ctx=cv.getContext('2d'); ctx.clearRect(0,0,cw,ch);
   const bs=arCamBasis();
-  if(arPos&&bs&&arSegs.length){ ctx.lineJoin='round'; ctx.lineCap='round';
+  if(arSunMode){ if(bs)arDrawSun(ctx,bs,cw,ch); }
+  else if(arPos&&bs&&arSegs.length){ ctx.lineJoin='round'; ctx.lineCap='round';
     ctx.lineWidth=Math.max(2.5,cw*0.006); ctx.strokeStyle='rgba(80,232,110,.9)';
     arSegs.forEach(s=>{ const pA=arProjectV(s.a,bs,cw,ch), pB=arProjectV(s.b,bs,cw,ch); if(pA&&pB){ ctx.beginPath(); ctx.moveTo(pA.x,pA.y); ctx.lineTo(pB.x,pB.y); ctx.stroke(); } });
     const rr=Math.max(6,cw*0.014), fs=Math.max(13,Math.round(cw*0.03)); ctx.font='bold '+fs+'px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -3421,19 +3441,55 @@ function arDraw(){ if(!arOn)return; const cv=document.getElementById('arCanvas')
   }
   const hn=arHeadingNow(); document.getElementById('arHeading').textContent = hn==null?'brújula…':('🧭 '+Math.round(hn)+'°');
   arRAF=requestAnimationFrame(arDraw); }
-function openAR(){ const view=document.getElementById('arView'); view.classList.add('show'); arOn=true;
-  const msg=document.getElementById('arMsg'), showMsg=t=>{msg.innerHTML=t;msg.classList.add('show');}, hideMsg=()=>msg.classList.remove('show');
-  showMsg('Pedí permiso de cámara y ubicación…');
-  const cv=document.getElementById('arCanvas'); arResize=()=>{ const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=view.clientWidth*dpr; cv.height=view.clientHeight*dpr; }; arResize(); window.addEventListener('resize',arResize);
-  navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(st=>{ arStream=st; const v=document.getElementById('arVideo'); v.srcObject=st; v.play&&v.play().catch(()=>{}); hideMsg(); }).catch(err=>{ showMsg('No pude abrir la cámara.<br><small>'+((err&&err.name)||'')+' — dale permiso y reintentá.</small>'); });
+function _arShowMsg(t){const m=document.getElementById('arMsg');m.innerHTML=t;m.classList.add('show');}
+function _arHideMsg(){document.getElementById('arMsg').classList.remove('show');}
+function arStartSensors(withGeo){ const view=document.getElementById('arView'); const cv=document.getElementById('arCanvas');
+  arResize=()=>{ const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=view.clientWidth*dpr; cv.height=view.clientHeight*dpr; }; arResize(); window.addEventListener('resize',arResize);
+  navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(st=>{ arStream=st; const v=document.getElementById('arVideo'); v.srcObject=st; v.play&&v.play().catch(()=>{}); _arHideMsg(); }).catch(err=>{ _arShowMsg('No pude abrir la cámara.<br><small>'+((err&&err.name)||'')+' — dale permiso y reintentá.</small>'); });
   if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){ DeviceOrientationEvent.requestPermission().then(s=>{ if(s==='granted')window.addEventListener('deviceorientation',arOrient,true); }).catch(()=>{}); }
   else { window.addEventListener('deviceorientationabsolute',arOrient,true); window.addEventListener('deviceorientation',arOrient,true); }
-  loadSolar(()=>{ if(arPos){ const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); } });
-  if(navigator.geolocation){ arWatch=navigator.geolocation.watchPosition(p=>{ arPos=[p.coords.latitude,p.coords.longitude]; const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); if(arStream)hideMsg(); if(!arSegs.length)showMsg('No pude ubicar una parcela cerca tuyo.'); }, ()=>showMsg('No pude obtener tu ubicación.<br><small>Activá el GPS y dale permiso.</small>'), {enableHighAccuracy:true,maximumAge:2000,timeout:20000}); }
+  if(withGeo&&navigator.geolocation){ arWatch=navigator.geolocation.watchPosition(p=>{ arPos=[p.coords.latitude,p.coords.longitude]; const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); if(arStream)_arHideMsg(); if(!arSegs.length)_arShowMsg('No pude ubicar una parcela cerca tuyo.'); }, ()=>_arShowMsg('No pude obtener tu ubicación.<br><small>Activá el GPS y dale permiso.</small>'), {enableHighAccuracy:true,maximumAge:2000,timeout:20000}); } }
+function arStopSensors(){ if(arStream){arStream.getTracks().forEach(t=>t.stop());arStream=null;} const v=document.getElementById('arVideo'); if(v)v.srcObject=null; if(arWatch!=null&&navigator.geolocation){navigator.geolocation.clearWatch(arWatch);arWatch=null;} window.removeEventListener('deviceorientation',arOrient,true); window.removeEventListener('deviceorientationabsolute',arOrient,true); if(arResize)window.removeEventListener('resize',arResize); }
+function openAR(){ arSunMode=false; document.getElementById('arSunCtl').classList.remove('show'); const view=document.getElementById('arView'); view.classList.add('show'); arOn=true; _arShowMsg('Pedí permiso de cámara y ubicación…');
+  arStartSensors(true); loadSolar(()=>{ if(arPos){ const e=solElevAt(arPos[0],arPos[1]); arEyeElev=(e!=null?e:0)+1.5; arBuildSegs(); } });
   arRAF=requestAnimationFrame(arDraw); }
-function closeAR(){ arOn=false; document.getElementById('arView').classList.remove('show'); if(arRAF)cancelAnimationFrame(arRAF); arRAF=null; if(arStream){arStream.getTracks().forEach(t=>t.stop());arStream=null;} const v=document.getElementById('arVideo'); if(v)v.srcObject=null; if(arWatch!=null&&navigator.geolocation){navigator.geolocation.clearWatch(arWatch);arWatch=null;} window.removeEventListener('deviceorientation',arOrient,true); window.removeEventListener('deviceorientationabsolute',arOrient,true); if(arResize)window.removeEventListener('resize',arResize); }
+function openSolAR(){ if(!window.SOLAR||!solCentroid){ loadSolar(()=>openSolAR()); return; } arSunMode=true; document.getElementById('solBar').classList.remove('show'); const view=document.getElementById('arView'); view.classList.add('show'); arOn=true; _arShowMsg('Apuntá al cielo. Pedí permiso de cámara y movimiento…');
+  arStartSensors(false);
+  document.getElementById('arSunCtl').classList.add('show'); arSunBuildChips(); const sl=document.getElementById('arSunHour'); if(!solDateBase)solSetDate(new Date()); sl.value=780; arSunArc(); arSunSyncLbl();
+  setTimeout(_arHideMsg,1200); arRAF=requestAnimationFrame(arDraw); }
+function closeAR(){ arOn=false; if(arSunPlayT){clearInterval(arSunPlayT);arSunPlayT=null;} document.getElementById('arView').classList.remove('show'); document.getElementById('arSunCtl').classList.remove('show'); if(arRAF)cancelAnimationFrame(arRAF); arRAF=null; arStopSensors(); }
 document.getElementById('btnAR').onclick=openAR;
 document.getElementById('arExit').onclick=closeAR;
+/* --- Modo sol en la cámara: dibujar el recorrido del sol y la silueta de la sierra --- */
+function sunDir(az,alt){ const a=az*_RAD,e=alt*_RAD,ce=Math.cos(e); return [ce*Math.sin(a),ce*Math.cos(a),Math.sin(e)]; } // ENU unit
+function arSunArc(){ arArc=[]; if(!solCentroid||!solDateBase)return; const [la,lo]=solCentroid; for(let m=0;m<=1440;m+=6){ const p=sunPos(new Date(solDateBase.getTime()+m*60000),la,lo); if(p.alt<-3)continue; const hor=solHorizonDeg(solLotId,p.az); arArc.push({m,az:p.az,alt:p.alt,lit:p.alt>hor}); } }
+function arSunHourVal(){ return +document.getElementById('arSunHour').value; }
+function arSunSyncLbl(){ document.getElementById('arSunHourLbl').textContent=fmtHM(arSunHourVal()); }
+function arProjDir(dir,bs,cw,ch){ return arProjectV({dE:dir[0]*1000,dN:dir[1]*1000,up:dir[2]*1000},bs,cw,ch); }
+function arDrawSun(ctx,bs,cw,ch){ if(!solCentroid)return; const [la,lo]=solCentroid;
+  // silueta de la sierra (horizonte) alrededor del rumbo actual
+  const hn=arHeadingNow()||0; ctx.lineWidth=Math.max(2,cw*0.005); ctx.strokeStyle='rgba(120,80,40,.85)'; ctx.beginPath(); let started=false;
+  for(let d=-90;d<=90;d+=2){ const az=((hn+d)%360+360)%360, alt=solHorizonDeg(solLotId,az); const p=arProjDir(sunDir(az,alt),bs,cw,ch); if(p){ if(!started){ctx.moveTo(p.x,p.y);started=true;} else ctx.lineTo(p.x,p.y);} else started=false; }
+  ctx.stroke();
+  // arco del sol del día (dorado si le pega; gris si está detrás de la sierra)
+  ctx.lineWidth=Math.max(3,cw*0.007); ctx.lineCap='round';
+  for(let i=0;i<arArc.length-1;i++){ const a=arArc[i],b=arArc[i+1]; const pa=arProjDir(sunDir(a.az,a.alt),bs,cw,ch), pb=arProjDir(sunDir(b.az,b.alt),bs,cw,ch); if(pa&&pb){ ctx.strokeStyle=a.lit?'rgba(255,196,60,.95)':'rgba(150,150,160,.65)'; ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); } }
+  // marcas de hora
+  const fs=Math.max(12,Math.round(cw*0.026)); ctx.font='bold '+fs+'px system-ui,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  arArc.forEach(a=>{ if(a.m%60!==0)return; const p=arProjDir(sunDir(a.az,a.alt),bs,cw,ch); if(!p)return; ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(2.5,cw*0.006),0,7); ctx.fill(); ctx.fillStyle='rgba(0,0,0,.55)'; const t=(a.m/60)+'h', tw=ctx.measureText(t).width; ctx.fillRect(p.x-tw/2-4,p.y+fs*0.5,tw+8,fs*1.1); ctx.fillStyle='#fff'; ctx.fillText(t,p.x,p.y+fs*1.05); });
+  // el sol AHORA
+  const now=sunPos(new Date(solDateBase.getTime()+arSunHourVal()*60000),la,lo); const hor=solHorizonDeg(solLotId,now.az); const lit=now.alt>hor;
+  const el=document.getElementById('arSunNow'); el.className='ar-sun-now '+(now.alt<=0?'night':(lit?'sun':'shade')); el.textContent=now.alt<=0?'🌙 De noche':(lit?('☀ El sol está a '+now.alt.toFixed(0)+'° de altura'):('⛰ Detrás de la sierra (sol a '+now.alt.toFixed(0)+'°)'));
+  if(now.alt>-2){ const p=arProjDir(sunDir(now.az,now.alt),bs,cw,ch); if(p){ const R=Math.max(16,cw*0.05); const grd=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,R); if(lit){grd.addColorStop(0,'rgba(255,245,170,.98)');grd.addColorStop(1,'rgba(255,180,40,.12)');}else{grd.addColorStop(0,'rgba(200,200,210,.9)');grd.addColorStop(1,'rgba(160,160,170,.08)');} ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,R,0,7); ctx.fill(); ctx.fillStyle=lit?'#fff7d0':'#dcdce4'; ctx.beginPath(); ctx.arc(p.x,p.y,Math.max(7,cw*0.02),0,7); ctx.fill(); } } }
+function arSunBuildChips(){ const y=new Date().getFullYear(); const opts=[['Hoy',new Date()],['Verano ☀',new Date(y,11,21)],['Otoño',new Date(y,2,21)],['Invierno ❄',new Date(y,5,21)],['Primavera',new Date(y,8,21)]];
+  const box=document.getElementById('arSunChips'); box.innerHTML=opts.map(([lb,d])=>{ const dd=new Date(d.getFullYear(),d.getMonth(),d.getDate()); return '<button data-iso="'+dd.toISOString().slice(0,10)+'">'+lb+'</button>'; }).join('');
+  box.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{ solDateBase=new Date(opts[i][1].getFullYear(),opts[i][1].getMonth(),opts[i][1].getDate()); arSunArc(); box.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.iso===solDateBase.toISOString().slice(0,10))); });
+  box.querySelectorAll('button').forEach(x=>x.classList.toggle('on', solDateBase&&x.dataset.iso===solDateBase.toISOString().slice(0,10))); }
+function arSunPlayToggle(){ const btn=document.getElementById('arSunPlay'), sl=document.getElementById('arSunHour'); if(arSunPlayT){clearInterval(arSunPlayT);arSunPlayT=null;btn.textContent='▶';return;}
+  let m=Math.max(0,arSunHourVal()); btn.textContent='⏸'; arSunPlayT=setInterval(()=>{ m+=6; if(m>1439){m=1439;clearInterval(arSunPlayT);arSunPlayT=null;btn.textContent='▶';} sl.value=m; arSunSyncLbl(); },140); }
+document.getElementById('solCam') && (document.getElementById('solCam').onclick=openSolAR);
+document.getElementById('arSunHour').addEventListener('input',()=>{ if(arSunPlayT){clearInterval(arSunPlayT);arSunPlayT=null;document.getElementById('arSunPlay').textContent='▶';} arSunSyncLbl(); });
+document.getElementById('arSunPlay').onclick=arSunPlayToggle;
 document.getElementById('arTune').addEventListener('input',e=>{ arTune=+e.target.value; document.getElementById('arTuneL').textContent=(arTune>0?'+':'')+arTune+'°'; });
 
 try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
