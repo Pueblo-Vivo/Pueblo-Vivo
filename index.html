@@ -1644,11 +1644,12 @@ function renderLegend(){}
 
 /* ============ Cambio de modo ============ */
 function setMode(m){
-  MODE=m;currentFilter='todos';clearCompare();
+  MODE=m;currentFilter='todos';   // la selección de "comparar" se mantiene al navegar (se limpia con ✕)
   document.getElementById('mComprarCasa').classList.toggle('active',m==='comprar'&&ventaTipo==='casa');
   document.getElementById('mComprarTerreno').classList.toggle('active',m==='comprar'&&ventaTipo==='terreno');
   document.getElementById('mAlojar').classList.toggle('active',m==='alojar');
   document.getElementById('mComunidad').classList.toggle('active',m==='comunidad');
+  updateTray();
   const isComu=m==='comunidad';
   const isList=(m==='comprar'||m==='alojar')&&LISTON;
   document.getElementById('comuView').classList.toggle('show',isComu);
@@ -2154,6 +2155,7 @@ function renderLote(id){
       <button class="act seen ${u.seen?'on':''}" id="btnSeen">${ic('eye')}${u.seen?'Visto ✓':'Marcar visto'}</button>
       ${linked?`<button class="act full" id="btnCmp">${ic('cmp')}${compare.includes(id)?'Quitar de comparar':'Comparar este lote'}</button>`:''}
     </div>
+    ${compare.length>=2?`<div class="actions" style="margin-top:10px"><button class="act full" id="btnVerCmp" style="background:#2b6a4a;color:#fff">${ic('cmp')} Ver comparación (${compare.length} lotes)</button></div>`:''}
     <div class="actions" style="margin-top:10px"><button class="act full" id="btnSol" style="background:#fff4d6;color:#8a5a00">☀️ Ver sol y sombra</button></div>
     ${linked?`<div class="actions" style="margin-top:10px"><button class="act" id="btnShare">${ic('share')}Compartir</button><button class="act" id="btnPdf">${ic('pdf')}Ficha PDF</button></div>`:''}`;
   scroll.innerHTML=`
@@ -2177,6 +2179,7 @@ function renderLote(id){
   wireCommon(id);
   document.getElementById('btnVerMapa').onclick=()=>{ LISTON=false; closeSheet(); if(MODE!=='comprar'&&MODE!=='alojar')setMode('comprar'); else setMode(MODE); setTimeout(()=>{try{highlight(id);}catch(e){}},90); };
   { const bsol=document.getElementById('btnSol'); if(bsol)bsol.onclick=()=>openSol(id); }
+  { const bvc=document.getElementById('btnVerCmp'); if(bvc)bvc.onclick=()=>{ closeSheet(); setTimeout(openCompare,80); }; }
   document.getElementById('btnSeen').onclick=()=>{u.seen=!u.seen;save();render();renderFilters();estiloRefresh(id);};
   document.getElementById('cSend').onclick=sendComment;
   document.getElementById('cIn').addEventListener('keydown',e=>{if(e.key==='Enter')sendComment();});
