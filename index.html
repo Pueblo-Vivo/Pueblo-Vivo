@@ -3311,7 +3311,7 @@ async function triggerInstall(){
 /* ============ Sol y sombra (asoleamiento con relieve real de las sierras) ============ */
 let solMode=false, solLotId=null, solCentroid=null, solDateBase=null, solLayer=null, solPlayT=null, solLastDate=null, _solLoading=false;
 const _RAD=Math.PI/180;
-function loadSolar(cb){ if(window.SOLAR)return cb(); if(_solLoading){_solLoading.push(cb);return;} _solLoading=[cb]; toast('Cargando relieve…'); const s=document.createElement('script'); s.src='sol-data.js?v=1'; s.onload=()=>{const cbs=_solLoading;_solLoading=false;cbs.forEach(f=>f());}; s.onerror=()=>{_solLoading=false;toast('No se pudo cargar el relieve');}; document.head.appendChild(s); }
+function loadSolar(cb){ if(window.SOLAR)return cb(); if(_solLoading){_solLoading.push(cb);return;} _solLoading=[cb]; toast('Cargando relieve…'); const s=document.createElement('script'); s.src='sol-data.js'; s.onload=()=>{const cbs=_solLoading;_solLoading=false;cbs.forEach(f=>f());}; s.onerror=()=>{_solLoading=false;toast('No se pudo cargar el relieve');}; document.head.appendChild(s); }
 // posición del sol: {alt,az} en grados; az desde el NORTE, horario (0=N,90=E,180=S,270=O)
 function sunPos(date,lat,lon){ const d=date.getTime()/864e5-0.5+2440588-2451545;
   const M=_RAD*(357.5291+0.98560028*d);
