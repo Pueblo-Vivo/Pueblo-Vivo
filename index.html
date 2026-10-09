@@ -2378,11 +2378,16 @@ document.getElementById('trayX').onclick=clearCompare;
 document.getElementById('trayCmp').onclick=openCompare;
 function openCompare(){
   if(compare.length<2){toast('Elegí al menos 2 lotes');return;}
-  const rows=[['Precio',id=>'USD '+money(info(id).total)],['USD/m²',id=>'USD '+info(id).usd],
-    ['Superficie',id=>money(supOf(PARCELAS.features.find(x=>x.properties.id==id).properties,info(id)))+' m²'],
+  /* El USD/m² se calcula del precio real dividido la superficie, igual que en la tarjeta
+     de la lista. Antes salía de un valor de relleno y no coincidía (decía 16 donde era 7).
+     La fila "Orientación" se sacó: ese dato nunca vino de la planilla, era inventado. */
+  const supDe=id=>supOf(PARCELAS.features.find(x=>x.properties.id==id).properties,info(id));
+  const rows=[
+    ['Precio',id=>{const i=info(id);return (i.fromSheet&&i.total)?'USD '+money(i.total):'Consultar';}],
+    ['USD/m²',id=>{const i=info(id),s=supDe(id);return (i.fromSheet&&i.total&&s)?'USD '+money(Math.round(i.total/s)):'—';}],
+    ['Superficie',id=>money(supDe(id))+' m²'],
     ['Barrio',id=>PARCELAS.features.find(x=>x.properties.id==id).properties.barrio],
-    ['Estado',id=>({libre:'Libre',reservado:'Reservado',vendido:'Vendido'})[info(id).estado]],
-    ['Orientación',id=>info(id).orient],
+    ['Estado',id=>{const i=info(id);return i.fromSheet?(({libre:'Disponible',reservado:'Reservado',vendido:'Vendido'})[i.estado]||'Disponible'):'—';}],
     ['Siembra Dicha',id=>{const d=(info(id).dist||[]).find(x=>x.name==='Siembra Dicha');return d?fmtDist(d.m):'-';}],
     ['Despensa',id=>{const d=(info(id).dist||[]).find(x=>x.name==='Despensa');return d?fmtDist(d.m):'-';}]];
   const head='<th class="rl"></th>'+compare.map(id=>`<th>Parc. ${PARCELAS.features.find(x=>x.properties.id==id).properties.mapNum}</th>`).join('');
@@ -2524,7 +2529,8 @@ function shareWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).prop
   let txt;
   if(isAlq(inf)){const d=stayDates();const nom=inf.inmueble||('Casa '+p.mapNum);
     txt=`*Pueblo Vivo · ${nom}* (${p.barrio})\nAlquiler${inf.alqPrice?` · ${enPesos(inf.alqPrice)}/noche`:''}${d?`\nFechas: ${fmtD(d[0])} al ${fmtD(d[1])}`:''}\n\nHola, quiero consultar disponibilidad para alojarme en Umepay.`;}
-  else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m² · USD ${money(inf.total)} · Orientación ${inf.orient}\nEstado: ${inf.estado}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
+  // Solo datos reales: el precio va únicamente si la parcela está en la planilla
+  else{txt=`*Pueblo Vivo · Parcela ${p.mapNum}* (${p.barrio})\n${money(supOf(p,inf))} m²${(inf.fromSheet&&inf.total)?` · USD ${money(inf.total)}`:''}\n\nMe interesa este lote en la ecoaldea Umepay.`;}
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 // Link para compartir una propiedad puntual (abre la app directo en su ficha, en el mismo contexto)
 function propLink(id,modo){ return location.origin+location.pathname+'?ver='+id+(modo?('&modo='+modo):''); }
@@ -2574,7 +2580,7 @@ function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).pro
     <body><h1>Pueblo Vivo · Parcela ${p.mapNum}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
     <p class="p">USD ${money(inf.total)}</p><span class="badge">${inf.estado}</span>
     <table><tr><td>Superficie</td><td>${money(supP)} m² (${(supP/10000).toFixed(2)} ha)</td></tr>
-    <tr><td>Precio por m²</td><td>USD ${ppmP}</td></tr><tr><td>Orientación</td><td>${inf.orient}</td></tr>
+    <tr><td>Precio por m²</td><td>USD ${ppmP}</td></tr>
     <tr><td>Características</td><td>${feats}</td></tr></table>
     <div class="imgs">${inf.fotos.map(s=>`<img src="${driveSrc(s)}">`).join('')}</div>
     <p style="color:#867d6c;font-size:12px;margin-top:30px">Prototipo · datos de muestra · cartografía Umepay</p>
@@ -2587,7 +2593,6 @@ function openFilterSheet(){
   fscroll.innerHTML=`<h2 style="font-family:Fraunces,serif;color:var(--forest);font-size:21px;margin:4px 0 16px">Filtros</h2>
    <div class="frow"><h4>Presupuesto máximo</h4><div class="frange"><input type="range" id="fPrice" min="20000" max="800000" step="10000" value="${maxP}"><span class="fval" id="fPriceV"></span></div></div>
    <div class="frow"><h4>Tamaño mínimo</h4><div class="frange"><input type="range" id="fSize" min="0" max="20000" step="500" value="${FILT.minSize}"><span class="fval" id="fSizeV"></span></div></div>
-   <div class="frow"><h4>Orientación</h4><div class="fchips" id="fOrient">${ORIENT.map(o=>`<button class="fchip ${FILT.orient.includes(o)?'on':''}" data-o="${o}">${o}</button>`).join('')}</div></div>
    <div class="fbtns"><button id="fClear">Limpiar</button><button class="apply" id="fApply">Ver resultados</button></div>`;
   const pv=()=>document.getElementById('fPriceV').textContent='USD '+money(+document.getElementById('fPrice').value);
   const sv=()=>{const v=+document.getElementById('fSize').value;document.getElementById('fSizeV').textContent=v?money(v)+' m²':'Cualquiera';};
