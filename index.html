@@ -214,6 +214,8 @@ body.poinames .poi-pin .t{display:block}
 .lv-filters .lvchip{cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px}
 .lv-filters .lvchip svg{width:14px;height:14px}
 .lv-filters .lvchip.on{background:var(--forest);color:#fff;border-color:var(--forest)}
+/* Botón de limpiar: va primero y se nota, para que no se pierda entre los selects */
+.lv-filters .lvchip.lvclear{background:var(--terra);color:#fff;border-color:var(--terra);font-weight:700}
 .lvamen{display:flex;flex-wrap:wrap;gap:6px;width:100%}
 .lvamen .lvchip{width:auto}
 .lv-list{flex:1;min-height:0;overflow-y:auto;padding:10px 14px 26px;display:flex;flex-direction:column;gap:12px}
@@ -1054,9 +1056,17 @@ let invSeq=0, REALES=loadInv(), linkMode=null, linkByNum={};
 const numById={}; PARCELAS.features.forEach(f=>numById[f.properties.id]=f.properties.mapNum); // mapNum = clave interna de enlace (no el num original)
 for(const k in ADMIN){if(ADMIN[k]&&ADMIN[k].sheetRef!=null)delete ADMIN[k];} saveAdmin(); // limpia enlaces viejos
 let compare=[]; // ids
-let FILT={maxPrice:null,minSize:0,orient:[]};
+/* Los filtros son de CADA sección: lo que ponés en Alojarte no se traslada a
+   Comprar casa ni a Comprar terreno, y al revés tampoco. Cada una guarda los suyos
+   y los encuentra como los dejaste cuando volvés. */
+function secFiltros(){ return MODE==='alojar' ? 'alojar' : (ventaTipo==='casa' ? 'casa' : 'terreno'); }
+const FILT_NUEVO=()=>({maxPrice:null,minSize:0,orient:[]});
+const FILT_SEC={alojar:FILT_NUEVO(),casa:FILT_NUEVO(),terreno:FILT_NUEVO()};
+function FI(){ return FILT_SEC[secFiltros()]; }
 let LISTON=true;   // Comprar/Alojar arrancan en vista de LISTA (el mapa se abre con un botón)
-let LFILT={maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};   // filtros de la vista de lista
+const LFILT_NUEVO=()=>({maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''});
+const LFILT_SEC={alojar:LFILT_NUEVO(),casa:LFILT_NUEVO(),terreno:LFILT_NUEVO()};
+function LF(){ return LFILT_SEC[secFiltros()]; }   // filtros de la vista de lista, por sección
 let miniMap=null;
 
 const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d2r,dLng=(b[1]-a[1])*d2r;
@@ -1220,11 +1230,11 @@ function passesFilter(id){
   if(currentFilter==='fav'&&!u.fav)return false;
   if(currentFilter==='seen'&&!u.seen)return false;
   // filtros avanzados
-  if(FILT.maxPrice||FILT.minSize||FILT.orient.length){
+  if(FI().maxPrice||FI().minSize||FI().orient.length){
     const f=PARCELAS.features.find(x=>x.properties.id==id);
-    if(FILT.maxPrice&&inf.total>FILT.maxPrice)return false;
-    if(FILT.minSize&&f.properties.sup<FILT.minSize)return false;
-    if(FILT.orient.length&&!FILT.orient.includes(inf.orient))return false;
+    if(FI().maxPrice&&inf.total>FI().maxPrice)return false;
+    if(FI().minSize&&f.properties.sup<FI().minSize)return false;
+    if(FI().orient.length&&!FI().orient.includes(inf.orient))return false;
   }
   return true;
 }
@@ -1239,7 +1249,7 @@ function mapShows(id){
   }
   if(currentFilter==='fav')return u.fav;
   if(currentFilter==='seen')return u.seen;
-  if(FILT.maxPrice||FILT.minSize||FILT.orient.length)return passesFilter(id); // filtros avanzados: solo los que matchean
+  if(FI().maxPrice||FI().minSize||FI().orient.length)return passesFilter(id); // filtros avanzados: solo los que matchean
   return true; // todos: la venta del tipo en color, el resto gris
 }
 function applyFilter(){
@@ -1258,17 +1268,17 @@ function lotThumb(inf,isCasa){ const f=lotFirstPhoto(inf); if(f)return '<div cla
 function casaField(inf,label){ const cs=(inf.casas||[])[0]; if(!cs)return ''; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(label)>=0); return row?String(row[2]).trim():''; }
 function casaHas(inf,mk){ const cs=(inf.casas||[])[0]; if(!cs)return false; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(mk)>=0); return !!row&&!/^no$/i.test(String(row[2]).trim()); }
 const LV_AMEN=[['estufa le','Estufa a leña'],['wifi','WiFi'],['cocina equipada','Cocina'],['parrilla','Parrilla'],['estacionamiento','Estacionam.'],['agua caliente','Agua caliente']];
-function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LFILT.maxPrice&&inf.total>LFILT.maxPrice)continue; if(LFILT.maxSup&&sup>LFILT.maxSup)continue; if(LFILT.barrio&&p.barrio!==LFILT.barrio)continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
-  const s=LFILT.sort;
+function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LF().maxPrice&&inf.total>LF().maxPrice)continue; if(LF().maxSup&&sup>LF().maxSup)continue; if(LF().barrio&&p.barrio!==LF().barrio)continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
+  const s=LF().sort;
   if(s==='precio-desc')out.sort((a,b)=>(b.inf.total||0)-(a.inf.total||0));
   else if(s==='precio-asc')out.sort((a,b)=>(a.inf.total||1e12)-(b.inf.total||1e12));
   else if(s==='sup-desc')out.sort((a,b)=>b.sup-a.sup);
   else if(s==='ppm')out.sort((a,b)=>a.ppm-b.ppm);
   else out.sort((a,b)=>(a.inf.orden==null?1e9:a.inf.orden)-(b.inf.orden==null?1e9:b.inf.orden)); // por defecto: orden de la planilla
   return out; }
-function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LFILT.maxPrice&&price&&price>LFILT.maxPrice)continue; if(LFILT.minCap&&cap&&cap<LFILT.minCap)continue; if(LFILT.minHab&&hab&&hab<LFILT.minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
-  if(LFILT.sort==='precio-desc')out.sort((a,b)=>(b.price||0)-(a.price||0));
-  else if(LFILT.sort==='precio-asc')out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
+function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LF().maxPrice&&price&&price>LF().maxPrice)continue; if(LF().minCap&&cap&&cap<LF().minCap)continue; if(LF().minHab&&hab&&hab<LF().minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
+  if(LF().sort==='precio-desc')out.sort((a,b)=>(b.price||0)-(a.price||0));
+  else if(LF().sort==='precio-asc')out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
   else out.sort((a,b)=>{const oa=a.inf.ordAlq==null?(a.inf.orden==null?1e9:a.inf.orden):a.inf.ordAlq,ob=b.inf.ordAlq==null?(b.inf.orden==null?1e9:b.inf.orden):b.inf.ordAlq;return oa-ob;}); // por defecto: orden de la planilla
   return out; }
 function ensureMiniMap(){
@@ -1313,38 +1323,43 @@ function renderListView(){
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
   wireDest(list,dest,d=>openSheet(d.id));
 }
-function anyLFilt(isAlojar){return isAlojar?(LFILT.maxPrice||LFILT.minCap||LFILT.minHab||LFILT.sort||stayDates()):(LFILT.maxPrice||LFILT.maxSup||LFILT.barrio||LFILT.conCasa||LFILT.sort);}
+function anyLFilt(isAlojar){return isAlojar?(LF().maxPrice||LF().minCap||LF().minHab||LF().sort||stayDates()):(LF().maxPrice||LF().maxSup||LF().barrio||LF().conCasa||LF().sort);}
 function renderLvFilters(isAlojar){
   const el=document.getElementById('lvFilters');if(!el)return;
   const opt=(v,cur,lab)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+lab+'</option>';
   let html='';
   if(isAlojar){
     const d=stayDates();
-    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30,50,80,120,200].map(v=>opt(v,LFILT.maxPrice,'Hasta '+enPesos(v)+'/noche')).join('')+'</select>';
-    html+='<select id="lfCap"><option value="0">Personas: todas</option>'+[2,3,4,5,6].map(v=>opt(v,LFILT.minCap,v+'+ personas')).join('')+'</select>';
-    html+='<select id="lfHab"><option value="0">Habitaciones: todas</option>'+[1,2,3].map(v=>opt(v,LFILT.minHab,v+'+ hab.')).join('')+'</select>';
+    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30,50,80,120,200].map(v=>opt(v,LF().maxPrice,'Hasta '+enPesos(v)+'/noche')).join('')+'</select>';
+    html+='<select id="lfCap"><option value="0">Personas: todas</option>'+[2,3,4,5,6].map(v=>opt(v,LF().minCap,v+'+ personas')).join('')+'</select>';
+    html+='<select id="lfHab"><option value="0">Habitaciones: todas</option>'+[1,2,3].map(v=>opt(v,LF().minHab,v+'+ hab.')).join('')+'</select>';
     html+='<button class="lvchip'+(d?' on':'')+'" id="lfDates">'+ic('cal')+(d?(fmtShort(d[0])+' → '+fmtShort(d[1])):'Fechas')+'</button>';
-    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LFILT.sort,'Ordenar: menor precio')+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+'</select>';
+    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LF().sort,'Ordenar: menor precio')+opt('precio-desc',LF().sort,'Ordenar: mayor precio')+'</select>';
   }else{
-    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LFILT.maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
-    html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LFILT.maxSup,'Hasta '+money(v)+' m²')).join('')+'</select>';
-    html+='<select id="lfBarrio"><option value="">Barrio: todos</option>'+barriosVenta().map(b=>opt(b,LFILT.barrio,esc(b))).join('')+'</select>';
-    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LFILT.sort,'Ordenar: menor precio')+opt('precio-desc',LFILT.sort,'Ordenar: mayor precio')+opt('sup-desc',LFILT.sort,'Ordenar: más grande')+opt('ppm',LFILT.sort,'Ordenar: menor USD/m²')+'</select>';
+    html+='<select id="lfPrice"><option value="">Precio: todos</option>'+[30000,50000,80000,120000,200000].map(v=>opt(v,LF().maxPrice,'Hasta USD '+money(v))).join('')+'</select>';
+    html+='<select id="lfSup"><option value="0">Superficie: toda</option>'+[3000,5000,10000,20000,30000].map(v=>opt(v,LF().maxSup,'Hasta '+money(v)+' m²')).join('')+'</select>';
+    html+='<select id="lfBarrio"><option value="">Barrio: todos</option>'+barriosVenta().map(b=>opt(b,LF().barrio,esc(b))).join('')+'</select>';
+    html+='<select id="lfSort"><option value="">Orden: recomendado</option>'+opt('precio-asc',LF().sort,'Ordenar: menor precio')+opt('precio-desc',LF().sort,'Ordenar: mayor precio')+opt('sup-desc',LF().sort,'Ordenar: más grande')+opt('ppm',LF().sort,'Ordenar: menor USD/m²')+'</select>';
   }
-  if(anyLFilt(isAlojar))html+='<button class="lvchip" id="lfClear">Limpiar filtros ✕</button>';
-  el.innerHTML=html;
-  const P=document.getElementById('lfPrice');if(P)P.onchange=e=>{LFILT.maxPrice=e.target.value?+e.target.value:null;renderListView();};
-  const SO=document.getElementById('lfSort');if(SO)SO.onchange=e=>{LFILT.sort=e.target.value||'';renderListView();};
+  // El botón va PRIMERO: al final quedaba fuera de pantalla en el celular y no se veía
+  el.innerHTML=(anyLFilt(isAlojar)?'<button class="lvchip lvclear" id="lfClear">✕ Limpiar filtros</button>':'')+html;
+  const P=document.getElementById('lfPrice');if(P)P.onchange=e=>{LF().maxPrice=e.target.value?+e.target.value:null;renderListView();};
+  const SO=document.getElementById('lfSort');if(SO)SO.onchange=e=>{LF().sort=e.target.value||'';renderListView();};
   if(isAlojar){
-    const C=document.getElementById('lfCap');if(C)C.onchange=e=>{LFILT.minCap=+e.target.value||0;renderListView();};
-    const H=document.getElementById('lfHab');if(H)H.onchange=e=>{LFILT.minHab=+e.target.value||0;renderListView();};
+    const C=document.getElementById('lfCap');if(C)C.onchange=e=>{LF().minCap=+e.target.value||0;renderListView();};
+    const H=document.getElementById('lfHab');if(H)H.onchange=e=>{LF().minHab=+e.target.value||0;renderListView();};
     const D=document.getElementById('lfDates');if(D)D.onclick=()=>openCal({inDate:stayIn,outDate:stayOut,title:'Fechas de tu estadía',onDone:(a,b)=>{stayIn=a;stayOut=b;renderListView();}});
   }else{
-    const S=document.getElementById('lfSup');if(S)S.onchange=e=>{LFILT.maxSup=+e.target.value||0;renderListView();};
-    const B=document.getElementById('lfBarrio');if(B)B.onchange=e=>{LFILT.barrio=e.target.value||'';renderListView();};
-    const K=document.getElementById('lfCasa');if(K)K.onclick=()=>{LFILT.conCasa=!LFILT.conCasa;renderListView();};
+    const S=document.getElementById('lfSup');if(S)S.onchange=e=>{LF().maxSup=+e.target.value||0;renderListView();};
+    const B=document.getElementById('lfBarrio');if(B)B.onchange=e=>{LF().barrio=e.target.value||'';renderListView();};
+    const K=document.getElementById('lfCasa');if(K)K.onclick=()=>{LF().conCasa=!LF().conCasa;renderListView();};
   }
-  const CL=document.getElementById('lfClear');if(CL)CL.onclick=()=>{LFILT={maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''};renderListView();};
+  // Limpia solo los de esta sección, y también las fechas si estás en Alojarte
+  const CL=document.getElementById('lfClear');if(CL)CL.onclick=()=>{
+    LFILT_SEC[secFiltros()]=LFILT_NUEVO();
+    if(MODE==='alojar'){ stayIn=null; stayOut=null; }
+    renderListView(); applyFilter();
+  };
 }
 /* ===== Disponibilidad por fechas (Alojarte estilo Airbnb) ===== */
 let stayIn=null, stayOut=null;
@@ -1638,7 +1653,7 @@ function renderFilters(){
     b.innerHTML=`${ic}${ft.label} <span class="cnt">${ft.n}</span>`;
     b.onclick=()=>{currentFilter=ft.k;renderFilters();applyFilter();};el.appendChild(b);});
   if(MODE==='comprar'){
-    const fb=document.createElement('button');const dirty=FILT.maxPrice||FILT.minSize||FILT.orient.length;
+    const fb=document.createElement('button');const dirty=FI().maxPrice||FI().minSize||FI().orient.length;
     fb.className='chip fbtn'+(dirty?' dirty':'');fb.innerHTML=`${ICON.funnel} Filtros`;
     fb.onclick=openFilterSheet;el.appendChild(fb);
   }
@@ -2601,19 +2616,19 @@ function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).pro
 /* ============ Filtros avanzados ============ */
 const fsheet=document.getElementById('fsheet'),fscroll=document.getElementById('fsheetScroll');
 function openFilterSheet(){
-  const maxP=FILT.maxPrice||500000;
+  const maxP=FI().maxPrice||500000;
   fscroll.innerHTML=`<h2 style="font-family:Fraunces,serif;color:var(--forest);font-size:21px;margin:4px 0 16px">Filtros</h2>
    <div class="frow"><h4>Presupuesto máximo</h4><div class="frange"><input type="range" id="fPrice" min="20000" max="800000" step="10000" value="${maxP}"><span class="fval" id="fPriceV"></span></div></div>
-   <div class="frow"><h4>Tamaño mínimo</h4><div class="frange"><input type="range" id="fSize" min="0" max="20000" step="500" value="${FILT.minSize}"><span class="fval" id="fSizeV"></span></div></div>
+   <div class="frow"><h4>Tamaño mínimo</h4><div class="frange"><input type="range" id="fSize" min="0" max="20000" step="500" value="${FI().minSize}"><span class="fval" id="fSizeV"></span></div></div>
    <div class="fbtns"><button id="fClear">Limpiar</button><button class="apply" id="fApply">Ver resultados</button></div>`;
   const pv=()=>document.getElementById('fPriceV').textContent='USD '+money(+document.getElementById('fPrice').value);
   const sv=()=>{const v=+document.getElementById('fSize').value;document.getElementById('fSizeV').textContent=v?money(v)+' m²':'Cualquiera';};
   document.getElementById('fPrice').oninput=pv;document.getElementById('fSize').oninput=sv;pv();sv();
   fscroll.querySelectorAll('#fOrient .fchip').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
-  document.getElementById('fClear').onclick=()=>{FILT={maxPrice:null,minSize:0,orient:[]};closeSheet();renderFilters();applyFilter();toast('Filtros limpiados');};
+  document.getElementById('fClear').onclick=()=>{FILT_SEC[secFiltros()]=FILT_NUEVO();closeSheet();renderFilters();applyFilter();toast('Filtros limpiados');};
   document.getElementById('fApply').onclick=()=>{
-    FILT.maxPrice=+document.getElementById('fPrice').value;FILT.minSize=+document.getElementById('fSize').value;
-    FILT.orient=[...fscroll.querySelectorAll('#fOrient .fchip.on')].map(b=>b.dataset.o);
+    FI().maxPrice=+document.getElementById('fPrice').value;FI().minSize=+document.getElementById('fSize').value;
+    FI().orient=[...fscroll.querySelectorAll('#fOrient .fchip.on')].map(b=>b.dataset.o);
     closeSheet();renderFilters();applyFilter();
     let n=0;for(const id in DATA)if(passesFilter(id))n++;toast(n+' lotes coinciden');
   };
