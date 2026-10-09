@@ -2567,23 +2567,35 @@ function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).pr
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\n${enPesos(inf.rental.nightly)}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
 function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
-  const supP=supOf(p,inf), ppmP=inf.total&&supP?Math.round(inf.total/supP):inf.usd;
-  const feats=inf.feats.map(f=>f[0]).join(' · ');
+  const supP=supOf(p,inf), ppmP=(inf.total&&supP)?Math.round(inf.total/supP):null;
+  /* Todo lo que va acá sale de la planilla. Antes imprimía "Características" tomadas
+     de una lista al azar y un pie que decía "datos de muestra", en una hoja que se le
+     manda a un cliente. */
+  const nom=inf.inmueble||('Parcela '+p.mapNum);
+  const esAlq=opOf(inf)==='alquiler';
+  const precio=esAlq?(inf.alqPrice?enPesos(inf.alqPrice)+' por noche':'Consultar')
+                    :(inf.total?'USD '+money(inf.total):'Consultar');
+  const etiqueta=esAlq?'En alquiler':'En venta';
+  const filas=[['Superficie',supP?money(supP)+' m² ('+(supP/10000).toFixed(2)+' ha)':null],
+    ['Precio por m²',(!esAlq&&ppmP)?'USD '+ppmP:null],
+    ['Tipo',inf.tipo],['Legalidad',inf.legalidad],['m² cubiertos',inf.mtCub],['m² semicubiertos',inf.semicub],
+    ['Características',inf.carac],['Forma de pago',inf.formaPago],['Expensas',inf.expensas],
+    ['Valor promocional',inf.valorPromo?('USD '+inf.valorPromo):null],['Otros',inf.otros],
+    ['N° de lote',inf.loteNum!=null?inf.loteNum:p.mapNum]].filter(r=>r[1]);
+  const hoy=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
   const w=window.open('','_blank');if(!w){toast('Permití las ventanas emergentes');return;}
-  w.document.write(`<html><head><title>Parcela ${p.mapNum} · Pueblo Vivo</title><style>
+  w.document.write(`<html><head><title>${esc(nom)} · Pueblo Vivo</title><style>
     body{font-family:Georgia,serif;color:#1c1a15;max-width:600px;margin:40px auto;padding:0 24px}
     h1{color:#1f3d2b;border-bottom:3px solid #b5532a;padding-bottom:8px}
     .p{font-size:34px;color:#1f3d2b;font-weight:bold} table{width:100%;border-collapse:collapse;margin:18px 0}
     td{padding:9px 0;border-bottom:1px solid #e6ded0}td:first-child{color:#867d6c;width:45%}
     .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs img{width:48%;border-radius:8px}
     .badge{display:inline-block;background:#dff0e4;color:#1d7a45;padding:4px 12px;border-radius:99px;font-size:14px}</style></head>
-    <body><h1>Pueblo Vivo · Parcela ${p.mapNum}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
-    <p class="p">USD ${money(inf.total)}</p><span class="badge">${inf.estado}</span>
-    <table><tr><td>Superficie</td><td>${money(supP)} m² (${(supP/10000).toFixed(2)} ha)</td></tr>
-    <tr><td>Precio por m²</td><td>USD ${ppmP}</td></tr>
-    <tr><td>Características</td><td>${feats}</td></tr></table>
-    <div class="imgs">${inf.fotos.map(s=>`<img src="${driveSrc(s)}">`).join('')}</div>
-    <p style="color:#867d6c;font-size:12px;margin-top:30px">Prototipo · datos de muestra · cartografía Umepay</p>
+    <body><h1>${esc(nom)}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
+    <p class="p">${precio}</p><span class="badge">${etiqueta}</span>
+    <table>${filas.map(r=>`<tr><td>${r[0]}</td><td>${esc(String(r[1]))}</td></tr>`).join('')}</table>
+    <div class="imgs">${(inf.fotos||[]).slice(0,6).map(s=>`<img src="${driveSrc(s)}">`).join('')}</div>
+    <p style="color:#867d6c;font-size:12px;margin-top:30px">Pueblo Vivo · Ecoaldea Umepay · ${hoy}<br>Los valores pueden cambiar sin aviso. Consultanos por WhatsApp.</p>
     <script>setTimeout(()=>window.print(),600)<\/script></body></html>`);w.document.close();}
 
 /* ============ Filtros avanzados ============ */
