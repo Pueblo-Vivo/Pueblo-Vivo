@@ -2943,12 +2943,21 @@ function initVisitorGate(){
     'gmx.com','aol.com','zoho.com','mail.com','yandex.com',
     'fibertel.com.ar','speedy.com.ar','arnet.com.ar','ciudad.com.ar','gigared.com'];
   const formaOk=m=>/^[a-z0-9]+([._%+\-][a-z0-9]+)*@[a-z0-9]+([.\-][a-z0-9]+)*\.[a-z]{2,}$/.test(m);
-  const mailValido=m=>formaOk(m) && PROVEEDORES.indexOf(m.split('@')[1])>=0;
+  const mailLocalOk=m=>{ const loc=(m.split('@')[0]||''); return loc.length>=3 && /[a-z]/.test(loc); };  // bloquea "1@hotmail.com"
+  const mailValido=m=>formaOk(m) && mailLocalOk(m) && PROVEEDORES.indexOf(m.split('@')[1])>=0;
+  // Nombre real: nombre y apellido, solo letras, con vocales, sin tecleos al azar
+  const nombreOk=n=>{ const words=n.trim().split(/\s+/).filter(Boolean); if(words.length<2)return false;
+    const letras=/^[a-zA-Záéíóúüñ'’\-]+$/, vocal=/[aeiouáéíóúü]/i, mash=/[bcdfghjklmnpqrstvwxyzñ]{5,}/i;
+    for(const w of words){ if(w.length<2||!letras.test(w)||!vocal.test(w)||mash.test(w))return false; }
+    return n.replace(/[^a-záéíóúüñ]/gi,'').length>=5; };
+  // Teléfono real: 8–14 dígitos, no todo el mismo número ni secuencias (111111111, 123456789)
+  const telOk=w=>{ const d=w.replace(/\D/g,''); if(d.length<8||d.length>14)return false; if(new Set(d).size<3)return false;
+    if('01234567890'.includes(d)||'09876543210'.includes(d))return false; return true; };
   btn.onclick=async()=>{
-    const n=(nom.value||'').trim(), w=(wa.value||'').trim(), digits=w.replace(/\D/g,''), mail=(mailEl.value||'').trim().toLowerCase();
-    if(n.length<2){err.textContent='Escribí tu nombre.';nom.focus();return;}
-    if(digits.length<8){err.textContent='Escribí un WhatsApp válido.';wa.focus();return;}
-    if(!formaOk(mail)){err.textContent='Escribí un mail válido (ej: nombre@gmail.com).';mailEl.focus();return;}
+    const n=(nom.value||'').trim(), w=(wa.value||'').trim(), mail=(mailEl.value||'').trim().toLowerCase();
+    if(!nombreOk(n)){err.textContent='Escribí tu nombre y apellido reales.';nom.focus();return;}
+    if(!telOk(w)){err.textContent='Escribí un número de WhatsApp real.';wa.focus();return;}
+    if(!formaOk(mail)||!mailLocalOk(mail)){err.textContent='Escribí un mail válido (ej: nombre@gmail.com).';mailEl.focus();return;}
     if(!mailValido(mail)){err.textContent='Usá un mail real: Gmail, Hotmail, Outlook, Yahoo, iCloud…';mailEl.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
     const v={nombre:n,whatsapp:w,mail:mail,when:Date.now()};
