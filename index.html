@@ -345,7 +345,8 @@ body.listmode .lv-tolist{display:none}
 #landing .lgd-install{width:100%;margin-top:12px;padding:14px;border:1.5px solid #d9c8a8;border-radius:14px;background:#fff;color:#5f6e37;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 #landing .lgd-install svg{width:18px;height:18px}
 #landing .lgd-foot{color:#a89e8d;font-size:12px;margin-top:20px}
-#regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px}
+/* overflow-y:auto para que en pantallas bajas (iPhone SE) se pueda llegar al botón */
+#regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #regGate.show{display:flex}
 #regGate .rgcard{background:#fff;border-radius:18px;box-shadow:0 14px 50px rgba(80,50,10,.20);max-width:380px;width:100%;padding:26px 22px 22px;text-align:center}
 #regGate .rglogo{width:64px;height:64px;margin:0 auto 2px;display:block}
@@ -354,6 +355,12 @@ body.listmode .lv-tolist{display:none}
 #regGate label{display:block;text-align:left;font-size:12.5px;font-weight:700;color:#6b6152;margin:12px 0 5px}
 #regGate input{width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e2d7c2;border-radius:11px;font-size:16px;background:#fdfbf6;color:#2a2620}
 #regGate input:focus{outline:none;border-color:#bf6f27}
+/* Casilla para recibir novedades: la fila entera es clickeable, que en el celu es chica */
+#regGate .rgcheck{display:flex;align-items:flex-start;gap:9px;margin:14px 0 0;padding:11px 12px;
+  background:#fdfbf6;border:1.5px solid #e2d7c2;border-radius:11px;cursor:pointer;text-align:left;
+  font-size:13.5px;font-weight:600;color:#6b6152;line-height:1.35}
+#regGate .rgcheck input{width:19px;height:19px;flex:0 0 auto;margin:0;accent-color:#bf6f27;cursor:pointer}
+#regGate .rgcheck:has(input:checked){border-color:#bf6f27;background:#fdf4e8;color:#7a4a16}
 #regGate .rgbtn{width:100%;margin-top:20px;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#bf6f27,#ddae4c);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
 #regGate .rgbtn:disabled{opacity:.55}
 #regGate .rgerr{color:#c0392b;font-size:12.5px;margin-top:9px;min-height:15px}
@@ -953,6 +960,7 @@ body.listmode .lv-tolist{display:none}
   <input id="rgWA" type="tel" placeholder="Ej: 3546 51-0397" autocomplete="tel" inputmode="tel">
   <label>Tu mail</label>
   <input id="rgMail" type="email" placeholder="tucorreo@mail.com" autocomplete="email" inputmode="email">
+  <label class="rgcheck"><input id="rgNov" type="checkbox"><span>Quiero recibir novedades e información sobre Umepay</span></label>
   <button class="rgbtn" id="rgBtn">Ingresar</button>
   <div class="rgerr" id="rgErr"></div>
   <div class="rgnote">Tus datos son solo para contactarte sobre Umepay.</div>
@@ -2947,7 +2955,7 @@ const DUENOS=['santiago','fran silveyra','candelaria','santiago moretto','candel
 function esDueno(nombre){ const n=(nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim(); return DUENOS.indexOf(n)>=0; }
 function sendToSheet(v){ // manda el ingreso a la hoja "Ingresos" (Apps Script). no-cors: dispara y no espera respuesta.
   if(esDueno(v.nombre))return;   // los dueños no se loguean
-  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||'',tipo:v.tipo||'registro'})}); }catch(e){} }
+  try{ fetch(INGRESOS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||'',tipo:v.tipo||'registro',novedades:v.novedades?1:0})}); }catch(e){} }
 async function sendVisitor(v){ if(esDueno(v.nombre))return true;   // los dueños no se loguean
   if(!sb)return false;   // respaldo en Supabase (confirmable)
   try{ const {error}=await sb.from('visitantes').insert({nombre:v.nombre,whatsapp:v.whatsapp,mail:v.mail||null}); if(error)throw error; return true; }
@@ -2992,7 +3000,8 @@ function initVisitorGate(){
     if(!formaOk(mail)||!mailLocalOk(mail)){err.textContent='Escribí un mail válido (ej: nombre@gmail.com).';mailEl.focus();return;}
     if(!mailValido(mail)){err.textContent='Usá un mail real: Gmail, Hotmail, Outlook, Yahoo, iCloud…';mailEl.focus();return;}
     err.textContent=''; btn.disabled=true; btn.textContent='Entrando…';
-    const v={nombre:n,whatsapp:w,mail:mail,when:Date.now()};
+    const chk=document.getElementById('rgNov');
+    const v={nombre:n,whatsapp:w,mail:mail,when:Date.now(),novedades:!!(chk&&chk.checked)};
     try{sessionStorage.setItem('pv_entry_logged','1');}catch(e){}  // ya queda avisado en esta sesión
     sendToSheet(v);                       // a la hoja Ingresos (registro nuevo)
     const ok=await sendVisitor(v); v.pending=!ok;   // respaldo Supabase (con reintento)
