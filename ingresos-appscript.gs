@@ -3,6 +3,8 @@
  *  - doPost: registra los ingresos en la hoja "Ingresos" (webhook de la app).
  *            Si la persona tildó "quiero recibir novedades", la suma a la hoja
  *            "Novedades" y le manda un mail de bienvenida (una sola vez).
+ *            BAJAS: si en la columna H de "Ingresos" dice BAJA en alguna de sus
+ *            filas, no se le manda nada más, ni aunque vuelva a tildar la casilla.
  *  - EMPLINK: fórmula para armar el link de emprendedor de Comunidad. Uso en el Sheet: =EMPLINK(B2)
  *
  * Instalación / actualización:
@@ -42,6 +44,8 @@ function doPost(e){
     var d = JSON.parse(e.postData.contents);
     var fecha = Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'dd/MM/yyyy HH:mm:ss');
     var quiere = (d.novedades == 1 || d.novedades === true || d.novedades === '1');
+    // ¿Alguna vez pidió la baja? Se mira ANTES de escribir la fila nueva.
+    var baja = pvEstaDeBaja(ss, d.mail);
 
     // Busco la última fila que tenga FECHA (columna A) — que la escribe SOLO la app.
     // Así, lo que haya en F/G (fórmulas, marcas) NO desplaza el ingreso nuevo: se acabó el "hueco".
@@ -53,10 +57,12 @@ function doPost(e){
     }
     var fila = lastA + 1;
     sh.getRange(fila, 1, 1, 5).setValues([[fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro', d.mail || '']]);
-    sh.getRange(fila, 8).setValue(quiere ? 'SI' : '');
+    // La BAJA se re-escribe en la fila nueva: queda a la vista y no se pierde nunca.
+    sh.getRange(fila, 8).setValue(baja ? 'BAJA' : (quiere ? 'SI' : ''));
 
-    // Si pidió novedades, lo sumo a la lista y le mando la bienvenida (una sola vez por mail)
-    if (quiere && d.mail) pvSumarANovedades(ss, d.nombre || '', d.mail, d.whatsapp || '', fecha);
+    // Si pidió novedades, lo sumo a la lista y le mando la bienvenida (una sola vez por mail).
+    // Si alguna vez pidió la baja, no: la baja manda, aunque vuelva a tildar la casilla.
+    if (quiere && d.mail && !baja) pvSumarANovedades(ss, d.nombre || '', d.mail, d.whatsapp || '', fecha);
 
     return ContentService.createTextOutput(JSON.stringify({ok:true}))
       .setMimeType(ContentService.MimeType.JSON);
@@ -103,16 +109,46 @@ function pvPrimerNombre(n){
   return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
 }
 
-/** Devuelve los mails de la lista, sin los que pidieron la baja.
+/* ===== BAJAS =====
+ * Para dar de baja a alguien: escribí la palabra BAJA en la columna H (Novedades)
+ * de la hoja Ingresos, en CUALQUIERA de sus filas. Con una sola alcanza.
+ * La baja le gana siempre al SI, y no se puede perder: no hay que borrar ninguna fila.
+ */
+
+/** Todos los mails que pidieron la baja, en un diccionario para buscar rápido. */
+function pvMailsDeBaja(ss){
+  var out = {};
+  var sh = ss.getSheetByName('Ingresos');
+  if (!sh || sh.getLastRow() < 2) return out;
+  var v = sh.getRange(2, 5, sh.getLastRow() - 1, 4).getValues();   // E=Mail … H=Novedades
+  for (var i = 0; i < v.length; i++){
+    var mail = String(v[i][0]).trim().toLowerCase();
+    if (mail && /baja/i.test(String(v[i][3]))) out[mail] = 1;
+  }
+  return out;
+}
+function pvEstaDeBaja(ss, mail){
+  mail = String(mail || '').trim().toLowerCase();
+  if (!mail) return false;
+  return !!pvMailsDeBaja(ss)[mail];
+}
+
+/** Devuelve los mails de la lista, sin los que pidieron la baja ni repetidos.
  *  Uso en el Sheet (en una celda vacía):  =PVLISTA()                    */
 function PVLISTA(){
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Novedades');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Novedades');
   if (!sh || sh.getLastRow() < 2) return '';
+  var bajas = pvMailsDeBaja(ss);       // las BAJA escritas en la hoja Ingresos
   var v = sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues();
-  var out = [];
+  var out = [], vistos = {};
   for (var i = 0; i < v.length; i++){
-    var mail = String(v[i][2]).trim(), baja = String(v[i][5]).trim();
-    if (mail && !baja) out.push(mail);
+    var mail = String(v[i][2]).trim().toLowerCase();
+    if (!mail) continue;
+    if (String(v[i][5]).trim()) continue;   // columna Baja de esta misma hoja
+    if (bajas[mail] || vistos[mail]) continue;
+    vistos[mail] = 1;
+    out.push(mail);
   }
   return out.join(', ');
 }
