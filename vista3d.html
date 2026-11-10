@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Umepay 3D</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css" rel="stylesheet">
+<style>
+  :root{ --panel:rgba(16,24,20,.78); --line:rgba(255,255,255,.16); --fg:#eef3ee; --muted:#a9b7ad; --leaf:#57d06a; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#0e1511;font-family:'Spline Sans',system-ui,-apple-system,sans-serif;color:var(--fg);overflow:hidden}
+  #map{position:fixed;inset:0}
+  .top{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:9px;pointer-events:none;
+    padding:calc(12px + env(safe-area-inset-top,0)) 14px 12px max(14px,env(safe-area-inset-left,0));
+    background:linear-gradient(to bottom,rgba(8,12,10,.7),transparent)}
+  .top b{font-size:15px;font-weight:800}
+  .top span{font-size:11px;color:var(--muted);display:block;margin-top:-2px}
+  .dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0));z-index:5;
+    width:min(420px,calc(100vw - 24px));background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);
+    border-radius:16px;padding:11px 14px}
+  .row{display:flex;align-items:center;gap:10px}
+  .row label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;min-width:58px}
+  .row input[type=range]{flex:1;accent-color:var(--leaf);min-width:0}
+  .row .val{font-size:13px;font-weight:800;min-width:42px;text-align:right}
+  .hint{margin-top:8px;font-size:11px;color:var(--muted);text-align:center;line-height:1.4}
+  .err{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6;background:rgba(120,30,30,.9);color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;max-width:80%;text-align:center}
+  .err[hidden]{display:none}
+  .maplibregl-popup-content{background:#15201b;color:#eef3ee;border-radius:10px;font-family:inherit;font-size:13px;padding:8px 12px}
+  .maplibregl-popup-content b{color:var(--leaf)}
+  .maplibregl-popup-tip{border-top-color:#15201b;border-bottom-color:#15201b}
+  .maplibregl-ctrl-group{background:var(--panel)!important;border:1px solid var(--line)!important}
+  .maplibregl-ctrl-group button{filter:invert(1) hue-rotate(180deg)}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="err" class="err" hidden></div>
+<div class="top"><div><b>Umepay 3D</b><span>prototipo · terreno + satélite</span></div></div>
+<div class="dock">
+  <div class="row"><label>Relieve</label><input id="exag" type="range" min="1" max="3" step="0.1" value="1.6"><span class="val" id="exagV">×1.6</span></div>
+  <div class="hint">Rueda / pellizco = zoom · arrastrar = mover · botón derecho o dos dedos = girar e inclinar</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script src="parcelas-data.js"></script>
+<script>
+const map = new maplibregl.Map({
+  container:'map',
+  minZoom:11, maxZoom:20, maxPitch:85,
+  center:[-64.745,-32.206], zoom:14.2, pitch:68, bearing:18,
+  style:{
+    version:8,
+    sources:{
+      sat:{ type:'raster', tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'], tileSize:256, maxzoom:19, attribution:'Imagery © Esri' },
+      dem:{ type:'raster-dem', tiles:['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'], encoding:'terrarium', tileSize:256, maxzoom:15, attribution:'Elevation: Mapzen/AWS' }
+    },
+    layers:[ {id:'sat', type:'raster', source:'sat'} ]
+  }
+});
+map.on('error', e=>{ const b=document.getElementById('err'); if(b){ b.textContent='⚠ '+(((e.error&&e.error.message))||'no se pudo cargar el mapa'); b.hidden=false; } });
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+map.scrollZoom.setWheelZoomRate(1/300); // rueda del mouse más suave
+map.touchZoomRotate.enableRotation();
+
+map.on('load', ()=>{
+  try{ map.setTerrain({source:'dem', exaggeration:1.6}); }catch(e){}
+  try{ map.setSky({ 'sky-color':'#5a8cc2', 'horizon-color':'#cdd9df', 'fog-color':'#e3eaef',
+    'sky-horizon-blend':0.6, 'horizon-fog-blend':0.5, 'fog-ground-blend':0.3,
+    'atmosphere-blend':['interpolate',['linear'],['zoom'],0,1,10,0.6,16,0] }); }catch(e){}
+  // límites de los lotes
+  if(window.PARCELAS){
+    map.addSource('lotes', {type:'geojson', data:window.PARCELAS, promoteId:'id'});
+    map.addLayer({id:'lotes-line', type:'line', source:'lotes',
+      paint:{'line-color':'#7fe89a','line-width':['interpolate',['linear'],['zoom'],12,0.8,16,2.2],'line-opacity':0.9}});
+    map.addLayer({id:'lotes-fill', type:'fill', source:'lotes',
+      paint:{'fill-color':'#7fe89a','fill-opacity':['case',['boolean',['feature-state','hl'],false],0.25,0]}});
+    let hl=null;
+    map.on('click','lotes-fill',(e)=>{ const f=e.features[0]; if(!f)return; const p=f.properties;
+      if(hl!=null)map.setFeatureState({source:'lotes',id:hl},{hl:false});
+      hl=p.id; map.setFeatureState({source:'lotes',id:hl},{hl:true});
+      const n=(p.mapNum!=null?p.mapNum:p.num);
+      new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat)
+        .setHTML('<b>Lote '+n+'</b>'+(p.barrio?(' · '+p.barrio):'')+(p.sup?('<br>'+Number(p.sup).toLocaleString('es-AR')+' m²'):'')).addTo(map); });
+    map.on('mouseenter','lotes-fill',()=>map.getCanvas().style.cursor='pointer');
+    map.on('mouseleave','lotes-fill',()=>map.getCanvas().style.cursor='');
+  }
+});
+// control de relieve
+const ex=document.getElementById('exag');
+ex.addEventListener('input',()=>{ const v=+ex.value; document.getElementById('exagV').textContent='×'+v.toFixed(1); map.setTerrain({source:'dem',exaggeration:v}); });
+</script>
+</body>
+</html>
