@@ -29,6 +29,15 @@
   .nav2 .sep{height:6px}
   .err{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6;background:rgba(120,30,30,.9);color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;max-width:80%;text-align:center}
   .err[hidden]{display:none}
+  .card{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0));z-index:6;
+    width:min(360px,calc(100vw - 24px));background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+  .card[hidden]{display:none}
+  .card .cx{position:absolute;top:7px;right:10px;background:transparent;border:0;color:var(--muted);font-size:17px;cursor:pointer;line-height:1}
+  .card .ct{font-size:17px;font-weight:800;padding-right:20px}
+  .card .cm{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .card .cp{font-size:16px;font-weight:800;color:#ffd24a;margin-top:8px}
+  .card .cs{font-size:12.5px;color:var(--fg);margin-top:1px}
+  .card .cgo{display:inline-block;margin-top:10px;color:var(--leaf);font-weight:800;font-size:13px;text-decoration:none}
   .maplibregl-popup-content{background:#15201b;color:#eef3ee;border-radius:10px;font-family:inherit;font-size:13px;padding:8px 12px}
   .maplibregl-popup-content b{color:var(--leaf)}
   .maplibregl-popup-tip{border-top-color:#15201b;border-bottom-color:#15201b}
@@ -39,6 +48,7 @@
 <body>
 <div id="map"></div>
 <div id="err" class="err" hidden></div>
+<div id="card" class="card" hidden></div>
 <div class="nav2">
   <button id="tiltUp" title="Inclinar hacia el horizonte">⌃</button>
   <button id="tiltDn" title="Vista más desde arriba">⌄</button>
@@ -54,7 +64,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
 <script src="parcelas-data.js"></script>
+<script src="lotes-reales.js"></script>
 <script>
+// cruzar parcelas con el inventario (parcela.mapNum === lote.loteNum)
+(function(){ const byLote={}; (window.LOTES_REALES||[]).forEach(r=>{ if(r.loteNum!=null)byLote[r.loteNum]=r; });
+  (window.PARCELAS&&window.PARCELAS.features||[]).forEach(f=>{ const r=byLote[f.properties.mapNum];
+    f.properties.enVenta=(r&&r.valor)?1:0; f.properties.op=r?((/casa/i.test(r.tipo||''))?'casa':'terreno'):'';
+    f.properties.inmueble=(r&&r.inmueble)||''; f.properties.precio=(r&&r.valor)||0; f.properties.tipoReal=(r&&r.tipo)||''; }); })();
 const map = new maplibregl.Map({
   container:'map',
   minZoom:10, maxZoom:20, maxPitch:85,
@@ -78,24 +94,41 @@ map.on('load', ()=>{
   try{ map.setSky({ 'sky-color':'#5a8cc2', 'horizon-color':'#cdd9df', 'fog-color':'#e3eaef',
     'sky-horizon-blend':0.6, 'horizon-fog-blend':0.5, 'fog-ground-blend':0.3,
     'atmosphere-blend':['interpolate',['linear'],['zoom'],0,1,10,0.6,16,0] }); }catch(e){}
-  // límites de los lotes
+  // límites de los lotes (en venta resaltados)
   if(window.PARCELAS){
     map.addSource('lotes', {type:'geojson', data:window.PARCELAS, promoteId:'id'});
-    map.addLayer({id:'lotes-line', type:'line', source:'lotes',
-      paint:{'line-color':'#7fe89a','line-width':['interpolate',['linear'],['zoom'],12,0.8,16,2.2],'line-opacity':0.9}});
     map.addLayer({id:'lotes-fill', type:'fill', source:'lotes',
-      paint:{'fill-color':'#7fe89a','fill-opacity':['case',['boolean',['feature-state','hl'],false],0.25,0]}});
+      paint:{'fill-color':['case',['==',['get','enVenta'],1],'#ffd24a','#8fd0a0'],
+        'fill-opacity':['case',['boolean',['feature-state','hl'],false],0.38,['case',['==',['get','enVenta'],1],0.1,0.012]]}});
+    map.addLayer({id:'lotes-line', type:'line', source:'lotes',
+      paint:{'line-color':['case',['==',['get','enVenta'],1],'#ffd24a','rgba(215,225,220,.5)'],
+        'line-width':['case',['==',['get','enVenta'],1],
+          ['interpolate',['linear'],['zoom'],12,1.4,17,3],
+          ['interpolate',['linear'],['zoom'],12,0.6,17,1.4]],
+        'line-opacity':0.95}});
     let hl=null;
-    map.on('click','lotes-fill',(e)=>{ const f=e.features[0]; if(!f)return; const p=f.properties;
-      if(hl!=null)map.setFeatureState({source:'lotes',id:hl},{hl:false});
-      hl=p.id; map.setFeatureState({source:'lotes',id:hl},{hl:true});
-      const n=(p.mapNum!=null?p.mapNum:p.num);
-      new maplibregl.Popup({closeButton:false}).setLngLat(e.lngLat)
-        .setHTML('<b>Lote '+n+'</b>'+(p.barrio?(' · '+p.barrio):'')+(p.sup?('<br>'+Number(p.sup).toLocaleString('es-AR')+' m²'):'')).addTo(map); });
+    const sel=(id)=>{ if(hl!=null)map.setFeatureState({source:'lotes',id:hl},{hl:false}); hl=id; if(id!=null)map.setFeatureState({source:'lotes',id:id},{hl:true}); };
+    map.on('click','lotes-fill',(e)=>{ const f=e.features[0]; if(!f)return; sel(f.properties.id); showCard(f.properties); });
     map.on('mouseenter','lotes-fill',()=>map.getCanvas().style.cursor='pointer');
     map.on('mouseleave','lotes-fill',()=>map.getCanvas().style.cursor='');
+    // tocar fuera de un lote cierra la tarjeta
+    map.on('click',(e)=>{ const fs=map.queryRenderedFeatures(e.point,{layers:['lotes-fill']}); if(!fs.length){ sel(null); document.getElementById('card').hidden=true; } });
+    window.__sel=sel;
   }
 });
+function showCard(p){ const c=document.getElementById('card');
+  const titulo = p.inmueble ? p.inmueble : ('Parcela '+(p.mapNum!=null?p.mapNum:p.num));
+  const sup = p.sup ? (Number(p.sup).toLocaleString('es-AR')+' m²') : '';
+  let html='<button class="cx" aria-label="Cerrar">✕</button><div class="ct">'+esc(titulo)+'</div>'+
+    '<div class="cm">'+(p.barrio?esc(p.barrio):'Umepay')+(sup?(' · '+sup):'')+'</div>';
+  if(+p.enVenta===1){ html+='<div class="cp">En venta · USD '+Number(p.precio).toLocaleString('es-AR')+'</div>'+
+    '<div class="cs">'+esc(p.tipoReal||'terreno')+'</div>'; }
+  else { html+='<div class="cs" style="color:var(--muted)">No está publicado en venta.</div>'; }
+  html+='<a class="cgo" href="https://pueblo-vivo.github.io/Pueblo-Vivo/" target="_blank" rel="noopener">Ver en Pueblo Vivo ›</a>';
+  c.innerHTML=html; c.hidden=false;
+  c.querySelector('.cx').onclick=()=>{ c.hidden=true; if(window.__sel)window.__sel(null); };
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 // control de relieve
 const ex=document.getElementById('exag');
 ex.addEventListener('input',()=>{ const v=+ex.value; document.getElementById('exagV').textContent='×'+v.toFixed(1); map.setTerrain({source:'dem',exaggeration:v}); });
