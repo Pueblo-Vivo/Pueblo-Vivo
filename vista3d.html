@@ -102,9 +102,9 @@ map.on('load', ()=>{
         'fill-opacity':['case',['boolean',['feature-state','hl'],false],0.38,['case',['==',['get','enVenta'],1],0.1,0.012]]}});
     map.addLayer({id:'lotes-line', type:'line', source:'lotes',
       paint:{'line-color':['case',['==',['get','enVenta'],1],'#ffd24a','rgba(215,225,220,.5)'],
-        'line-width':['case',['==',['get','enVenta'],1],
-          ['interpolate',['linear'],['zoom'],12,1.4,17,3],
-          ['interpolate',['linear'],['zoom'],12,0.6,17,1.4]],
+        'line-width':['interpolate',['linear'],['zoom'],
+          12,['case',['==',['get','enVenta'],1],1.4,0.6],
+          17,['case',['==',['get','enVenta'],1],3,1.4]],
         'line-opacity':0.95}});
     let hl=null;
     const sel=(id)=>{ if(hl!=null)map.setFeatureState({source:'lotes',id:hl},{hl:false}); hl=id; if(id!=null)map.setFeatureState({source:'lotes',id:id},{hl:true}); };
