@@ -2950,7 +2950,7 @@ async function uploadFoto(id,dataUrl){
   }catch(e){ console.warn('upload',e); toast('No se pudo subir la foto (queda local)'); return dataUrl; }
 }
 /* ===== Registro de visitantes (control de acceso) ===== */
-const VKEY='pv_visitor_v2';  // subir la versión = re-pedir el registro a TODOS los que ya habían entrado
+const VKEY='pv_visitor_v3';  // subir la versión = re-pedir el registro a TODOS los que ya habían entrado
 const INGRESOS_URL='https://script.google.com/macros/s/AKfycbzU47H1pdtJ-pSokBtsSB13gksUNJqjnQhhkEfjR25Sdc5frSFQHGDSLAuVhpi2QhKL/exec';
 // Dueños de la app: NO se registran ni cuentan como reingreso (solo se loguean los clientes)
 const DUENOS=['santiago','fran silveyra','candelaria','santiago moretto','candelaria rivas','santi prueba'];
