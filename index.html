@@ -2039,7 +2039,7 @@ function openComuEditor(slug,clave){
       '<input type="file" id="ceFile" accept="image/*" style="display:none">';
     document.getElementById('ceSave').onclick=()=>{ readForm(); guardarComu(slug,clave,data); };
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
-    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1200,async img=>{ readForm(); toast('Subiendo foto…'); const url=await uploadComuFoto(slug,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarComu(slug,clave,data,draw); }); rd.readAsDataURL(f); };
+    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1600,async img=>{ if(!img){toast(FOTO_NO);return;} readForm(); toast('Subiendo foto…'); const url=await uploadComuFoto(slug,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarComu(slug,clave,data,draw); },0.85); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-delf]').forEach(b=>b.onclick=()=>{ readForm(); data.fotos.splice(+b.dataset.delf,1); guardarComu(slug,clave,data,draw); });
     enableDragSort(document.getElementById('cmSortGal'), orden=>{ readForm(); data.fotos=orden.slice(); guardarComu(slug,clave,data,draw); });
     scroll.querySelectorAll('.gphoto').forEach((im,i)=>im.onclick=()=>{ currentGallery=data.fotos.map(u=>({src:driveSrc(u),raw:u,kind:'comu'})); currentGalleryId=null; openLightbox(i); });
@@ -2076,7 +2076,7 @@ function openCasaEditor(lote,clave){
       '<div class="actions"><button class="btn-primary" id="ceDisp" style="grid-column:1/-1;background:#7a4a16">'+ic('cal')+' Editar fechas ocupadas</button></div>';
     document.getElementById('ceSaveP').onclick=()=>{ data.precio=+document.getElementById('ceP').value||null; guardarCasa(lote,clave,data); };
     document.getElementById('ceAddF').onclick=()=>document.getElementById('ceFile').click();
-    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1100,async img=>{ toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); }); rd.readAsDataURL(f); };
+    document.getElementById('ceFile').onchange=e=>{ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>resizeImg(rd.result,1600,async img=>{ if(!img){toast(FOTO_NO);return;} toast('Subiendo foto…'); const url=await uploadFotoAnon(lote,img); if(!url){toast('No se pudo subir la foto');return;} data.fotos.push(url); guardarCasa(lote,clave,data,draw); },0.85); rd.readAsDataURL(f); };
     scroll.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ const g=gal[+b.dataset.del]; if(!g)return; if(g.tipo==='baked'){ if(data.hidden.indexOf(g.u)<0)data.hidden.push(g.u); } else { const j=data.fotos.indexOf(g.u); if(j>=0)data.fotos.splice(j,1); } guardarCasa(lote,clave,data,draw); });
     enableDragSort(document.getElementById('ceSortGal'), orden=>{ data.order=orden; guardarCasa(lote,clave,data,draw); });
     document.getElementById('ceDisp').onclick=()=>openDispEditor(lote,clave);
@@ -2321,7 +2321,7 @@ function wireCommon(id){
   const u=uget(id);
   document.getElementById('btnLike').onclick=()=>{u.fav=!u.fav;save();render();renderFilters();estiloRefresh(id);updateRouteBadge();toast(u.fav?'Agregado a favoritos ❤':'Quitado de favoritos');};
   const add=document.getElementById('addPhoto');if(add)add.onclick=()=>document.getElementById('fileIn').click();
-  const fi=document.getElementById('fileIn');if(fi)fi.onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,900,img=>{u.photos.push(img);save();render();toast('Foto agregada 📷');});rd.readAsDataURL(file);};
+  const fi=document.getElementById('fileIn');if(fi)fi.onchange=e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,900,img=>{if(!img){toast(FOTO_NO);return;}u.photos.push(img);save();render();toast('Foto agregada 📷');});rd.readAsDataURL(file);};
   scroll.querySelectorAll('.gphoto[data-gi]').forEach(img=>img.onclick=()=>openLightbox(+img.dataset.gi));
   const bc=document.getElementById('btnCal'); if(bc)bc.onclick=()=>openCal({inDate:stayIn,outDate:stayOut,occupied:info(id).ocupado||[],title:'Disponibilidad de esta casa',onDone:(a,b)=>{stayIn=a;stayOut=b;stayRefresh();}});
   scroll.querySelectorAll('.casatab').forEach(b=>b.onclick=()=>{casaSel=+b.dataset.casa;render();});
@@ -2350,7 +2350,8 @@ function wireAdmin(id){
     toast('Subiendo '+files.length+' foto'+(files.length>1?'s':'')+'…');
     const ov=Object.assign({},ADMIN[id]); ov.addFotos=(ov.addFotos||[]).slice();
     for(const file of files){
-      const dataUrl=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1100,img=>r(img));rd.readAsDataURL(file);});
+      const dataUrl=await new Promise(r=>{const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1600,img=>r(img),0.85);rd.readAsDataURL(file);});
+      if(!dataUrl){ toast(FOTO_NO); continue; }
       const url=await uploadFoto(id,dataUrl);
       ov.addFotos.push(url);
     }
@@ -2391,7 +2392,10 @@ function delComment(i){const u=uget(openId);if(!u.comments[i])return;u.comments.
 // engancha los ✕ de cada nota (se llama después de pintar la ficha)
 function wireComments(){document.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=e=>{e.stopPropagation();delComment(+b.dataset.cdel);});}
 function estiloRefresh(id){const lyr=layers[id];if(lyr&&lyr.setStyle)lyr.setStyle(estilo(id));refreshLabels();}
-function resizeImg(dataUrl,max,cb){const img=new Image();img.onload=()=>{let w=img.width,h=img.height;if(w>max||h>max){const s=max/Math.max(w,h);w=w*s|0;h=h*s|0;}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);cb(cv.toDataURL('image/jpeg',0.72));};img.src=dataUrl;}
+/* q = calidad JPEG (0.72 por defecto). Si el navegador no sabe abrir el archivo
+   (HEIC en Windows/Android, archivo roto) devuelve null en vez de colgarse callado. */
+function resizeImg(dataUrl,max,cb,q){const img=new Image();img.onerror=()=>cb(null);img.onload=()=>{let w=img.width,h=img.height;if(!w||!h){cb(null);return;}if(w>max||h>max){const s=max/Math.max(w,h);w=w*s|0;h=h*s|0;}const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(img,0,0,w,h);cb(cv.toDataURL('image/jpeg',q||0.72));};img.src=dataUrl;}
+const FOTO_NO='No se pudo abrir esa foto. Si es HEIC (iPhone desde la compu), mandala como JPG';
 
 /* ============ Comparar ============ */
 let compareMode=false;
@@ -2714,7 +2718,7 @@ map.on('popupopen',e=>{ const node=e.popup.getElement&&e.popup.getElement(); if(
   on('[data-foto]','data-foto',i=>{fotoIdx=i;document.getElementById('mkFile').click();});
 });
 document.getElementById('mkFile').onchange=e=>{const f=e.target.files&&e.target.files[0];const i=fotoIdx;fotoIdx=null;e.target.value='';if(!f||i==null||!marcas[i])return;
-  const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1000,img=>{if(marcas[i]){marcas[i].foto=img;saveMarcas();drawMarcas();setTimeout(()=>{const l=marcasLayer.getLayers()[i];if(l)l.openPopup();},60);toast('Foto agregada');}});rd.readAsDataURL(f);};
+  const rd=new FileReader();rd.onload=()=>resizeImg(rd.result,1000,img=>{if(!img){toast(FOTO_NO);return;}if(marcas[i]){marcas[i].foto=img;saveMarcas();drawMarcas();setTimeout(()=>{const l=marcasLayer.getLayers()[i];if(l)l.openPopup();},60);toast('Foto agregada');}});rd.readAsDataURL(f);};
 drawMarcas();
 // Evito que tocar la barra/controles agregue un punto en el mapa por debajo (el bug del "primer punto")
 try{ L.DomEvent.disableClickPropagation(document.getElementById('markBar'));
