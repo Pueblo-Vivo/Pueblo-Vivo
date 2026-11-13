@@ -161,7 +161,7 @@ var PV_BASE   = 'https://pueblo-vivo.github.io/Pueblo-Vivo/';
 function pvSlug(n){
   if(n == null) return '';
   return String(n).toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .normalize('NFD').replace(RegExp('['+String.fromCharCode(768)+'-'+String.fromCharCode(879)+']','g'),'')
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 }
 function pvMd5(s){
