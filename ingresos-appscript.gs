@@ -177,3 +177,68 @@ function EMPLINK(id){
   var clave = pvMd5(slug + PV_SECRET).substring(0,10);
   return PV_BASE + '?emp=' + slug + '&clave=' + clave;
 }
+
+/* ===== CONTACTOS SIN REPETIR =====
+ * Devuelve una tabla con una fila por persona, sacando a los de Umepay.
+ * Uso: en una hoja nueva, en la celda A1, escribí    =PVCONTACTOS()
+ * Se actualiza sola cuando entra gente nueva (puede tardar unos segundos).
+ *
+ * Quién es "de Umepay": cualquiera que tenga la palabra umepay en la columna
+ * Origen (F) o en la columna Umepay (G), en alguna de sus filas.
+ * Quién es "la misma persona": el mismo mail. Las filas que vinieron sin mail
+ * se agrupan por teléfono. No junto por teléfono a los que sí tienen mail,
+ * porque hay teléfonos inventados (111111111) repetidos entre personas distintas.
+ */
+function PVCONTACTOS(){
+  var cab = [['Nombre','Mail','WhatsApp','Veces','Última vez','Baja']];
+  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Ingresos');
+  if (!sh || sh.getLastRow() < 2) return cab;
+  var v = sh.getRange(2, 1, sh.getLastRow() - 1, 8).getValues();
+
+  var orden = [], g = {};
+  for (var i = 0; i < v.length; i++){
+    var fecha = String(v[i][0] == null ? '' : v[i][0]).trim();
+    if (!fecha) continue;                       // fila que no es un ingreso de la app
+    var nombre = String(v[i][1] == null ? '' : v[i][1]).trim();
+    var telRaw = String(v[i][2] == null ? '' : v[i][2]).trim();
+    var mail   = String(v[i][4] == null ? '' : v[i][4]).trim().toLowerCase();
+    var ume    = /umepay/i.test(String(v[i][5]) + ' ' + String(v[i][6]));
+    var baja   = /baja/i.test(String(v[i][7]));
+    var tel    = telRaw.replace(/\D/g, '');
+    var clave  = mail || (tel ? 'tel:' + tel : '');
+    if (!clave) continue;
+
+    if (!g[clave]){
+      g[clave] = {nombre:'', mail:mail, tel:'', veces:0, ult:'', ultN:-1, ume:false, baja:false};
+      orden.push(clave);
+    }
+    var r = g[clave];
+    r.veces++;
+    if (ume)  r.ume  = true;
+    if (baja) r.baja = true;
+    var n = pvFechaNum(fecha);
+    if (n >= r.ultN){ r.ultN = n; r.ult = fecha; if (nombre) r.nombre = nombre; if (telRaw) r.tel = telRaw; }
+    if (!r.nombre && nombre) r.nombre = nombre;
+    if (!r.tel && telRaw)    r.tel = telRaw;
+  }
+
+  var out = [];
+  for (var j = 0; j < orden.length; j++){
+    var x = g[orden[j]];
+    if (x.ume) continue;
+    out.push([x.nombre, x.mail, x.tel, x.veces, x.ult, x.baja ? 'BAJA' : '']);
+  }
+  out.sort(function(a, b){
+    var A = String(a[0]).toLowerCase(), B = String(b[0]).toLowerCase();
+    return A < B ? -1 : (A > B ? 1 : 0);
+  });
+  return cab.concat(out);
+}
+
+/** "dd/MM/yyyy HH:mm:ss" -> número comparable, para saber cuál es la última. */
+function pvFechaNum(s){
+  var m = String(s).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return 0;
+  return Number(m[3]) * 1e10 + Number(m[2]) * 1e8 + Number(m[1]) * 1e6 +
+         Number(m[4] || 0) * 1e4 + Number(m[5] || 0) * 100 + Number(m[6] || 0);
+}
