@@ -2714,6 +2714,13 @@ function drawMarcas(){ marcasLayer.clearLayers();
     else capa=L.polyline(m.c,{color:m.t==='ruta'?'#2f7be6':'#b5532a',weight:4,opacity:.9});
     capa.bindPopup(popupHtml(m,i),{minWidth:190,maxWidth:230}); capa.addTo(marcasLayer);
   });
+  // Líneas/rutas: una franja invisible más ancha por encima, para poder TOCARLAS con el dedo (la línea
+  // visible es muy finita). Se agregan al final para no romper el índice marcasLayer.getLayers()[i] que
+  // usan renombrar y foto.
+  marcas.forEach((m,i)=>{ if(m.t==='l'||m.t==='ruta'){
+    const hit=L.polyline(m.c,{color:'#000',weight:26,opacity:0,lineCap:'round'});
+    hit.bindPopup(popupHtml(m,i),{minWidth:190,maxWidth:230}); hit.addTo(marcasLayer);
+  }});
 }
 map.on('popupopen',e=>{ const node=e.popup.getElement&&e.popup.getElement(); if(!node)return;
   const on=(sel,attr,fn)=>node.querySelectorAll(sel).forEach(b=>b.onclick=()=>fn(+b.getAttribute(attr)));
