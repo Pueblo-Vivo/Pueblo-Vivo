@@ -2601,7 +2601,190 @@ function openShared(raw,modo){
 function reservaWA(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const txt=`*Pueblo Vivo · Alojamiento Casa ${p.num}*\n${enPesos(inf.rental.nightly)}/noche · hasta ${inf.rental.cap} personas\n\nHola, quiero consultar disponibilidad para hospedarme en Umepay.`;
   window.open('https://wa.me/5493546510397?text='+encodeURIComponent(txt),'_blank');}
-function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
+/* ============ Ficha PDF ============
+   El PDF se arma acá adentro, byte por byte: no hay librería ni ventana de
+   impresión. Sale un archivo de verdad, que en el celular se manda por
+   WhatsApp con el botón de compartir y en la compu se descarga.
+   Las fotos se pueden leer porque están en Supabase, que manda los permisos
+   que hacen falta (las de Drive no se podrían).                           */
+const PDF_W=595.28, PDF_H=841.89, PDF_M=48;          // A4 en puntos + margen
+const PDF_VERDE=[0.12,0.24,0.17], PDF_TEJA=[0.71,0.33,0.16],
+      PDF_GRIS=[0.52,0.49,0.42], PDF_TINTA=[0.11,0.10,0.08], PDF_LINEA=[0.90,0.87,0.82];
+
+/* Texto -> bytes WinAnsi, que es lo que entienden las fuentes de base del PDF. */
+const PDF_EXTRA={'–':0x96,'—':0x97,'‘':0x91,'’':0x92,'“':0x93,
+                 '”':0x94,'•':0x95,'€':0x80,'…':0x85};
+function pdfTxt(s){
+  let out='';
+  const str=String(s==null?'':s);
+  for(let i=0;i<str.length;i++){
+    const ch=str[i]; let c=PDF_EXTRA[ch]!=null?PDF_EXTRA[ch]:str.charCodeAt(i);
+    if(c>255) c=63;                                   // lo que no entra, '?'
+    if(c===40||c===41||c===92) out+='\\'+String.fromCharCode(c);
+    else if(c<32||c>126) out+='\\'+('00'+c.toString(8)).slice(-3);
+    else out+=String.fromCharCode(c);
+  }
+  return out;
+}
+/* Ancho aproximado de un renglón. Helvetica no trae métricas acá, así que
+   estimo; se usa solo para cortar renglones, no para alinear nada. */
+function pdfAncho(s,size,bold){ return String(s).length*size*(bold?0.56:0.5); }
+function pdfCortar(s,size,bold,max){
+  const pal=String(s).split(/\s+/); const out=[]; let ln='';
+  pal.forEach(p=>{ const t=ln?ln+' '+p:p;
+    if(pdfAncho(t,size,bold)>max && ln){ out.push(ln); ln=p; } else ln=t; });
+  if(ln)out.push(ln); return out;
+}
+
+/* Una foto (o el logo) -> JPEG crudo, que el PDF embebe tal cual con DCTDecode. */
+function pdfJpeg(src,maxW){
+  return new Promise(res=>{
+    const im=new Image(); im.crossOrigin='anonymous';
+    const listo=()=>{
+      try{
+        let w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
+        if(!w||!h) return res(null);
+        if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,w,h); g.drawImage(im,0,0,w,h);
+        const b64=c.toDataURL('image/jpeg',0.78).split(',')[1];
+        const bin=atob(b64); const u=new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+        res({bytes:u,w:w,h:h});
+      }catch(e){ res(null); }                          // foto que no se deja leer
+    };
+    im.onload=listo; im.onerror=()=>res(null);
+    setTimeout(()=>res(null),12000);
+    im.src=src;
+  });
+}
+/* El logo de la barra de arriba, pasado a imagen. */
+function pdfLogo(){
+  const svg=document.querySelector('.logo-svg');
+  if(!svg) return Promise.resolve(null);
+  const cl=svg.cloneNode(true); cl.setAttribute('width','200'); cl.setAttribute('height','200');
+  const s=new XMLSerializer().serializeToString(cl);
+  return pdfJpeg('data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s),200);
+}
+
+/* Armador: junta los objetos y escribe la tabla de posiciones del final. */
+function pdfArmar(objs){
+  const partes=[], pos=[]; let largo=0;
+  const push=x=>{ const b=(typeof x==='string')?new TextEncoder().encode(x):x; partes.push(b); largo+=b.length; };
+  push('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+  for(let n=1;n<objs.length;n++){
+    pos[n]=largo;
+    const o=objs[n];
+    if(o && o.stream){
+      push(n+' 0 obj\n'+o.dict+'\nstream\n'); push(o.stream); push('\nendstream\nendobj\n');
+    } else { push(n+' 0 obj\n'+o+'\nendobj\n'); }
+  }
+  const xref=largo;
+  let t='xref\n0 '+objs.length+'\n0000000000 65535 f \n';
+  for(let n=1;n<objs.length;n++) t+=('0000000000'+pos[n]).slice(-10)+' 00000 n \n';
+  t+='trailer\n<< /Size '+objs.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
+  push(t);
+  const todo=new Uint8Array(largo); let k=0;
+  partes.forEach(b=>{ todo.set(b,k); k+=b.length; });
+  return todo;
+}
+
+/* La ficha en sí. d = {nom, barrio, precio, etiqueta, filas, fotos, hoy} */
+async function pdfFicha(d){
+  const objs=[null,null,null]; let next=3;
+  const nuevo=()=>next++;
+  const FR=nuevo(), FB=nuevo();
+  objs[FR]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objs[FB]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+
+  const imgs=[];                                        // {id,nombre,w,h}
+  const sumarImg=j=>{ if(!j)return null; const id=nuevo();
+    objs[id]={dict:'<< /Type /XObject /Subtype /Image /Width '+j.w+' /Height '+j.h+
+      ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+j.bytes.length+' >>',
+      stream:j.bytes};
+    const nombre='Im'+imgs.length; imgs.push({id:id,nombre:nombre,w:j.w,h:j.h}); return imgs[imgs.length-1]; };
+
+  const logo=sumarImg(await pdfLogo());
+  const fotos=[];
+  for(const f of (d.fotos||[]).slice(0,4)){ const x=sumarImg(await pdfJpeg(f,640)); if(x)fotos.push(x); }
+
+  /* --- dibujo --- */
+  const paginas=[]; let ops=[], y=0;
+  const col=(c,trazo)=>ops.push(c[0].toFixed(3)+' '+c[1].toFixed(3)+' '+c[2].toFixed(3)+' '+(trazo?'RG':'rg'));
+  const texto=(s,x,yy,size,bold,color)=>{ col(color||PDF_TINTA);
+    ops.push('BT /'+(bold?'FB':'FR')+' '+size+' Tf 1 0 0 1 '+x.toFixed(2)+' '+yy.toFixed(2)+' Tm ('+pdfTxt(s)+') Tj ET'); };
+  const linea=(x1,yy,x2)=>{ col(PDF_LINEA,true); ops.push('0.7 w '+x1.toFixed(2)+' '+yy.toFixed(2)+' m '+x2.toFixed(2)+' '+yy.toFixed(2)+' l S'); };
+  const nuevaPag=()=>{ if(ops.length)paginas.push(ops); ops=[]; y=PDF_H-PDF_M; };
+  const lugar=alto=>{ if(y-alto<PDF_M+40) nuevaPag(); };
+
+  nuevaPag();
+  /* encabezado */
+  if(logo){ const h=34, w=h*logo.w/logo.h;
+    ops.push('q '+w.toFixed(2)+' 0 0 '+h+' '+PDF_M+' '+(y-h).toFixed(2)+' cm /'+logo.nombre+' Do Q');
+    texto('PUEBLO VIVO',PDF_M+w+10,y-14,11,true,PDF_VERDE);
+    texto('Ecoaldea Umepay',PDF_M+w+10,y-26,9,false,PDF_GRIS);
+    y-=h+18;
+  } else { texto('PUEBLO VIVO',PDF_M,y-14,11,true,PDF_VERDE); y-=34; }
+  linea(PDF_M,y,PDF_W-PDF_M); y-=28;
+
+  /* título y precio */
+  pdfCortar(d.nom,20,true,PDF_W-2*PDF_M).forEach(l=>{ texto(l,PDF_M,y,20,true,PDF_VERDE); y-=25; });
+  y-=2;
+  texto(String(d.barrio||'').toUpperCase()+'  ·  '+d.etiqueta.toUpperCase(),PDF_M,y,9,false,PDF_TEJA);
+  y-=30;
+  texto(d.precio,PDF_M,y,26,true,PDF_VERDE); y-=30;
+
+  /* tabla */
+  (d.filas||[]).forEach(r=>{
+    const vals=pdfCortar(r[1],10,false,PDF_W-2*PDF_M-180);
+    lugar(16+(vals.length-1)*13);
+    linea(PDF_M,y+10,PDF_W-PDF_M);
+    texto(r[0],PDF_M,y,10,false,PDF_GRIS);
+    vals.forEach((v,i)=>texto(v,PDF_M+180,y-i*13,10,false,PDF_TINTA));
+    y-=16+(vals.length-1)*13;
+  });
+
+  /* fotos, de a dos */
+  if(fotos.length){
+    y-=16;
+    const ancho=(PDF_W-2*PDF_M-12)/2;
+    for(let i=0;i<fotos.length;i+=2){
+      const par=fotos.slice(i,i+2);
+      const alto=Math.max.apply(null,par.map(f=>ancho*f.h/f.w));
+      lugar(alto+12);
+      par.forEach((f,j)=>{ const h=ancho*f.h/f.w, x=PDF_M+j*(ancho+12);
+        ops.push('q '+ancho.toFixed(2)+' 0 0 '+h.toFixed(2)+' '+x.toFixed(2)+' '+(y-h).toFixed(2)+' cm /'+f.nombre+' Do Q'); });
+      y-=alto+12;
+    }
+  }
+
+  /* pie */
+  lugar(40); y-=10; linea(PDF_M,y+10,PDF_W-PDF_M);
+  texto('Pueblo Vivo · Ecoaldea Umepay · '+d.hoy,PDF_M,y-4,8,false,PDF_GRIS);
+  texto('Los valores pueden cambiar sin aviso. Consultanos por WhatsApp.',PDF_M,y-15,8,false,PDF_GRIS);
+  nuevaPag();
+
+  /* páginas */
+  const kids=[];
+  paginas.forEach(o=>{
+    const cont=nuevo(), pag=nuevo();
+    const txt=new TextEncoder().encode(o.join('\n'));
+    objs[cont]={dict:'<< /Length '+txt.length+' >>',stream:txt};
+    let rec=''; imgs.forEach(im=>rec+='/'+im.nombre+' '+im.id+' 0 R ');
+    objs[pag]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+PDF_W.toFixed(2)+' '+PDF_H.toFixed(2)+']'+
+      ' /Resources << /Font << /FR '+FR+' 0 R /FB '+FB+' 0 R >> /XObject << '+rec+'>> >>'+
+      ' /Contents '+cont+' 0 R >>';
+    kids.push(pag+' 0 R');
+  });
+  objs[2]='<< /Type /Pages /Count '+kids.length+' /Kids ['+kids.join(' ')+'] >>';
+  objs[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  for(let i=1;i<next;i++) if(objs[i]==null) objs[i]='<< >>';
+  objs.length=next;
+  return pdfArmar(objs);
+}
+
+function sharePDF(id){
+  const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const supP=supOf(p,inf), ppmP=(inf.total&&supP)?Math.round(inf.total/supP):null;
   /* Todo lo que va acá sale de la planilla. Antes imprimía "Características" tomadas
      de una lista al azar y un pie que decía "datos de muestra", en una hoja que se le
@@ -2610,28 +2793,34 @@ function sharePDF(id){const p=PARCELAS.features.find(x=>x.properties.id==id).pro
   const esAlq=opOf(inf)==='alquiler';
   const precio=esAlq?(inf.alqPrice?enPesos(inf.alqPrice)+' por noche':'Consultar')
                     :(inf.total?'USD '+money(inf.total):'Consultar');
-  const etiqueta=esAlq?'En alquiler':'En venta';
   const filas=[['Superficie',supP?money(supP)+' m² ('+(supP/10000).toFixed(2)+' ha)':null],
     ['Precio por m²',(!esAlq&&ppmP)?'USD '+ppmP:null],
     ['Tipo',inf.tipo],['Legalidad',inf.legalidad],['m² cubiertos',inf.mtCub],['m² semicubiertos',inf.semicub],
     ['Características',inf.carac],['Forma de pago',inf.formaPago],['Expensas',inf.expensas],
     ['Valor promocional',inf.valorPromo?('USD '+inf.valorPromo):null],['Otros',inf.otros],
     ['N° de lote',inf.loteNum!=null?inf.loteNum:p.mapNum]].filter(r=>r[1]);
-  const hoy=new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-  const w=window.open('','_blank');if(!w){toast('Permití las ventanas emergentes');return;}
-  w.document.write(`<html><head><title>${esc(nom)} · Pueblo Vivo</title><style>
-    body{font-family:Georgia,serif;color:#1c1a15;max-width:600px;margin:40px auto;padding:0 24px}
-    h1{color:#1f3d2b;border-bottom:3px solid #b5532a;padding-bottom:8px}
-    .p{font-size:34px;color:#1f3d2b;font-weight:bold} table{width:100%;border-collapse:collapse;margin:18px 0}
-    td{padding:9px 0;border-bottom:1px solid #e6ded0}td:first-child{color:#867d6c;width:45%}
-    .imgs{display:flex;gap:8px;flex-wrap:wrap}.imgs img{width:48%;border-radius:8px}
-    .badge{display:inline-block;background:#dff0e4;color:#1d7a45;padding:4px 12px;border-radius:99px;font-size:14px}</style></head>
-    <body><h1>${esc(nom)}</h1><p style="color:#b5532a;letter-spacing:2px;text-transform:uppercase;font-size:13px">${p.barrio} · Ecoaldea Umepay</p>
-    <p class="p">${precio}</p><span class="badge">${etiqueta}</span>
-    <table>${filas.map(r=>`<tr><td>${r[0]}</td><td>${esc(String(r[1]))}</td></tr>`).join('')}</table>
-    <div class="imgs">${(inf.fotos||[]).slice(0,6).map(s=>`<img src="${driveSrc(s)}">`).join('')}</div>
-    <p style="color:#867d6c;font-size:12px;margin-top:30px">Pueblo Vivo · Ecoaldea Umepay · ${hoy}<br>Los valores pueden cambiar sin aviso. Consultanos por WhatsApp.</p>
-    <script>setTimeout(()=>window.print(),600)<\/script></body></html>`);w.document.close();}
+  const d={nom:nom, barrio:p.barrio||'', precio:precio, etiqueta:esAlq?'En alquiler':'En venta',
+    filas:filas, fotos:((inf.fotos&&inf.fotos.length)?inf.fotos:((inf.casas&&inf.casas[0]&&inf.casas[0].fotos)||[])).map(driveSrc),
+    hoy:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})};
+  const archivo=('Pueblo Vivo - '+nom).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ-]/g,'').trim()+'.pdf';
+  toast('Armando la ficha…');
+  pdfFicha(d).then(bytes=>{
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    const bajar=()=>{ const u=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=u; a.download=archivo; a.click();
+      setTimeout(()=>URL.revokeObjectURL(u),4000); toast('Ficha descargada ✓'); };
+    const f=new File([blob],archivo,{type:'application/pdf'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[f]})){
+      /* Armar el PDF lleva unos segundos (hay que bajar las fotos) y el iPhone a
+         veces ya no acepta el menú de compartir cuando pasó tanto del toque.
+         Si lo rechaza, la bajamos igual: nunca se queda sin nada. */
+      navigator.share({files:[f],title:nom+' · Pueblo Vivo'})
+        .catch(e=>{ if(!e||e.name!=='AbortError') bajar(); });
+      return;
+    }
+    bajar();
+  }).catch(e=>{ console.warn('pdf',e); toast('No se pudo armar la ficha'); });
+}
 
 /* ============ Filtros avanzados ============ */
 const fsheet=document.getElementById('fsheet'),fscroll=document.getElementById('fsheetScroll');
