@@ -259,6 +259,34 @@ body.listmode .lv-tolist{display:none}
 .comu-head{padding:12px 16px 2px}
 .comu-head h2{margin:0;font-size:18px;color:var(--terra);font-weight:800}
 .comu-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+/* Vista previa de la ficha, antes de mandarla */
+.fich-prev{position:fixed;inset:0;z-index:4000;background:#efe9df;display:none;flex-direction:column}
+.fich-prev.show{display:flex}
+.fich-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;background:#fff;border-bottom:1px solid var(--line)}
+.fich-bar button{font-family:inherit;font-size:14.5px;font-weight:600;border-radius:11px;padding:10px 14px;cursor:pointer}
+.fich-volver{background:#fff;border:1px solid var(--line);color:var(--ink);display:inline-flex;align-items:center;gap:6px}
+.fich-volver svg{width:16px;height:16px}
+.fich-ok{background:var(--forest);border:1px solid var(--forest);color:#fff}
+.fich-ok:disabled{opacity:.6}
+.fich-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px}
+.fich-hoja{background:#fff;max-width:620px;margin:0 auto;padding:26px 24px 30px;border-radius:4px;
+  box-shadow:0 6px 24px rgba(0,0,0,.12);color:#1c1a15;font-family:Helvetica,Arial,sans-serif}
+.fich-head{display:flex;align-items:center;gap:10px;border-bottom:1px solid #e6ded0;padding-bottom:12px}
+.fich-head svg{width:34px;height:34px;flex:0 0 auto}
+.fich-head b{display:block;color:var(--forest);font-size:13px;letter-spacing:.5px}
+.fich-head span{display:block;color:#867d6c;font-size:11px}
+.fich-hoja h1{font-family:Helvetica,Arial,sans-serif;color:var(--forest);font-size:25px;margin:22px 0 6px;line-height:1.15}
+.fich-sub{color:var(--terra);font-size:11px;letter-spacing:1.5px;margin:0 0 18px}
+.fich-precio{color:var(--forest);font-size:30px;font-weight:bold;margin:0 0 18px}
+.fich-tabla{width:100%;border-collapse:collapse;font-size:13px}
+.fich-tabla td{padding:7px 0;border-top:1px solid #e6ded0;vertical-align:top}
+.fich-tabla td:first-child{color:#867d6c;width:42%;padding-right:10px}
+.fich-fotos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.fich-fotos img{width:100%;border-radius:4px;display:block}
+.fich-pie{color:#867d6c;font-size:10.5px;margin-top:22px;border-top:1px solid #e6ded0;padding-top:10px;line-height:1.5}
+.lv-search{max-width:none}
+.lv-search .lvqx{border:0;background:transparent;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px;line-height:1}
 .comu-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin:10px 16px 0}
 .comu-search input{border:0;outline:0;font-size:15px;width:100%;background:transparent;color:var(--ink)}
 .comu-search svg{width:17px;height:17px;color:var(--muted);flex:0 0 auto}
@@ -880,6 +908,7 @@ body.listmode .lv-tolist{display:none}
 
 <div id="listView">
   <div class="lv-bar"><div class="lv-count" id="lvCount"></div></div>
+  <div class="comu-search lv-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input id="lvQ" placeholder="Buscar por nombre…"><button class="lvqx" id="lvQX" hidden aria-label="Borrar">✕</button></div>
   <div class="lv-body">
     <div class="lv-side">
       <div class="lv-mini-wrap"><div class="lv-mini" id="lvMini"></div><button class="lv-mini-btn" id="lvMapBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg> Ver en el mapa</button></div>
@@ -1074,9 +1103,18 @@ const FILT_NUEVO=()=>({maxPrice:null,minSize:0,orient:[]});
 const FILT_SEC={alojar:FILT_NUEVO(),casa:FILT_NUEVO(),terreno:FILT_NUEVO()};
 function FI(){ return FILT_SEC[secFiltros()]; }
 let LISTON=true;   // Comprar/Alojar arrancan en vista de LISTA (el mapa se abre con un botón)
-const LFILT_NUEVO=()=>({maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:''});
+const LFILT_NUEVO=()=>({maxPrice:null,maxSup:0,barrio:'',conCasa:false,minCap:0,minHab:0,amen:[],sort:'',q:''});
 const LFILT_SEC={alojar:LFILT_NUEVO(),casa:LFILT_NUEVO(),terreno:LFILT_NUEVO()};
 function LF(){ return LFILT_SEC[secFiltros()]; }   // filtros de la vista de lista, por sección
+/* Buscador por nombre. Sin acentos y sin mayúsculas, así "agape" encuentra "Ágape".
+   Mira el nombre, el barrio, el tipo y el número de lote. */
+function lvNorm(s){ return String(s==null?'':s).toLowerCase().normalize('NFD')
+  .replace(RegExp('['+String.fromCharCode(768)+'-'+String.fromCharCode(879)+']','g'),''); }
+function lvMatch(inf,p,q){
+  if(!q) return true;
+  const heno=lvNorm([inf.inmueble,p.barrio,inf.tipo,inf.loteNum,p.mapNum].filter(x=>x!=null&&x!=='').join(' '));
+  return lvNorm(q).split(/\s+/).filter(Boolean).every(t=>heno.indexOf(t)>=0);
+}
 let miniMap=null;
 
 const haversine=(a,b)=>{const R=6371000,d2r=Math.PI/180;const dLat=(b[0]-a[0])*d2r,dLng=(b[1]-a[1])*d2r;
@@ -1278,7 +1316,7 @@ function lotThumb(inf,isCasa){ const f=lotFirstPhoto(inf); if(f)return '<div cla
 function casaField(inf,label){ const cs=(inf.casas||[])[0]; if(!cs)return ''; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(label)>=0); return row?String(row[2]).trim():''; }
 function casaHas(inf,mk){ const cs=(inf.casas||[])[0]; if(!cs)return false; const row=(cs.f||[]).find(x=>String(x[1]).toLowerCase().indexOf(mk)>=0); return !!row&&!/^no$/i.test(String(row[2]).trim()); }
 const LV_AMEN=[['estufa le','Estufa a leña'],['wifi','WiFi'],['cocina equipada','Cocina'],['parrilla','Parrilla'],['estacionamiento','Estacionam.'],['agua caliente','Agua caliente']];
-function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LF().maxPrice&&inf.total>LF().maxPrice)continue; if(LF().maxSup&&sup>LF().maxSup)continue; if(LF().barrio&&p.barrio!==LF().barrio)continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
+function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); if(!isVenta(inf))continue; if(ventaTipo==='casa'&&!conCasa(inf))continue; if(ventaTipo==='terreno'&&conCasa(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const sup=supOf(p,inf); if(LF().maxPrice&&inf.total>LF().maxPrice)continue; if(LF().maxSup&&sup>LF().maxSup)continue; if(LF().barrio&&p.barrio!==LF().barrio)continue; if(!lvMatch(inf,p,LF().q))continue; out.push({id:+id,inf,p,sup,ppm:(inf.total&&sup?inf.total/sup:1e9)}); }
   const s=LF().sort;
   if(s==='precio-desc')out.sort((a,b)=>(b.inf.total||0)-(a.inf.total||0));
   else if(s==='precio-asc')out.sort((a,b)=>(a.inf.total||1e12)-(b.inf.total||1e12));
@@ -1286,7 +1324,7 @@ function ventaList(){ const out=[]; for(const id in DATA){ const inf=info(+id); 
   else if(s==='ppm')out.sort((a,b)=>a.ppm-b.ppm);
   else out.sort((a,b)=>(a.inf.orden==null?1e9:a.inf.orden)-(b.inf.orden==null?1e9:b.inf.orden)); // por defecto: orden de la planilla
   return out; }
-function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LF().maxPrice&&price&&price>LF().maxPrice)continue; if(LF().minCap&&cap&&cap<LF().minCap)continue; if(LF().minHab&&hab&&hab<LF().minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; out.push({id:+id,inf,p,price,cap}); }
+function alqList(){ const d=stayDates(),out=[]; for(const id in DATA){ const inf=info(+id); if(!isAlq(inf))continue; const p=PARCELAS.features.find(x=>x.properties.id==id).properties; const price=inf.alqPrice||null, cap=parseInt(casaField(inf,'capacidad'))||null, hab=parseInt(casaField(inf,'cantidad de habitaciones'))||null; if(LF().maxPrice&&price&&price>LF().maxPrice)continue; if(LF().minCap&&cap&&cap<LF().minCap)continue; if(LF().minHab&&hab&&hab<LF().minHab)continue; if(d&&!isFreeFor(inf,d[0],d[1]))continue; if(!lvMatch(inf,p,LF().q))continue; out.push({id:+id,inf,p,price,cap}); }
   if(LF().sort==='precio-desc')out.sort((a,b)=>(b.price||0)-(a.price||0));
   else if(LF().sort==='precio-asc')out.sort((a,b)=>(a.price||1e9)-(b.price||1e9));
   else out.sort((a,b)=>{const oa=a.inf.ordAlq==null?(a.inf.orden==null?1e9:a.inf.orden):a.inf.ordAlq,ob=b.inf.ordAlq==null?(b.inf.orden==null?1e9:b.inf.orden):b.inf.ordAlq;return oa-ob;}); // por defecto: orden de la planilla
@@ -1308,6 +1346,12 @@ function renderListView(){
   const items=isAlojar?alqList():ventaList();
   const uno=items.length===1, sustV=(ventaTipo==='terreno')?(uno?'terreno en venta':'terrenos en venta'):(uno?'casa en venta':'casas en venta');
   document.getElementById('lvCount').textContent=items.length+' '+(isAlojar?(uno?'alojamiento':'alojamientos'):sustV);
+  /* El buscador es de cada sección: al cambiar de solapa muestra lo que había ahí.
+     Sólo lo toco si cambió, para no moverle el cursor mientras escribe. */
+  const q=document.getElementById('lvQ');
+  if(q){ if(q.value!==LF().q)q.value=LF().q;
+    const x=document.getElementById('lvQX'); if(x)x.hidden=!LF().q;
+    q.placeholder=isAlojar?'Buscar casa por nombre…':(ventaTipo==='casa'?'Buscar casa por nombre…':'Buscar terreno por nombre o lote…'); }
   renderLvFilters(isAlojar);
   const list=document.getElementById('lvList');
   if(!items.length){list.innerHTML='<div class="comu-empty">No hay resultados con esos filtros. Probá aflojar los filtros.</div>';return;}
@@ -1333,7 +1377,7 @@ function renderListView(){
   list.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{const id=+b.dataset.map;LISTON=false;setMode(MODE);setTimeout(()=>{try{highlight(id);}catch(e){}},60);});
   wireDest(list,dest,d=>openSheet(d.id));
 }
-function anyLFilt(isAlojar){return isAlojar?(LF().maxPrice||LF().minCap||LF().minHab||LF().sort||stayDates()):(LF().maxPrice||LF().maxSup||LF().barrio||LF().conCasa||LF().sort);}
+function anyLFilt(isAlojar){if(LF().q)return true;return isAlojar?(LF().maxPrice||LF().minCap||LF().minHab||LF().sort||stayDates()):(LF().maxPrice||LF().maxSup||LF().barrio||LF().conCasa||LF().sort);}
 function renderLvFilters(isAlojar){
   const el=document.getElementById('lvFilters');if(!el)return;
   const opt=(v,cur,lab)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+lab+'</option>';
@@ -1932,6 +1976,8 @@ function openComu(x){
   openId=null;casaSel=0;scrim.classList.add('show');sheet.classList.add('open');
 }
 document.getElementById('comuQ').addEventListener('input',e=>{comuQ=e.target.value.toLowerCase().trim();renderComu();});
+document.getElementById('lvQ').addEventListener('input',e=>{LF().q=e.target.value;renderListView();});
+document.getElementById('lvQX').addEventListener('click',()=>{LF().q='';document.getElementById('lvQ').value='';renderListView();document.getElementById('lvQ').focus();});
 
 /* ===== Disponibilidad por dueño (calendario, editable con clave; moderadores editan todo) ===== */
 async function loadDisp(){ if(!sb)return; try{ const {data,error}=await sb.from('disp').select('lote,ocupado'); if(error)throw error; const m={}; (data||[]).forEach(r=>{ if(r&&r.lote!=null)m[r.lote]=Array.isArray(r.ocupado)?r.ocupado:[]; }); DISP=m; applyFilter(); if(openId!=null)render(); }catch(e){console.warn('loadDisp',e);} }
@@ -2783,7 +2829,8 @@ async function pdfFicha(d){
   return pdfArmar(objs);
 }
 
-function sharePDF(id){
+/* Los datos de la ficha, una sola vez: los usan la vista previa y el PDF. */
+function fichaDatos(id){
   const p=PARCELAS.features.find(x=>x.properties.id==id).properties,inf=info(id);
   const supP=supOf(p,inf), ppmP=(inf.total&&supP)?Math.round(inf.total/supP):null;
   /* Todo lo que va acá sale de la planilla. Antes imprimía "Características" tomadas
@@ -2799,12 +2846,49 @@ function sharePDF(id){
     ['Características',inf.carac],['Forma de pago',inf.formaPago],['Expensas',inf.expensas],
     ['Valor promocional',inf.valorPromo?('USD '+inf.valorPromo):null],['Otros',inf.otros],
     ['N° de lote',inf.loteNum!=null?inf.loteNum:p.mapNum]].filter(r=>r[1]);
-  const d={nom:nom, barrio:p.barrio||'', precio:precio, etiqueta:esAlq?'En alquiler':'En venta',
-    filas:filas, fotos:((inf.fotos&&inf.fotos.length)?inf.fotos:((inf.casas&&inf.casas[0]&&inf.casas[0].fotos)||[])).map(driveSrc),
+  const fotos=((inf.fotos&&inf.fotos.length)?inf.fotos:((inf.casas&&inf.casas[0]&&inf.casas[0].fotos)||[])).map(driveSrc);
+  return {nom:nom, barrio:p.barrio||'', precio:precio, etiqueta:esAlq?'En alquiler':'En venta',
+    filas:filas, fotos:fotos,
     hoy:new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})};
-  const archivo=('Pueblo Vivo - '+nom).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ-]/g,'').trim()+'.pdf';
-  toast('Armando la ficha…');
-  pdfFicha(d).then(bytes=>{
+}
+
+/* Vista previa: la misma hoja, en pantalla, antes de mandarla a nadie. */
+function fichaHtml(d){
+  const logo=document.querySelector('.logo-svg');
+  return '<div class="fich-head">'+(logo?logo.outerHTML:'')+
+      '<div><b>PUEBLO VIVO</b><span>Ecoaldea Umepay</span></div></div>'+
+    '<h1>'+esc(d.nom)+'</h1>'+
+    '<p class="fich-sub">'+esc(String(d.barrio).toUpperCase())+'  ·  '+esc(d.etiqueta.toUpperCase())+'</p>'+
+    '<p class="fich-precio">'+esc(d.precio)+'</p>'+
+    '<table class="fich-tabla">'+d.filas.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+esc(String(r[1]))+'</td></tr>').join('')+'</table>'+
+    (d.fotos.length?'<div class="fich-fotos">'+d.fotos.slice(0,4).map(s=>'<img src="'+s+'" alt="">').join('')+'</div>':'')+
+    '<p class="fich-pie">Pueblo Vivo · Ecoaldea Umepay · '+esc(d.hoy)+'<br>'+
+      'Los valores pueden cambiar sin aviso. Consultanos por WhatsApp.</p>';
+}
+
+function sharePDF(id){
+  const d=fichaDatos(id);
+  let ov=document.getElementById('fichPrev');
+  if(!ov){ ov=document.createElement('div'); ov.id='fichPrev'; ov.className='fich-prev'; document.body.appendChild(ov); }
+  const puedeCompartir=!!(navigator.share&&navigator.canShare&&
+    navigator.canShare({files:[new File([new Blob(['x'])],'x.pdf',{type:'application/pdf'})]}));
+  ov.innerHTML='<div class="fich-bar">'+
+      '<button class="fich-volver" id="fichX"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Volver</button>'+
+      '<button class="fich-ok" id="fichGo">'+(puedeCompartir?'Compartir PDF':'Descargar PDF')+'</button>'+
+    '</div><div class="fich-scroll"><div class="fich-hoja" id="fichHoja">'+fichaHtml(d)+'</div></div>';
+  ov.classList.add('show'); document.body.style.overflow='hidden';
+  const cerrar=()=>{ ov.classList.remove('show'); document.body.style.overflow=''; };
+  document.getElementById('fichX').onclick=cerrar;
+  document.getElementById('fichGo').onclick=function(){
+    const b=this; if(b.disabled)return; b.disabled=true; const antes=b.textContent; b.textContent='Armando…';
+    bajarFichaPdf(d).then(()=>{ b.disabled=false; b.textContent=antes; })
+                    .catch(()=>{ b.disabled=false; b.textContent=antes; });
+  };
+}
+
+function bajarFichaPdf(d){
+  const archivo=('Pueblo Vivo - '+d.nom).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ-]/g,'').trim()+'.pdf';
+  return pdfFicha(d).then(bytes=>{
     const blob=new Blob([bytes],{type:'application/pdf'});
     const bajar=()=>{ const u=URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=u; a.download=archivo; a.click();
@@ -2814,9 +2898,8 @@ function sharePDF(id){
       /* Armar el PDF lleva unos segundos (hay que bajar las fotos) y el iPhone a
          veces ya no acepta el menú de compartir cuando pasó tanto del toque.
          Si lo rechaza, la bajamos igual: nunca se queda sin nada. */
-      navigator.share({files:[f],title:nom+' · Pueblo Vivo'})
+      return navigator.share({files:[f],title:d.nom+' · Pueblo Vivo'})
         .catch(e=>{ if(!e||e.name!=='AbortError') bajar(); });
-      return;
     }
     bajar();
   }).catch(e=>{ console.warn('pdf',e); toast('No se pudo armar la ficha'); });
