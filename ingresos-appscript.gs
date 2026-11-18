@@ -5,6 +5,9 @@
  *            "Novedades" y le manda un mail de bienvenida (una sola vez).
  *            BAJAS: si en la columna H de "Ingresos" dice BAJA en alguna de sus
  *            filas, no se le manda nada más, ni aunque vuelva a tildar la casilla.
+ *            NUEVOS: si es la PRIMERA vez de esa persona, la copia también a la
+ *            hoja "Ingresos nuevos" (los reingresos NO van ahí). Para cargar el
+ *            historial una sola vez, correr la función PVLLENARNUEVOS.
  *  - EMPLINK: fórmula para armar el link de emprendedor de Comunidad. Uso en el Sheet: =EMPLINK(B2)
  *
  * Instalación / actualización:
@@ -49,16 +52,34 @@ function doPost(e){
 
     // Busco la última fila que tenga FECHA (columna A) — que la escribe SOLO la app.
     // Así, lo que haya en F/G (fórmulas, marcas) NO desplaza el ingreso nuevo: se acabó el "hueco".
+    // De paso junto las personas que YA existían (mail, o WhatsApp si no hay mail),
+    // mirando solo las filas de ANTES, para saber si este ingreso es nuevo o un reingreso.
     var n = sh.getLastRow();
     var lastA = 1;
+    var existentes = {};
     if (n > 0){
-      var colA = sh.getRange(1, 1, n, 1).getValues();
-      for (var i = 0; i < colA.length; i++){ if (String(colA[i][0]).trim() !== '') lastA = i + 1; }
+      var prev = sh.getRange(1, 1, n, 5).getValues();   // A..E (Fecha..Mail)
+      for (var i = 0; i < prev.length; i++){
+        if (String(prev[i][0]).trim() !== ''){
+          lastA = i + 1;
+          if (i >= 1){                                     // i=0 es el encabezado
+            var k = pvKeyIngreso(prev[i][4], prev[i][2]);  // E=Mail, C=WhatsApp
+            if (k) existentes[k] = 1;
+          }
+        }
+      }
     }
     var fila = lastA + 1;
     sh.getRange(fila, 1, 1, 5).setValues([[fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro', d.mail || '']]);
     // La BAJA se re-escribe en la fila nueva: queda a la vista y no se pierde nunca.
     sh.getRange(fila, 8).setValue(baja ? 'BAJA' : (quiere ? 'SI' : ''));
+
+    // ¿PRIMERA vez de esta persona? Entonces va también a la hoja "Ingresos nuevos".
+    // Si ya figuraba antes (reingreso), NO se copia: esa hoja queda solo con los nuevos.
+    var miKey = pvKeyIngreso(d.mail, d.whatsapp);
+    if (!miKey || !existentes[miKey]){
+      pvSumarIngresoNuevo(ss, fecha, d.nombre || '', d.whatsapp || '', d.tipo || 'registro', d.mail || '');
+    }
 
     // Si pidió novedades, lo sumo a la lista y le mando la bienvenida (una sola vez por mail).
     // Si alguna vez pidió la baja, no: la baja manda, aunque vuelva a tildar la casilla.
@@ -70,6 +91,58 @@ function doPost(e){
     return ContentService.createTextOutput(JSON.stringify({ok:false, error:String(err)}))
       .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+/* ===== INGRESOS NUEVOS (una fila por persona, solo la PRIMERA vez) =====
+ * La hoja "Ingresos" sigue con TODO (nuevos + reingresos).
+ * La hoja "Ingresos nuevos" junta solo la primera vez de cada persona.
+ * "La misma persona" = mismo mail; si no tiene mail, mismo WhatsApp.
+ */
+function pvKeyIngreso(mail, tel){
+  mail = String(mail || '').trim().toLowerCase();
+  if (mail) return mail;
+  var t = String(tel || '').replace(/\D/g, '');
+  return t ? 'tel:' + t : '';
+}
+function pvSumarIngresoNuevo(ss, fecha, nombre, whatsapp, tipo, mail){
+  var sh = ss.getSheetByName('Ingresos nuevos');
+  if (!sh){
+    sh = ss.insertSheet('Ingresos nuevos');
+    sh.getRange(1, 1, 1, 5).setValues([['Fecha','Nombre','WhatsApp','Tipo','Mail']]);
+    sh.setFrozenRows(1);
+  }
+  var fila = sh.getLastRow() + 1;   // esta hoja la escribe SOLO el script: sin huecos
+  sh.getRange(fila, 1, 1, 5).setValues([[fecha, nombre, whatsapp, tipo, mail]]);
+}
+
+/** UNA SOLA VEZ: llena "Ingresos nuevos" con el historial que ya está en "Ingresos".
+ *  Toma la PRIMERA aparición de cada persona. Después, doPost la mantiene sola.
+ *  Para correrla: en el editor de Apps Script, elegí PVLLENARNUEVOS arriba y apretá ▶ Ejecutar. */
+function PVLLENARNUEVOS(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var src = ss.getSheetByName('Ingresos');
+  var sh = ss.getSheetByName('Ingresos nuevos') || ss.insertSheet('Ingresos nuevos');
+  sh.clearContents();
+  sh.getRange(1, 1, 1, 5).setValues([['Fecha','Nombre','WhatsApp','Tipo','Mail']]);
+  sh.setFrozenRows(1);
+  if (!src || src.getLastRow() < 2) return;
+  var v = src.getRange(2, 1, src.getLastRow() - 1, 5).getValues();   // A..E
+  var vistos = {}, out = [];
+  for (var i = 0; i < v.length; i++){
+    var fecha = String(v[i][0] == null ? '' : v[i][0]).trim();
+    if (!fecha) continue;                              // fila que no es un ingreso de la app
+    var nombre = String(v[i][1] == null ? '' : v[i][1]).trim();
+    var tel    = String(v[i][2] == null ? '' : v[i][2]).trim();
+    var tipo   = String(v[i][3] == null ? '' : v[i][3]).trim();
+    var mail   = String(v[i][4] == null ? '' : v[i][4]).trim();
+    var key = pvKeyIngreso(mail, tel);
+    if (key){
+      if (vistos[key]) continue;                       // ya tomé su primer ingreso
+      vistos[key] = 1;
+    }
+    out.push([fecha, nombre, tel, tipo, mail]);        // sin mail ni tel: lo dejo igual (no lo pierdo)
+  }
+  if (out.length) sh.getRange(2, 1, out.length, 5).setValues(out);
 }
 
 /* ===== Lista de novedades + mail de bienvenida ===== */
