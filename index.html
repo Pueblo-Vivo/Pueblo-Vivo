@@ -373,6 +373,27 @@ body.listmode .lv-tolist{display:none}
 #landing .lgd-install{width:100%;margin-top:12px;padding:14px;border:1.5px solid #d9c8a8;border-radius:14px;background:#fff;color:#5f6e37;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
 #landing .lgd-install svg{width:18px;height:18px}
 #landing .lgd-foot{color:#a89e8d;font-size:12px;margin-top:20px}
+/* ===== Intro: el logo se dibuja al abrir y desaparece (~3s). Aditivo, por encima de todo. ===== */
+#pvIntro{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;background:linear-gradient(160deg,#faf6ee,#e8dcc4);padding:26px}
+#pvIntro .pvi-wrap{display:flex;flex-direction:column;align-items:center;text-align:center}
+#pvIntro .pvi-logo{width:min(40vw,150px);height:auto;display:block}
+#pvIntro .pvi-leaf{fill:none;stroke:url(#pviGrad);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0}
+#pvIntro .pvi-seed{fill:url(#pviGrad);transform-box:fill-box;transform-origin:center}
+#pvIntro .pvi-word{font-family:'Fraunces',serif;font-weight:700;color:#7a4a1e;font-size:clamp(28px,8vw,40px);line-height:1.02;margin-top:12px;letter-spacing:.3px}
+#pvIntro .pvi-tag{font-family:'Fraunces',serif;font-weight:500;color:#8a7f6c;font-size:clamp(12px,3.4vw,15px);margin-top:2px}
+@keyframes pviDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes pviPop{0%{opacity:0;transform:scale(0)}60%{opacity:1;transform:scale(1.35)}100%{opacity:1;transform:scale(1)}}
+@keyframes pviRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pviOut{to{opacity:0;visibility:hidden}}
+#pvIntro.play{animation:pviOut .45s ease 2.5s forwards}
+#pvIntro.play .pvi-seed{animation:pviPop .3s ease both}
+#pvIntro.play .pvi-c{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .15s both}
+#pvIntro.play .pvi-l{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .4s both}
+#pvIntro.play .pvi-r{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .65s both}
+#pvIntro.play .pvi-word{animation:pviRise .5s ease 1.3s both}
+#pvIntro.play .pvi-tag{animation:pviRise .45s ease 1.55s both}
+#pvIntro.gone{opacity:0;transition:opacity .4s ease;pointer-events:none}
+@media (prefers-reduced-motion:reduce){#pvIntro.play,#pvIntro.play .pvi-seed,#pvIntro.play .pvi-c,#pvIntro.play .pvi-l,#pvIntro.play .pvi-r,#pvIntro.play .pvi-word,#pvIntro.play .pvi-tag{animation:none}#pvIntro .pvi-leaf{stroke-dashoffset:0}}
 /* overflow-y:auto para que en pantallas bajas (iPhone SE) se pueda llegar al botón */
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #regGate.show{display:flex}
@@ -973,6 +994,20 @@ body.listmode .lv-tolist{display:none}
   <button class="lbnav lbnext" id="lbNext">›</button>
   <div class="lbbar"><span class="lbcount" id="lbCount"></span><button class="lbdel" id="lbDel">🗑 Eliminar</button></div>
 </div>
+<div id="pvIntro" aria-hidden="true"><div class="pvi-wrap">
+  <svg class="pvi-logo" viewBox="0 0 100 100" aria-label="Pueblo Vivo">
+    <defs><linearGradient id="pviGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs>
+    <g transform="translate(50,80)">
+      <path class="pvi-leaf pvi-l" pathLength="1" transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/>
+      <path class="pvi-leaf pvi-c" pathLength="1" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/>
+      <path class="pvi-leaf pvi-r" pathLength="1" transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/>
+    </g>
+    <circle class="pvi-seed" cx="50" cy="90" r="3.3"/>
+  </svg>
+  <div class="pvi-word">Pueblo Vivo</div>
+  <div class="pvi-tag">Umepay · ecoaldea</div>
+</div></div>
+
 <div id="landing"><div class="lgd">
   <svg class="lgd-logo" viewBox="0 0 100 100" aria-label="Pueblo Vivo"><defs><linearGradient id="pvgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs><g transform="translate(50,80)" fill="none" stroke="url(#pvgL)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="3.3" fill="url(#pvgL)"/></svg>
   <h1>Pueblo Vivo</h1>
@@ -3647,6 +3682,21 @@ async function triggerInstall(){
   land.classList.remove('hide');
   document.getElementById('lgdEnter').onclick=()=>{ try{sessionStorage.setItem('pv_entered','1');}catch(e){} land.classList.add('hide'); };
   document.getElementById('lgdInstall').onclick=triggerInstall;
+})();
+
+/* Intro animada del logo al abrir la app (una vez por sesión, ~3s). Tocar para saltear. */
+(function(){
+  const el=document.getElementById('pvIntro'); if(!el)return;
+  let saltar=false;
+  try{ saltar = esLinkEditor() || sessionStorage.getItem('pv_intro_v1')==='1'; }catch(e){}
+  if(saltar){ el.style.display='none'; return; }
+  try{ sessionStorage.setItem('pv_intro_v1','1'); }catch(e){}
+  el.style.display='flex';
+  void el.offsetWidth;        // asegura que arranque la animación
+  el.classList.add('play');
+  const cerrar=()=>{ el.classList.add('gone'); setTimeout(()=>{ el.style.display='none'; }, 450); };
+  const t=setTimeout(cerrar, 2900);
+  el.addEventListener('click',()=>{ clearTimeout(t); cerrar(); });   // saltear tocando
 })();
 
 /* Pido almacenamiento persistente: reduce que el teléfono borre el caché y la app deje de abrir offline */
