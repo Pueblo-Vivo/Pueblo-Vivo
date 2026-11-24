@@ -374,8 +374,8 @@ body.listmode .lv-tolist{display:none}
 #landing .lgd-install svg{width:18px;height:18px}
 #landing .lgd-foot{color:#a89e8d;font-size:12px;margin-top:20px}
 /* ===== Intro: el logo se dibuja al abrir y desaparece (~3s). Aditivo, por encima de todo. ===== */
-#pvIntro{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;background:linear-gradient(160deg,#faf6ee,#e8dcc4);padding:26px}
-#pvIntro .pvi-wrap{display:flex;flex-direction:column;align-items:center;text-align:center}
+#pvIntro{position:fixed;inset:0;z-index:7000;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#faf6ee,#e8dcc4);padding:26px}
+#pvIntro .pvi-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;transform:translateY(-6vh)}
 #pvIntro .pvi-logo{width:min(40vw,150px);height:auto;display:block}
 #pvIntro .pvi-leaf{fill:none;stroke:url(#pviGrad);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0}
 #pvIntro .pvi-seed{fill:url(#pviGrad);transform-box:fill-box;transform-origin:center}
@@ -1007,6 +1007,21 @@ body.listmode .lv-tolist{display:none}
   <div class="pvi-word">Pueblo Vivo</div>
   <div class="pvi-tag">Umepay · ecoaldea</div>
 </div></div>
+<script>/* Dispara la intro apenas se parsea, ANTES de que se pinte la portada (sin parpadeo). */
+(function(){
+  try{
+    var el=document.getElementById('pvIntro'); if(!el) return;
+    var p=null; try{ p=new URLSearchParams(location.search); }catch(e){}
+    var deep = p && (p.get('mod') || (p.get('casa')&&p.get('clave')) || (p.get('emp')&&p.get('clave')));
+    var ya=false; try{ ya = sessionStorage.getItem('pv_intro_v1')==='1'; }catch(e){}
+    if(deep || ya){ el.style.display='none'; return; }     // links de dueño o ya vista esta sesión
+    try{ sessionStorage.setItem('pv_intro_v1','1'); }catch(e){}
+    el.classList.add('play');
+    var cerrar=function(){ el.classList.add('gone'); setTimeout(function(){ el.style.display='none'; }, 450); };
+    var t=setTimeout(cerrar, 2900);
+    el.addEventListener('click', function(){ clearTimeout(t); cerrar(); });   // saltear tocando
+  }catch(e){ var x=document.getElementById('pvIntro'); if(x) x.style.display='none'; }
+})();</script>
 
 <div id="landing"><div class="lgd">
   <svg class="lgd-logo" viewBox="0 0 100 100" aria-label="Pueblo Vivo"><defs><linearGradient id="pvgL" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bf6f27"/><stop offset="1" stop-color="#ddae4c"/></linearGradient></defs><g transform="translate(50,80)" fill="none" stroke="url(#pvgL)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path transform="rotate(-40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/><path transform="rotate(40)" d="M0,0 C-10,-18 -16,-26 -16,-37 C-16,-47 -8,-53 0,-53 C8,-53 16,-47 16,-37 C16,-26 10,-18 0,0 Z"/></g><circle cx="50" cy="90" r="3.3" fill="url(#pvgL)"/></svg>
@@ -3682,21 +3697,6 @@ async function triggerInstall(){
   land.classList.remove('hide');
   document.getElementById('lgdEnter').onclick=()=>{ try{sessionStorage.setItem('pv_entered','1');}catch(e){} land.classList.add('hide'); };
   document.getElementById('lgdInstall').onclick=triggerInstall;
-})();
-
-/* Intro animada del logo al abrir la app (una vez por sesión, ~3s). Tocar para saltear. */
-(function(){
-  const el=document.getElementById('pvIntro'); if(!el)return;
-  let saltar=false;
-  try{ saltar = esLinkEditor() || sessionStorage.getItem('pv_intro_v1')==='1'; }catch(e){}
-  if(saltar){ el.style.display='none'; return; }
-  try{ sessionStorage.setItem('pv_intro_v1','1'); }catch(e){}
-  el.style.display='flex';
-  void el.offsetWidth;        // asegura que arranque la animación
-  el.classList.add('play');
-  const cerrar=()=>{ el.classList.add('gone'); setTimeout(()=>{ el.style.display='none'; }, 450); };
-  const t=setTimeout(cerrar, 2900);
-  el.addEventListener('click',()=>{ clearTimeout(t); cerrar(); });   // saltear tocando
 })();
 
 /* Pido almacenamiento persistente: reduce que el teléfono borre el caché y la app deje de abrir offline */
