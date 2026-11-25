@@ -376,24 +376,37 @@ body.listmode .lv-tolist{display:none}
 /* ===== Intro: el logo se dibuja al abrir y desaparece (~3s). Aditivo, por encima de todo. ===== */
 #pvIntro{position:fixed;inset:0;z-index:7000;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#faf6ee,#e8dcc4);padding:26px}
 #pvIntro .pvi-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;transform:translateY(-6vh)}
-#pvIntro .pvi-logo{width:min(40vw,150px);height:auto;display:block}
+#pvIntro .pvi-logo{width:min(40vw,150px);height:auto;display:block;overflow:visible}
 #pvIntro .pvi-leaf{fill:none;stroke:url(#pviGrad);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0}
-#pvIntro .pvi-seed{fill:url(#pviGrad);transform-box:fill-box;transform-origin:center}
+#pvIntro .pvi-c{transform-box:fill-box;transform-origin:50% 50%;will-change:transform}   /* tumba alrededor de su centro */
+#pvIntro .pvi-seed{fill:url(#pviGrad)}   /* el punto queda visible desde el principio */
 #pvIntro .pvi-word{font-family:'Fraunces',serif;font-weight:700;color:#7a4a1e;font-size:clamp(28px,8vw,40px);line-height:1.02;margin-top:12px;letter-spacing:.3px}
 #pvIntro .pvi-tag{font-family:'Fraunces',serif;font-weight:500;color:#8a7f6c;font-size:clamp(12px,3.4vw,15px);margin-top:2px}
-@keyframes pviDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
-@keyframes pviPop{0%{opacity:0;transform:scale(0)}60%{opacity:1;transform:scale(1.35)}100%{opacity:1;transform:scale(1)}}
+/* Caída tipo hoja: se da vuelta sobre sí misma (de canto -> scaleX chico) y planea de un lado al otro. */
+@keyframes pviFall{
+  0%{opacity:0;transform:translate(-34px,-430px) rotate(-12deg) scaleX(1)}
+  7%{opacity:1}
+  20%{transform:translate(-6px,-350px) rotate(10deg) scaleX(.12)}
+  33%{transform:translate(30px,-280px) rotate(16deg) scaleX(-.85)}
+  46%{transform:translate(6px,-205px) rotate(-6deg) scaleX(-.12)}
+  60%{transform:translate(-28px,-140px) rotate(-16deg) scaleX(.9)}
+  73%{transform:translate(-6px,-80px) rotate(-6deg) scaleX(.3)}
+  85%{transform:translate(14px,-34px) rotate(8deg) scaleX(.95)}
+  94%{transform:translate(3px,-8px) rotate(3deg) scaleX(1)}
+  100%{transform:translate(0,0) rotate(0) scaleX(1)}
+}
+@keyframes pviDraw{from{stroke-dashoffset:1;opacity:1}to{stroke-dashoffset:0;opacity:1}}
 @keyframes pviRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pviOut{to{opacity:0;visibility:hidden}}
-#pvIntro.play{animation:pviOut .45s ease 2.5s forwards}
-#pvIntro.play .pvi-seed{animation:pviPop .3s ease both}
-#pvIntro.play .pvi-c{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .15s both}
-#pvIntro.play .pvi-l{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .4s both}
-#pvIntro.play .pvi-r{animation:pviDraw .6s cubic-bezier(.3,.7,.3,1) .65s both}
-#pvIntro.play .pvi-word{animation:pviRise .5s ease 1.3s both}
-#pvIntro.play .pvi-tag{animation:pviRise .45s ease 1.55s both}
+#pvIntro.play{animation:pviOut .45s ease 3.5s forwards}
+#pvIntro.play .pvi-l,#pvIntro.play .pvi-r{opacity:0}   /* ocultas hasta dibujarse */
+#pvIntro.play .pvi-c{animation:pviFall 2.0s linear both}
+#pvIntro.play .pvi-l{animation:pviDraw .7s ease 1.85s forwards}
+#pvIntro.play .pvi-r{animation:pviDraw .7s ease 2.05s forwards}
+#pvIntro.play .pvi-word{animation:pviRise .55s ease 2.5s both}
+#pvIntro.play .pvi-tag{animation:pviRise .5s ease 2.75s both}
 #pvIntro.gone{opacity:0;transition:opacity .4s ease;pointer-events:none}
-@media (prefers-reduced-motion:reduce){#pvIntro.play,#pvIntro.play .pvi-seed,#pvIntro.play .pvi-c,#pvIntro.play .pvi-l,#pvIntro.play .pvi-r,#pvIntro.play .pvi-word,#pvIntro.play .pvi-tag{animation:none}#pvIntro .pvi-leaf{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){#pvIntro.play,#pvIntro.play .pvi-c,#pvIntro.play .pvi-l,#pvIntro.play .pvi-r,#pvIntro.play .pvi-word,#pvIntro.play .pvi-tag{animation:none}#pvIntro.play .pvi-l,#pvIntro.play .pvi-r{opacity:1}#pvIntro .pvi-leaf{stroke-dashoffset:0}}
 /* overflow-y:auto para que en pantallas bajas (iPhone SE) se pueda llegar al botón */
 #regGate{position:fixed;inset:0;z-index:5000;background:linear-gradient(160deg,#faf6ee,#efe4cf);display:none;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #regGate.show{display:flex}
@@ -1013,12 +1026,12 @@ body.listmode .lv-tolist{display:none}
     var el=document.getElementById('pvIntro'); if(!el) return;
     var p=null; try{ p=new URLSearchParams(location.search); }catch(e){}
     var deep = p && (p.get('mod') || (p.get('casa')&&p.get('clave')) || (p.get('emp')&&p.get('clave')));
-    var ya=false; try{ ya = sessionStorage.getItem('pv_intro_v1')==='1'; }catch(e){}
+    var ya=false; try{ ya = sessionStorage.getItem('pv_intro_v2')==='1'; }catch(e){}
     if(deep || ya){ el.style.display='none'; return; }     // links de dueño o ya vista esta sesión
-    try{ sessionStorage.setItem('pv_intro_v1','1'); }catch(e){}
+    try{ sessionStorage.setItem('pv_intro_v2','1'); }catch(e){}
     el.classList.add('play');
     var cerrar=function(){ el.classList.add('gone'); setTimeout(function(){ el.style.display='none'; }, 450); };
-    var t=setTimeout(cerrar, 2900);
+    var t=setTimeout(cerrar, 3550);
     el.addEventListener('click', function(){ clearTimeout(t); cerrar(); });   // saltear tocando
   }catch(e){ var x=document.getElementById('pvIntro'); if(x) x.style.display='none'; }
 })();</script>
